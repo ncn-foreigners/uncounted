@@ -4,7 +4,7 @@
 \alias{nonlinear_estimate}
 \title{Zhang (2008) model}
 \usage{
-nonlinear_estimate(data, counts, pop_size, auxiliary, control)
+nonlinear_estimate(data, counts, pop_size, auxiliary, backend, control)
 }
 \arguments{
 \item{data}{input data.frame}
@@ -14,6 +14,8 @@ nonlinear_estimate(data, counts, pop_size, auxiliary, control)
 \item{pop_size}{population size}
 
 \item{auxiliary}{auxiliary variable (single)}
+
+\item{backend}{whether to use OLS, NLS, GLM or other}
 
 \item{control}{control parameters (TODO)}
 }
