@@ -4,7 +4,7 @@
 #' @param counts observed counts
 #' @param pop_size population size
 #' @param auxiliary auxiliary variable (single)
-#' @param backend whether to use OLS, NLS, GLM or other
+#' @param family what to assume: gaussian, poisson, NB
 #' @param control control parameters (TODO)
 #'
 #' @export
@@ -12,7 +12,7 @@ nonlinear_estimate <- function(data,
                                counts,
                                pop_size,
                                auxiliary,
-                               backend,
+                               family,
                                control) {
 
 
