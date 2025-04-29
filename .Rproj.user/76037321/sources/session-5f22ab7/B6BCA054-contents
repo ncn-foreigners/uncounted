@@ -1,0 +1,16 @@
+Package: uncounted
+Type: Package
+Title: Various methods to estimate the population size
+Version: 0.1.0
+Authors@R: c(
+    person(
+      "Maciej", "Beręsewicz",
+      email = "maciej.beresewicz@ue.poznan.pl",
+      role = c("aut", "cre")
+    )
+  )
+Description: Package implements methods for dual and multiple system estimation with linkage errors and correlation; methods based on non-linear count regression models or 
+License: MIT + file LICENSE
+Encoding: UTF-8
+LazyData: true
+RoxygenNote: 7.3.2
