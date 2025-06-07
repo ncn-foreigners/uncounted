@@ -47,10 +47,12 @@ zhang_model <- function(m, n, N){
     hessian = TRUE
   )
 
-  alpha_est <- optimization$par[1]
-  beta_est <- optimization$par[2]
-  phi_est <- optimization$par[3]
+  alpha_est <- unname(optimization$par[1])
+  beta_est <- unname(optimization$par[2])
+  phi_est <- unname(optimization$par[3])
   xi_est <- sum(N^alpha_est)     # target parameter estimator
+
+  estimates <- c(xi = xi_est, alpha = alpha_est, beta = beta_est, phi = phi_est)
 
   # confidence intervals for alpha
   hessian <- optimization$hessian
@@ -66,9 +68,9 @@ zhang_model <- function(m, n, N){
 
   return(
      list(
-       coefficients = c(alpha_est, beta_est, phi_est, xi_est),
-       confint_alpha = ci_alpha,
-       confint_xi = ci_xi,
+       estimates = estimates,
+       confint_alpha = setNames(ci_alpha, c('lower', 'upper')),
+       confint_xi = setNames(ci_xi, c('lower', 'upper')),
        optim_result = optimization)
    )
 
