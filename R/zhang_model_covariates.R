@@ -58,10 +58,12 @@ zhang_model_cov <- function(m, n, N, X = NULL, Z = NULL, start = "glm"){
     hessian = TRUE
   )
 
-  alpha_est <- optimization$par[1:p1]
-  beta_est <- optimization$par[(p1+1):(p1+p2)]
-  phi_est <- optimization$par[p1+p2+1]
+  alpha_est <- unname(optimization$par[1:p1])
+  beta_est <- unname(optimization$par[(p1+1):(p1+p2)])
+  phi_est <- unname(optimization$par[p1+p2+1])
   xi_est <- sum(N^as.vector(X %*% alpha_est))     # target parameter estimator
+
+  estimates <- list(xi = xi_est, alpha = alpha_est, beta = beta_est, phi = phi_est)
 
   # confidence intervals for alpha_est coordinates
   hessian <- optimization$hessian
@@ -81,9 +83,9 @@ zhang_model_cov <- function(m, n, N, X = NULL, Z = NULL, start = "glm"){
 
   return(
     list(
-      coefficients = c(alpha_est, beta_est, phi_est, xi_est),
-      ci_xi = ci_xi,
-      ci_alpha = data.frame(lower = lower_alpha, upper = upper_alpha),
+      estimates = estimates,
+      confint_alpha = data.frame(lower = lower_alpha, upper = upper_alpha),
+      confint_xi = setNames(ci_xi, c('lower', 'upper')),
       optim_result = optimization)
   )
 
