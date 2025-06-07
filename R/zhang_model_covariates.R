@@ -1,5 +1,5 @@
 
-zhang_model_cov <- function(m, n, N, start = 'glm', X = NULL, Z = NULL){
+zhang_model_cov <- function(m, n, N, X = NULL, Z = NULL, start = "glm"){
 
   if (is.null(X)==TRUE)  {X <- matrix(1, nrow = length(n), ncol = 1)}
   if (is.null(Z)==TRUE)  {Z <- matrix(1, nrow = length(n), ncol = 1)}
@@ -61,16 +61,31 @@ zhang_model_cov <- function(m, n, N, start = 'glm', X = NULL, Z = NULL){
   alpha_est <- optimization$par[1:p1]
   beta_est <- optimization$par[(p1+1):(p1+p2)]
   phi_est <- optimization$par[p1+p2+1]
-  xi_est <- sum(N^(X %*% alpha_est))     # target parameter estimator
+  xi_est <- sum(N^as.vector(X %*% alpha_est))     # target parameter estimator
 
+  # confidence intervals for alpha_est coordinates
+  hessian <- optimization$hessian
+  cov_matrix <- tryCatch(solve(hessian), error = function(e) NA)  # is it possible - check
+  z <- qnorm(0.975)
+  lower_alpha <- rep(NA, length(alpha_est))
+  upper_alpha <- rep(NA, length(alpha_est))
+  for (i in 1:length(alpha_est)){
+    var_alpha <- cov_matrix[i,i]
+    s_alpha <- sqrt(var_alpha)
+    lower_alpha[i] <- alpha_est[i] - z*s_alpha
+    upper_alpha[i] <- alpha_est[i] + z*s_alpha
+  }
+
+  # confidence intervals for xi
+  ci_xi <- c(sum(N^as.vector(X %*% lower_alpha)), sum(N^as.vector(X %*% upper_alpha)))
 
   return(
     list(
       coefficients = c(alpha_est, beta_est, phi_est, xi_est),
+      ci_xi = ci_xi,
+      ci_alpha = data.frame(lower = lower_alpha, upper = upper_alpha),
       optim_result = optimization)
   )
 
 }
-
-
 
