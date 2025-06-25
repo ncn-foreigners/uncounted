@@ -251,14 +251,12 @@ zhang_model_cov <- function(m,
     glm_fit <- glm(y ~ x1 + x2 - 1, data = df, family = poisson(link = 'log'))
   }
   starting <- coef(glm_fit)
-  print(starting)
   if (any(!is.finite(starting))) stop('GLM - infinite values')
 
   alpha_start <- rep(starting[1], p1)  # if X, Z are given, alpha and beta must be vectors of correct length
   beta_start <- rep(starting[2], p2)
   phi_start <- 1/var(glm_fit$residuals)
   start_par <- c(alpha_start, beta_start, phi_start)
-
 
   # negative log-likelihood, gradient and hessian
 
@@ -301,7 +299,6 @@ zhang_model_cov <- function(m,
   estimates <- list(xi = xi_est, alpha = alpha_est, beta = beta_est, phi = phi_est)
 
   hessian <- optimization$hessian
-  print(eigen(hessian)$values)
 
   # covariance matrix
   if (vcov == 'robust') {
