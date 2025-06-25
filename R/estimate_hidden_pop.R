@@ -1,6 +1,3 @@
-#'
-#' Estimate hidden population size using non-linear count regression model
-#'
 #' @importFrom stats model.matrix
 #' @importFrom stats lm
 #' @importFrom stats nls
@@ -10,14 +7,14 @@
 #' @importFrom stats coef
 #' @importFrom stats optim
 #'
-#' @description
-#' This function estimates hidden population sizes using the Zhang (2008) methodology
+#' @title Estimate hidden population size using non-linear count regression model
+#'
+#' @description This function estimates hidden population sizes using the Zhang (2008) methodology
 #' for irregular migration populations. It implements a non-linear count regression
 #' model specifically designed for estimating irregular residents based on administrative
-#' data from border control, police records, and population registers.
+#' data from border control, police records, and population registers
 #'
-#'
-#' The function implements the methodology developed by Zhang (2008) and adapted by
+#' @details The function implements the methodology developed by Zhang (2008) and adapted by
 #' Beręsewicz & Pawlukiewicz (2020) for estimating irregular foreigner populations.
 #' The core model assumes that observed apprehensions follow a Poisson distribution:
 #'
@@ -127,8 +124,6 @@
 #' Statystyczne. The Polish Statistician*, 64(10), 7-35.
 #'
 #' @seealso
-#' \code{\link{ols_model}}, \code{\link{nls_model}}, \code{\link{zhang_model_cov}}
-#' for the underlying estimation functions.
 #'
 #' \code{\link{foreigners_pl}} for the example dataset.
 #'
