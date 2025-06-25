@@ -2,7 +2,7 @@
 % Please edit documentation in R/nonlinear_estimate.R
 \name{nonlinear_estimate}
 \alias{nonlinear_estimate}
-\title{Zhang (2008) model}
+\title{The Zhang (2008) model}
 \usage{
 nonlinear_estimate(data, counts, pop_size, auxiliary, family, control)
 }
@@ -20,5 +20,5 @@ nonlinear_estimate(data, counts, pop_size, auxiliary, family, control)
 \item{control}{control parameters (TODO)}
 }
 \description{
-Zhang (2008) model
+The Zhang (2008) model
 }

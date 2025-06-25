@@ -7,10 +7,17 @@ Authors@R: c(
       "Maciej", "Beręsewicz",
       email = "maciej.beresewicz@ue.poznan.pl",
       role = c("aut", "cre")
+    ),
+    person(
+      "Aniela", "Czerniawska",
+      email = "anicze4@st.amu.edu.pl",
+      role = c("aut", "ctr")
     )
   )
-Description: Package implements methods for dual and multiple system estimation with linkage errors and correlation; methods based on non-linear count regression models or 
+Description: Package implements methods various methods from the literature on estimation population size: graphs, nonlinear approach, dual and multiple system esitmation
 License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
 RoxygenNote: 7.3.2
+Depends: 
+    R (>= 3.5)

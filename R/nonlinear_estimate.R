@@ -1,4 +1,4 @@
-#' @title Zhang (2008) model
+#' @title The Zhang (2008) model
 #'
 #' @param data input data.frame
 #' @param counts observed counts
