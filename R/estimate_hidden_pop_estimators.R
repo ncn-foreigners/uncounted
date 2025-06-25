@@ -1,5 +1,4 @@
 
-
 ### OLS MODEL ###
 
 ols_model <- function(m, n, N, vcov = 'hessian'){

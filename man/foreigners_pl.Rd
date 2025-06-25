@@ -12,7 +12,7 @@ foreigners_pl
 }
 \description{
 A dataset containing information on the number of apprehensions and auxiliary variables
-based on police records and population data
+based on police records and population data fot 2017 and 2018
 }
 \details{
 A data frame with 306 rows and 8 columns:
