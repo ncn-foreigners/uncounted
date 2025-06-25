@@ -1,7 +1,9 @@
 
-### OLS MODEL ###
-
-ols_model <- function(m, n, N, vcov = 'hessian'){
+## the OLS model
+ols_model <- function(m,
+                      n,
+                      N,
+                      vcov = 'hessian'){
 
   df <- data.frame(
     y = m,
@@ -9,11 +11,8 @@ ols_model <- function(m, n, N, vcov = 'hessian'){
     x2 = log(n/N)
   )
 
-  if (any(df$y <= 0)) {
-    message('Variable observed included zeros or negative values. They were removed.')
-    df <- subset(df, y > 0)
-  }
   ols_fit <- lm(log(y) ~ x1 + x2 - 1, data = df)
+
   alpha_est <- unname(coef(ols_fit)[1])
   beta_est <- unname(coef(ols_fit)[2])
   xi_est <- sum(N^alpha_est)
@@ -22,7 +21,7 @@ ols_model <- function(m, n, N, vcov = 'hessian'){
 
   # covariance matrix
   if (vcov == 'robust') {
-    cov_matrix <- vcovHC(ols_fit, type = "HC1")
+    cov_matrix <- sandwich::vcovHC(ols_fit, type = "HC1")
   } else {
     cov_matrix <- vcov(ols_fit)
   }
@@ -56,11 +55,11 @@ ols_model <- function(m, n, N, vcov = 'hessian'){
 
 
 
-
-
-### NLS MODEL with estimates form ols as starting points ###
-
-nls_model <- function(m, n, N, vcov = 'hessian'){
+## nls model
+nls_model <- function(m,
+                      n,
+                      N,
+                      vcov = 'hessian'){
 
   df <- data.frame(
     y = m,
@@ -68,24 +67,22 @@ nls_model <- function(m, n, N, vcov = 'hessian'){
     n = n
   )
 
-  if (any(df$y <= 0)) {
-    message('Variable observed included zeros or negative values. They were removed.')
-  }
-  df_ols <- subset(df, y > 0)
-  df_ols$x1 <- log(df_ols$N)
-  df_ols$x2 <- log(df_ols$n/df_ols$N)
-  ols_fit <- lm(log(y) ~ x1 + x2 - 1, data = df_ols)
+
+  df$x1 <- log(df$N)
+  df$x2 <- log(df$n/df$N)
+  ols_fit <- lm(log(y) ~ x1 + x2 - 1, data = df)
   estim_ols <- list(alpha = coef(ols_fit)[1], beta = coef(ols_fit)[2])
+
   if (coef(ols_fit)[1] < 0 || coef(ols_fit)[2] < 0) {
     warning("OLS produced negative starting values. They were changed to proceed with nls.")
   }
   estim_ols$alpha <- min(max(estim_ols$alpha, 0.01), 1)
   estim_ols$beta <- min(max(estim_ols$beta, 0.01), 1)
 
-  df_nls <- subset(df, y>0)
   nls_fit <- nls(y ~ N^alpha * (n/N)^beta,
                  data = df_nls,
                  start = estim_ols)
+
   estim_nls <- coef(nls_fit)
   alpha_est <- estim_nls['alpha']
   beta_est <- estim_nls['beta']
@@ -127,12 +124,111 @@ nls_model <- function(m, n, N, vcov = 'hessian'){
 }
 
 
+## mle model
 
+zhang_model_cov <- function(m,
+                            n,
+                            N,
+                            X = NULL,
+                            Z = NULL,
+                            vcov = 'hessian',
+                            family = 'poisson'){
 
+  log_lik_zhang_model_cov <- function(alpha, beta, phi, m, n, N, X, Z){
 
-### GLM - ZHANG MODEL ###
+    mu <- N^(as.vector(X %*% alpha)) * (n/N)^(as.vector(Z %*% beta))
 
-zhang_model_cov <- function(m, n, N, X = NULL, Z = NULL, vcov = 'hessian', family = 'poisson'){
+    # check point
+    if (any(!is.finite(mu)) || any(mu <= 0)) return(Inf)   # obvious why, log(mu) if mu <= 0  -> error
+    if (!is.finite(phi) || phi <= 0) return(Inf)           # if phi = 0, then lgamma(phi)= Inf
+
+    val <- m * log(mu) + phi * log(phi) -
+      (m + phi) * log(mu + phi) +
+      lgamma(m + phi) - lfactorial(m) - lgamma(phi)
+
+    # check if there are any inf
+    if (any(!is.finite(val))) return(Inf)
+
+    return(sum(val))
+  }
+
+  grad_log_lik_zhang_model_cov <- function(alpha, beta, phi, m, n ,N, X, Z){
+
+    mu <- N^(as.vector(X %*% alpha)) * (n/N)^(as.vector(Z %*% beta))
+
+    logN <- log(N)
+    logRatio <- log(n/N)
+
+    # check point
+    if (any(mu <= 0) || any(!is.finite(mu)) ||   # obvious
+        phi <= 0 || !is.finite(phi)) {           # obvious
+      return(rep(NA, ncol(X) + ncol(Z) + 1))     # to have correct gradient dimension and still try to go into optim()
+    }
+
+    d_mu <- m/mu - (m + phi)/(phi + mu)
+    d_alpha <- d_mu * mu * logN
+    d_beta <- d_mu * mu * logRatio
+
+    log_mu_phi <- log(mu + phi)
+    log_m_phi  <- log(m + phi)
+
+    # check point
+    if (any(!is.finite(log_mu_phi)) ||        # to avoid problems in sum d_phi
+        any(!is.finite(log_m_phi))) {
+      return(rep(NA, ncol(X) + ncol(Z) + 1))  # to have correct gradient dimension and still try to go into optim()
+    }
+
+    hess_log_lik_zhang_model_cov <- function(alpha, beta, phi, m, n ,N, X, Z){
+
+      mu <- N^(as.vector(X %*% alpha)) * (n/N)^(as.vector(Z %*% beta))
+
+      logN <- log(N)
+      logRatio <- log(n/N)
+
+      # check point
+      if (any(mu <= 0) || phi <= 0 || any(!is.finite(mu))) {
+        return(matrix(NA, nrow = ncol(X) + ncol(Z) + 1, ncol = ncol(X) + ncol(Z) + 1))
+      }          # similar to gradient check point
+
+      d_mu <- m/mu - (m + phi)/(phi + mu)
+      d_mu2 <- -m/mu^2 + (m + phi)/(mu + phi)^2
+
+      d_alpha2 <- d_mu2 * (mu * logN)^2 + d_mu * mu * logN^2
+      d_beta2 <- d_mu2 * (mu * logRatio)^2 + d_mu * mu * logRatio^2
+      d_phi2 <- 1/(2*phi^2) - (2*mu - m + phi)/(mu + phi)^2 + (mu + phi+ 0.5)/(m + phi)^2
+
+      d_alpha_beta <- d_mu2 * mu^2 * logN * logRatio + d_mu * mu * logN * logRatio
+      d_alpha_phi <- mu * logN * (m - mu)/(mu + phi)^2
+      d_beta_phi <- mu * logRatio * (m - mu)/(mu + phi)^2
+
+      # include covariates
+      H11 <- t(X) %*% (d_alpha2 * X)
+      H12 <- t(X) %*% (d_alpha_beta * Z)
+      H13 <- matrix(t(X) %*% d_alpha_phi, ncol=1)
+
+      H22 <- t(Z) %*% (d_beta2 * Z)
+      H23 <- matrix(t(Z) %*% d_beta_phi, ncol=1)
+
+      H33 <- matrix(sum(d_phi2), ncol=1, nrow=1)
+
+      # full hessian matrix
+      top_row <- cbind(H11, H12, H13)
+      middle_row <- cbind(H12, H22, H23)
+      bottom_row <- cbind(t(H13), t(H23), H33)
+
+      return(rbind(top_row, middle_row, bottom_row))
+
+    }
+
+    d_phi <- 1/(2*phi) - m/(mu + phi) - log(mu + phi)- phi/(mu + phi) + log(m + phi) + (m + phi - 0.5)/(m + phi)
+
+    grad_alpha <- as.vector(t(X) %*% d_alpha)
+    grad_beta <- as.vector(t(Z) %*% d_beta)
+    grad_phi <- sum(d_phi)
+
+    return(c(grad_alpha, grad_beta, grad_phi))
+
+  }
 
   if (is.null(X)==TRUE)  {X <- matrix(1, nrow = length(n), ncol = 1)}
   if (is.null(Z)==TRUE)  {Z <- matrix(1, nrow = length(n), ncol = 1)}
@@ -245,113 +341,7 @@ zhang_model_cov <- function(m, n, N, X = NULL, Z = NULL, vcov = 'hessian', famil
 
 }
 
-
-### LOG-LIKELIHOOD ###
-log_lik_zhang_model_cov <- function(alpha, beta, phi, m, n, N, X, Z){
-
-  mu <- N^(as.vector(X %*% alpha)) * (n/N)^(as.vector(Z %*% beta))
-
-  # check point
-  if (any(!is.finite(mu)) || any(mu <= 0)) return(Inf)   # obvious why, log(mu) if mu <= 0  -> error
-  if (!is.finite(phi) || phi <= 0) return(Inf)           # if phi = 0, then lgamma(phi)= Inf
-
-  val <- m * log(mu) + phi * log(phi) -
-    (m + phi) * log(mu + phi) +
-    lgamma(m + phi) - lfactorial(m) - lgamma(phi)
-
-  # check if there are any inf
-  if (any(!is.finite(val))) return(Inf)
-
-  return(sum(val))
-}
-
-
-### GRADIENT ###
-grad_log_lik_zhang_model_cov <- function(alpha, beta, phi, m, n ,N, X, Z){
-
-  mu <- N^(as.vector(X %*% alpha)) * (n/N)^(as.vector(Z %*% beta))
-
-  logN <- log(N)
-  logRatio <- log(n/N)
-
-  # check point
-  if (any(mu <= 0) || any(!is.finite(mu)) ||   # obvious
-      phi <= 0 || !is.finite(phi)) {           # obvious
-    return(rep(NA, ncol(X) + ncol(Z) + 1))     # to have correct gradient dimension and still try to go into optim()
-  }
-
-  d_mu <- m/mu - (m + phi)/(phi + mu)
-  d_alpha <- d_mu * mu * logN
-  d_beta <- d_mu * mu * logRatio
-
-  log_mu_phi <- log(mu + phi)
-  log_m_phi  <- log(m + phi)
-
-  # check point
-  if (any(!is.finite(log_mu_phi)) ||        # to avoid problems in sum d_phi
-      any(!is.finite(log_m_phi))) {
-    return(rep(NA, ncol(X) + ncol(Z) + 1))  # to have correct gradient dimension and still try to go into optim()
-  }
-
-  d_phi <- 1/(2*phi) - m/(mu + phi) - log(mu + phi)- phi/(mu + phi) + log(m + phi) + (m + phi - 0.5)/(m + phi)
-
-  grad_alpha <- as.vector(t(X) %*% d_alpha)
-  grad_beta <- as.vector(t(Z) %*% d_beta)
-  grad_phi <- sum(d_phi)
-
-  return(c(grad_alpha, grad_beta, grad_phi))
-
-}
-
-
-### HESSIAN ###
-hess_log_lik_zhang_model_cov <- function(alpha, beta, phi, m, n ,N, X, Z){
-
-  mu <- N^(as.vector(X %*% alpha)) * (n/N)^(as.vector(Z %*% beta))
-
-  logN <- log(N)
-  logRatio <- log(n/N)
-
-  # check point
-  if (any(mu <= 0) || phi <= 0 || any(!is.finite(mu))) {
-    return(matrix(NA, nrow = ncol(X) + ncol(Z) + 1, ncol = ncol(X) + ncol(Z) + 1))
-  }          # similar to gradient check point
-
-  d_mu <- m/mu - (m + phi)/(phi + mu)
-  d_mu2 <- -m/mu^2 + (m + phi)/(mu + phi)^2
-
-  d_alpha2 <- d_mu2 * (mu * logN)^2 + d_mu * mu * logN^2
-  d_beta2 <- d_mu2 * (mu * logRatio)^2 + d_mu * mu * logRatio^2
-  d_phi2 <- 1/(2*phi^2) - (2*mu - m + phi)/(mu + phi)^2 + (mu + phi+ 0.5)/(m + phi)^2
-
-  d_alpha_beta <- d_mu2 * mu^2 * logN * logRatio + d_mu * mu * logN * logRatio
-  d_alpha_phi <- mu * logN * (m - mu)/(mu + phi)^2
-  d_beta_phi <- mu * logRatio * (m - mu)/(mu + phi)^2
-
-  # include covariates
-  H11 <- t(X) %*% (d_alpha2 * X)
-  H12 <- t(X) %*% (d_alpha_beta * Z)
-  H13 <- matrix(t(X) %*% d_alpha_phi, ncol=1)
-
-  H22 <- t(Z) %*% (d_beta2 * Z)
-  H23 <- matrix(t(Z) %*% d_beta_phi, ncol=1)
-
-  H33 <- matrix(sum(d_phi2), ncol=1, nrow=1)
-
-  # full hessian matrix
-  top_row <- cbind(H11, H12, H13)
-  middle_row <- cbind(H12, H22, H23)
-  bottom_row <- cbind(t(H13), t(H23), H33)
-
-  return(rbind(top_row, middle_row, bottom_row))
-
-}
-
-
-
-
-### ROBUST COV MATRIX FOR NLS -- HC1
-
+# nls robust
 robust_vcov_nls_hc1 <- function(nls_model){
 
   # residuals

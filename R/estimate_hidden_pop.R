@@ -133,9 +133,12 @@
 #' # Load Polish irregular migration data
 #' data(foreigners_pl)
 #'
+#' model_data <- subset(foreigners_pl, year == 2018 & half == 1)
+#' model_data <- aggregate(cbind(border, police, pesel) ~ country, model_data, sum)
+#'
 #' # Basic Zhang model estimation using GLM (recommended)
 #' result_zhang <- estimate_hidden_pop(
-#'   data = subset(foreigners_pl, year == 2017 & half == 1),
+#'   data = model_data,
 #'   observed = ~ border,
 #'   auxiliary = ~ police,
 #'   reference_pop = ~ pesel,
@@ -145,7 +148,7 @@
 
 #' # Linearized model for assumption verification
 #' result_linear <- estimate_hidden_pop(
-#'   data = subset(foreigners_pl, year == 2017 & half == 1),
+#'   data = model_data,
 #'   observed = ~ border,
 #'   auxiliary = ~ police,
 #'   reference_pop = ~ pesel,
@@ -182,14 +185,14 @@ estimate_hidden_pop <- function(
     observed,           # ~ m  formula for m (allow for one)
     auxiliary,          # ~ n  allow for one
     reference_pop,      # ~ N  reference population size
-    cov_alpha = NULL,  # ~ x1 + x2  allow for covariates
-    cov_beta  = NULL,  # ~ x1 + x2  allow for covariates
-    method = 'ols',         # various method for fit / ols (linear regression), nls, glm
+    cov_alpha = NULL,   # ~ x1 + x2  allow for covariates
+    cov_beta  = NULL,   # ~ x1 + x2  allow for covariates
+    method = 'ols',     # various method for fit / ols (linear regression), nls, mle
     vcov = 'hessian',     # or robust - (method to estimate standard errors)
     family = 'gaussian'     # poisson, nb etc
 ){
 
-  if (!method %in% c("ols", "nls", "mle", "zhang")) {
+  if (!method %in% c("ols", "nls", "mle")) {
     stop("Invalid estimation method. Choose 'ols', 'nls', 'mle'.")
   }
 
