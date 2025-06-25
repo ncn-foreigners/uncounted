@@ -9,3 +9,7 @@ The {uncounted} package
   (2024). Counting the uncounted: Methodological extensions in multiple
   systems estimation. Dissertation, Maastricht University,
   doi:10.33540/2611](https://www.cbs.nl/en-gb/background/2024/51/counting-the-uncounted)
+
+- Work on this package is supported by the National Science Centre, OPUS
+  20 grant no. 2020/39/B/HS4/00941 (Towards census-like statistics for
+  foreign-born populations – quality, data integration and estimation)
