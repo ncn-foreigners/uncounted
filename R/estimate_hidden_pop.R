@@ -1,44 +1,55 @@
+#'
 #' Estimate hidden population size using non-linear count regression model
 #'
+#' @importFrom stats model.matrix
+#' @importFrom stats lm
+#' @importFrom stats nls
+#' @importFrom stats glm
+#' @importFrom stats poisson
+#' @importFrom stats vcov
+#' @importFrom stats coef
+#' @importFrom stats optim
+#'
+#' @description
 #' This function estimates hidden population sizes using the Zhang (2008) methodology
 #' for irregular migration populations. It implements a non-linear count regression
 #' model specifically designed for estimating irregular residents based on administrative
 #' data from border control, police records, and population registers.
 #'
-#' @description
+#'
 #' The function implements the methodology developed by Zhang (2008) and adapted by
 #' Beręsewicz & Pawlukiewicz (2020) for estimating irregular foreigner populations.
 #' The core model assumes that observed apprehensions follow a Poisson distribution:
 #'
-#' $$m_{it} \sim \text{Poisson}(\lambda_{it})$$
+#' \deqn{m_{it} \sim \text{Poisson}(\lambda_{it})}
 #'
-#' where $\lambda_{it} = \mu_{it} u_{it}$ and:
+#' where \eqn{\lambda_{it} = \mu_{it} u_{it}} and:
 #'
-#' $$\mu_{it} = N_{it}^{\alpha} \left(\frac{n_{it}}{N_{it}}\right)^{\beta}$$
+#' \deqn{\mu_{it} = N_{it}^{\alpha} \left(\frac{n_{it}}{N_{it}}\right)^{\beta}}
 #'
 #' The target parameter (theoretical size of irregular residents) is:
-#' $$\xi_t = \sum_{i=1}^{C} E(M_{it}|N_{it}) = \sum_{i=1}^{C} N_{it}^{\alpha}$$
+#' \deqn{\xi_t = \sum_{i=1}^{C} E(M_{it}|N_{it}) = \sum_{i=1}^{C} N_{it}^{\alpha}}
 #'
-#' where $\alpha$ and $\beta$ are parameters that should theoretically lie in $(0,1)$.
+#' where \eqn{\alpha} and \eqn{\beta} are parameters that should theoretically lie in \eqn{(0,1)}.
 #'
 #' @param data A `data.frame` containing the variables specified in the other parameters
 #' @param observed A formula (e.g., `~ m_var`) or character string specifying the
 #'   variable name for observed irregular residents apprehended by border guards.
-#'   This represents $m_{it}$ in the Zhang model -- the number of irregular foreigners
+#'   This represents \eqn{m_{it}} in the Zhang model -- the number of irregular foreigners
 #'   detected through border control operations.
 #' @param auxiliary A formula (e.g., `~ n_var`) or character string specifying the
 #'   variable name for auxiliary information from police records. This represents
-#'   $n_{it}$ in the Zhang model -- the number of foreigners appearing in police
+#'   \eqn{n_{it}} in the Zhang model -- the number of foreigners appearing in police
 #'   administrative records (legally staying).
 #' @param reference_pop A formula (e.g., `~ N_var`) or character string specifying
 #'   the variable name for reference population size from population register.
-#'   This represents $N_{it}$ in the Zhang model - the number of foreigners registered
+#'   This represents \eqn{N_{it}} in the Zhang model - the number of foreigners registered
 #'   in the central population register (PESEL in Poland).
 #' @param cov_alpha A formula (e.g., `~ x1 + x2`) specifying covariates for the
-#'   $\alpha$ parameter. Allows $\alpha$ to vary by groups (e.g., country, sex, time).
+#'   \eqn{\alpha} parameter. Allows \eqn{\alpha} to vary by groups (e.g., country, sex, time).
 #'   Only used with `method = "mle"`. Default is `NULL`.
 #' @param cov_beta A formula (e.g., `~ x1 + x2`) specifying covariates for the
-#'   $\beta$ parameter. Allows $\beta$ to vary by groups (e.g., country, sex, time).
+#'   \eqn{\beta} parameter. Allows \eqn{\beta} to vary by groups (e.g., country, sex, time).
 #'   Only used with `method = "mle"`. Default is `NULL`.
 #' @param method Character string specifying the estimation method. Options are:
 #'   \itemize{
@@ -57,76 +68,18 @@
 #'   \itemize{
 #'     \item For `method = "ols"` or `method = "nls"`:
 #'       \itemize{
-#'         \item `estimates` - Vector: $[\hat{\xi}, \hat{\alpha}, \hat{\beta}]$ where $\hat{\xi}$ is estimated hidden population
+#'         \item `estimates` --
 #'         \item `vcov` - Variance-covariance matrix
 #'         \item `se` - Standard errors
 #'       }
 #'     \item For `method = "glm"`:
 #'       \itemize{
 #'         \item `estimates` - List with `alpha` and `beta` parameter vectors
-#'         \item `target_estimate` - Estimated total hidden population $\hat{\xi}$
+#'         \item `target_estimate` - Estimated total hidden population \eqn{\hat{\xi}}
 #'         \item `vcov` - Variance-covariance matrix
 #'         \item `se` - Standard errors
 #'       }
 #'   }
-#'
-#' @details
-#' **The Zhang Methodology**: This approach is specifically designed for irregular
-#' migration estimation using administrative data. Unlike traditional capture-recapture
-#' methods, it uses a functional relationship between observed apprehensions,
-#' auxiliary police data, and reference population.
-#'
-#' **Model Assumptions**:
-#' 1. $M_t$ = size of unauthorized resident population (random variable)
-#' 2. $N_t$ = size of known reference population (fixed, known)
-#' 3. Target parameter: $\xi_t = E(M_t|N_t)$ (theoretical size)
-#' 4. Detection probability structure: $\omega_i = E(p_{it}|n_{it}, N_{it}) = (n_{it}/N_{it})^{\beta}$
-#'
-#' **Data Requirements**: The model requires that $m_{tij} > 0$, $n_{tij} > 0$ and
-#' $n_{tij}/N_{tij} < 1$ for all observations included in estimation.
-#'
-#' **Model Verification**: The linearized model for assumption checking:
-#' $$\log\left(\frac{m_i}{N_i}\right) = (\alpha - 1)\log N_i + \beta \log\left(\frac{n_i}{N_i}\right) + \epsilon_i$$
-#'
-#' Expected relationships: negative coefficient for $\log N_i$, positive for $\log(n_i/N_i)$.
-#'
-#' **Covariates Extension**: When covariates are included:
-#' $$\alpha_i = \exp(X_i^T \gamma_\alpha), \quad \beta_i = \exp(Z_i^T \gamma_\beta)$$
-#'
-#' **Parameter Interpretation**:
-#' - $\alpha$: Population scaling parameter (should be in $(0,1)$)
-#' - $\beta$: Detection probability parameter (should be in $(0,1)$)
-#' - Values outside $(0,1)$ may indicate model misspecification
-#'
-#' @section Data Sources (Polish Context):
-#' The method was developed using three administrative data sources:
-#' \itemize{
-#'   \item **Border Guard data**: Apprehensions of irregular foreigners ($m$)
-#'   \item **Police data**: Foreign nationals in police records ($n$)
-#'   \item **PESEL register**: Central population register ($N$)
-#' }
-#'
-#' @section Warnings:
-#' The function provides warnings when:
-#' \itemize{
-#'   \item Covariates are specified for OLS or NLS methods (covariates are ignored)
-#'   \item Estimated $\alpha$ or $\beta$ parameters lie outside $(0,1)$
-#'   \item For multiple parameters, when individual or summed parameters are outside $(0,1)$
-#' }
-#'
-#' @section Mathematical Foundation:
-#' The methodology is based on the relationship:
-#' $$E(M_{it}|N_{it}) = N_{it}^{\alpha}$$
-#'
-#' and detection probability:
-#' $$E(p_{it}|n_{it}, N_{it}) = \left(\frac{n_{it}}{N_{it}}\right)^{\beta}$$
-#'
-#' The total irregular population estimate is:
-#' $$\hat{\xi} = \sum_{i=1}^{C} N_i^{\hat{\alpha}}$$
-#'
-#' @importFrom stats model.matrix
-#' @importFrom stats lm nls glm poisson
-#' @importFrom stats vcov coef optim
 #'
 #' @examples
 #' \dontrun{
