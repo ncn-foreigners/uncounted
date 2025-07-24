@@ -124,6 +124,60 @@ nls_model <- function(m,
 }
 
 
+## Poisson regression
+glm_model <- function(m,
+                      n,
+                      N,
+                      vcov = 'hessian'){
+
+  df <- data.frame(
+    y = m,
+    x1 = log(N),
+    x2 = log(n/N)
+  )
+
+  glm_fit <- glm(y ~ x1 + x2 - 1, data = df, family = poisson(link = 'log'))
+
+  alpha_est <- unname(coef(glm_fit)[1])
+  beta_est <- unname(coef(glm_fit)[2])
+  xi_est <- sum(N^alpha_est)
+
+  # covariance matrix
+  if (vcov == 'robust') {
+    cov_matrix <- sandwich::vcovHC(glm_fit, type = "HC1")
+  } else {
+    cov_matrix <- vcov(glm_fit)
+  }
+
+  # standard error for alpha_est
+  st_alpha <- sqrt(cov_matrix[1,1])
+  st_beta <- sqrt(cov_matrix[2,2])
+
+  # standard error for xi    -  method similar to confidence intervals
+  st_xi <- sum(as.numeric(N)^as.vector(st_alpha))
+
+  #confidence intervals for alpha
+  confint_alpha <- confint(glm_fit)[1,]
+
+  #confidence intervals for xi - M estimate
+  confint_xi <- c(sum(N^confint_alpha[1]), sum(N^confint_alpha[2]))
+
+  estimates <- c(xi = xi_est, alpha = alpha_est, beta = beta_est)
+
+  return(
+    list(estimates = estimates,
+         cov_matrix = cov_matrix,
+         confint_alpha = setNames(confint_alpha, c("lower", "upper")),
+         confint_xi = setNames(confint_xi, c("lower", "upper")),
+         st_error_alpha = st_alpha,
+         st_error_xi = st_xi,
+         glm_fit = glm_fit
+    )
+  )
+}
+
+
+
 ## mle model
 
 zhang_model_cov <- function(m,
