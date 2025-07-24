@@ -300,7 +300,8 @@ zhang_model_cov <- function(m,
 
   # covariance matrix
   if (vcov == 'robust') {
-    cov_matrix <- sandwich::vcovHC(glm_fit, type = 'HC1')    #### NEEDS TO BE CORRECTED - ROBUST VCOV FOR MLE
+    #cov_matrix <- sandwich::vcovHC(glm_fit, type = 'HC1')    #### NEEDS TO BE CORRECTED - ROBUST VCOV FOR MLE
+    cov_matrix <- robust_mle(optimization, m,n,N, X,Z)
   } else {
     cov_matrix <- tryCatch(solve(hessian), error = function(e) NULL)
   }
@@ -354,4 +355,38 @@ robust_vcov_nls_hc1 <- function(nls_model){
   cov_matrix <- (n/(n-k)) * bread %*% meat %*% bread
 
   return(cov_matrix)
+}
+
+
+# mle robust covariance matrix
+robust_mle <- function(opt, m, n, N, X, Z){
+
+  p1 <- ncol(X)
+  p2 <- ncol(Z)
+
+  grad_i <- function(param){
+
+    result <- lapply(1:length(m), function(i){
+      grad_log_lik_zhang_model_cov(
+        alpha = param[1 : p1],
+        beta = param[(p1+1) : (p1+p2)],
+        phi = param[p1+p2+1],
+        m = m[i],
+        n = n[i],
+        N = N[i],
+        matrix(X[i, ], nrow = 1),
+        matrix(Z[i, ], nrow = 1)
+      )})
+
+    return(result)
+  }
+
+  grads <- do.call(cbind, grad_i(opt$par))
+
+  H <- opt$hessian
+  inv_H <- MASS::ginv(H)
+
+  I <- grads %*% t(grads)
+
+  return(inv_H %*% I %*% inv_H)
 }
