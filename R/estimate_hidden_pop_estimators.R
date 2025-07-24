@@ -20,8 +20,6 @@ ols_model <- function(m,
   beta_est <- unname(coef(ols_fit)[2])
   xi_est <- sum(N^alpha_est)
 
-  X <- model.matrix(ols_fit)
-
   # covariance matrix
   if (vcov == 'robust') {
     cov_matrix <- sandwich::vcovHC(ols_fit, type = "HC1")
@@ -300,7 +298,7 @@ zhang_model_cov <- function(m,
 
   # covariance matrix
   if (vcov == 'robust') {
-    #cov_matrix <- sandwich::vcovHC(glm_fit, type = 'HC1')    #### NEEDS TO BE CORRECTED - ROBUST VCOV FOR MLE
+    #cov_matrix <- sandwich::vcovHC(glm_fit, type = 'HC1')
     cov_matrix <- robust_mle(optimization, m,n,N, X,Z)
   } else {
     cov_matrix <- tryCatch(solve(hessian), error = function(e) NULL)
@@ -350,7 +348,7 @@ robust_vcov_nls_hc1 <- function(nls_model){
 
   meat <- t(X) %*% diag(res^2) %*% X
 
-  bread <- solve(t(X) %*% X)
+  bread <- MASS::ginv(t(X) %*% X)
 
   cov_matrix <- (n/(n-k)) * bread %*% meat %*% bread
 
