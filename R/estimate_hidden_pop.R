@@ -134,13 +134,13 @@ estimate_hidden_pop <- function(
     reference_pop,      # ~ N  reference population size
     cov_alpha = NULL,   # ~ x1 + x2  allow for covariates
     cov_beta  = NULL,   # ~ x1 + x2  allow for covariates
-    method = 'ols',     # various method for fit / ols (linear regression), nls, mle
+    method = 'ols',     # various method for fit / ols (linear regression), nls, glm (poisson regression), mle
     vcov = 'hessian',     # or robust - (method to estimate standard errors)
     family = 'gaussian'     # poisson, nb etc
 ){
 
-  if (!method %in% c("ols", "nls", "mle")) {
-    stop("Invalid estimation method. Choose 'ols', 'nls', 'mle'.")
+  if (!method %in% c("ols", "nls", 'glm', "mle")) {
+    stop("Invalid estimation method. Choose 'ols', 'nls', 'glm', 'mle'.")
   }
 
   if (!vcov %in% c("hessian", "robust")) {
@@ -189,24 +189,13 @@ estimate_hidden_pop <- function(
   results <- switch(method,
                     'ols' = ols_model(m, n, N, vcov = vcov),
                     'nls' = nls_model(m, n, N, vcov = vcov),
+                    'glm' = glm_model(m, n, N, vcov = vcov),
                     'mle' = zhang_model_cov(m, n, N, X, Z, vcov = vcov))
 
 
-  if (method == 'ols'){
+  if (method %in% c('ols', 'nls', 'glm')){
     if (is.null(X)==FALSE){
-      message("Covariates won't be included in the 'ols' estimation method.")
-    }
-    if(results$estimates[2] < 0 || results$estimates[2] > 1 ){
-      message('Estimated alpha parameter lies out of the expected interval (0,1).')
-    }
-    if(results$estimates[3] < 0 || results$estimates[3] > 1 ){
-      message('Estimated beta parameter lies out of the expected interval (0,1).')
-    }
-  }
-
-  if (method == 'nls'){
-    if (is.null(X)==FALSE){
-      message("Covariates won't be included in the 'nls' estimation method.")
+      message("Covariates won't be included in the ", method," estimation method.")
     }
     if(results$estimates[2] < 0 || results$estimates[2] > 1 ){
       message('Estimated alpha parameter lies out of the expected interval (0,1).')
