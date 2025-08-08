@@ -173,6 +173,26 @@ estimate_hidden_pop <- function(
   n <- data[[n_var]]
   N <- data[[N_var]]
 
+  # covariates
+  X <- if (is.null(cov_alpha)==FALSE){model.matrix(cov_alpha, data)} else NULL
+  Z <- if (is.null(cov_beta)==FALSE){model.matrix(cov_beta, data)} else NULL
+
+  if (any(is.na(m)) || any(is.na(n)) || any(is.na(N)) || any(is.na(X)) || any(is.na(Z))) {
+    stop('Input data contains missing values (NA). Please handle missing data before estimation.')
+  }
+
+  if (any(N <= 0)) {
+    stop('Variable ', N_var, ' contains zero or negative values, which are not allowed.')
+  }
+
+  if (any(n <= 0)) {
+    stop('Variable ', n_var, ' contains zero or negative values, which are not allowed.')
+  }
+
+  if (any(N < n)) {
+    stop('There are observations where ', N_var,  ' < ', n_var, ' , which is not allowed.')
+  }
+
 
   if (is.list(m) || is.list(n) || is.list(N)) {
     stop(sprintf("Columns %s, %s, and %s cannot be lists.", m_var, n_var, N_var))
@@ -180,10 +200,6 @@ estimate_hidden_pop <- function(
   if (!is.numeric(m) || !is.numeric(n) || !is.numeric(N)) {
     stop(sprintf("Columns %s, %s, and %s must be numeric. Check input data types.", m_var, n_var, N_var))
   }
-
-  # covariates
-  X <- if (is.null(cov_alpha)==FALSE){model.matrix(cov_alpha, data)} else NULL
-  Z <- if (is.null(cov_beta)==FALSE){model.matrix(cov_beta, data)} else NULL
 
 
   results <- switch(method,
