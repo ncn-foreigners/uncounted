@@ -40,18 +40,31 @@ ols_model <- function(m,
   #confidence intervals for xi - M estimate
   confint_xi <- c(sum(N^confint_alpha[1]), sum(N^confint_alpha[2]))
 
-  estimates <- c(xi = xi_est, alpha = alpha_est, beta = beta_est)
+  coef <- c(alpha = alpha_est, beta = beta_est)
 
-  return(
-    list(estimates = estimates,
-         cov_matrix = cov_matrix,
-         confint_alpha = setNames(confint_alpha, c("lower", "upper")),
-         confint_xi = setNames(confint_xi, c("lower", "upper")),
-         st_error_alpha = st_alpha,
-         st_error_xi = st_xi,
-         ols_fit = ols_fit
-    )
-  )
+  # AIC, BIC values
+  aic <- AIC(ols_fit)
+  bic <- BIC(ols_fit)
+
+  results <- list(method = 'ols',
+                  coefficients = coef,
+                  xi_est = xi_est,
+                  se = NULL,
+                  vcov_method = vcov,
+                  vcov = cov_matrix,
+                  conf_int_xi = setNames(confint_xi, c("lower", "upper")),
+                  conf_int_alpha = setNames(confint_alpha, c("lower", "upper")),
+                  iter = NA,
+                  convergence = NA,
+                  aic = aic,
+                  bic = bic,
+                  residuals = ols_fit$residuals,
+                  fitted = fitted(ols_fit),
+                  m = m,
+                  n = n,
+                  N = N)
+
+  return(results)
 }
 
 
@@ -108,23 +121,36 @@ nls_model <- function(m,
   #confidence intervals for xi - M estimate
   confint_xi <- c(sum(N^confint_alpha[1]), sum(N^confint_alpha[2]))
 
-  estimates <- c(xi = xi_est, alpha_est, beta_est)
+  coef <- c(alpha_est, beta_est)
 
-  return(
-    list(estimates = estimates,
-         cov_matrix = cov_matrix,
-         confint_alpha = setNames(confint_alpha, c("lower", "upper")),
-         confint_xi = setNames(confint_xi, c("lower", "upper")),
-         st_error_alpha = st_alpha,
-         st_error_xi = st_xi,
-         nls_fit = nls_fit
-    )
-  )
+  # AIC, BIC values
+  aic <- AIC(nls_fit)
+  bic <- BIC(nls_fit)
+
+  results <- list(method = 'nls',
+                  coefficients = coef,
+                  xi_est = xi_est,
+                  se = NULL,
+                  vcov_method = vcov,
+                  vcov = cov_matrix,
+                  conf_int_xi = setNames(confint_xi, c("lower", "upper")),
+                  conf_int_alpha = setNames(confint_alpha, c("lower", "upper")),
+                  iter = nls_fit$convInfo$finIter,
+                  convergence = nls_fit$convInfo$isConv,
+                  aic = aic,
+                  bic = bic,
+                  residuals = resid(nls_fit),
+                  fitted = fitted(nls_fit),
+                  m = m,
+                  n = n,
+                  N = N)
+
+  return(results)
 
 }
 
 
-## Poisson regression
+ ## Poisson regression
 glm_model <- function(m,
                       n,
                       N,
@@ -162,18 +188,32 @@ glm_model <- function(m,
   #confidence intervals for xi - M estimate
   confint_xi <- c(sum(N^confint_alpha[1]), sum(N^confint_alpha[2]))
 
-  estimates <- c(xi = xi_est, alpha = alpha_est, beta = beta_est)
+  coef <- c(alpha = alpha_est, beta = beta_est)
 
-  return(
-    list(estimates = estimates,
-         cov_matrix = cov_matrix,
-         confint_alpha = setNames(confint_alpha, c("lower", "upper")),
-         confint_xi = setNames(confint_xi, c("lower", "upper")),
-         st_error_alpha = st_alpha,
-         st_error_xi = st_xi,
-         glm_fit = glm_fit
-    )
-  )
+  # AIC, BIC values
+  aic <- AIC(glm_fit)
+  bic <- BIC(glm_fit)
+
+  results <- list(method = 'glm - Poisson',
+                  coefficients = coef,
+                  xi_est = xi_est,
+                  se = NULL,
+                  vcov_method = vcov,
+                  vcov = cov_matrix,
+                  conf_int_xi = setNames(confint_xi, c("lower", "upper")),
+                  conf_int_alpha = setNames(confint_alpha, c("lower", "upper")),
+                  iter = NULL,
+                  convergence = NULL,
+                  aic = aic,
+                  bic = bic,
+                  residuals = resid(glm_fit),   # which type?
+                  fitted = fitted(glm_fit),
+                  m = m,
+                  n = n,
+                  N = N)
+
+  return(results)
+
 }
 
 
@@ -346,7 +386,7 @@ zhang_model_cov <- function(m,
   phi_est <- unname(optimization$par[p1+p2+1])
   xi_est <- sum(as.numeric(N)^as.vector(X %*% alpha_est))     # target parameter estimator
 
-  estimates <- list(xi = xi_est, alpha = alpha_est, beta = beta_est, phi = phi_est)
+  coef <- list(alpha = alpha_est, beta = beta_est, phi = phi_est)
 
   hessian <- optimization$hessian
 
@@ -374,18 +414,40 @@ zhang_model_cov <- function(m,
   st_xi <- sum(as.numeric(N)^as.vector(X %*% st_alpha))
 
   # confidence intervals for xi
-  ci_xi <- c(sum(as.numeric(N)^as.vector(X %*% lower_alpha)), sum(as.numeric(N)^as.vector(X %*% upper_alpha)))
+  confint_xi <- c(sum(as.numeric(N)^as.vector(X %*% lower_alpha)), sum(as.numeric(N)^as.vector(X %*% upper_alpha)))
 
-  return(
-    list(
-      estimates = estimates,
-      cov_matrix = cov_matrix,
-      confint_alpha = data.frame(lower = lower_alpha, upper = upper_alpha),
-      confint_xi = setNames(ci_xi, c('lower', 'upper')),
-      st_error_alpha = st_alpha,
-      st_error_xi = st_xi,
-      optim_result = optimization)
-  )
+  # AIC, BIC values
+  LL <- log_lik_zhang_model_cov(alpha_est, beta_est, phi_est, m, n, N, X,Z)
+  k <- length(alpha_est) + length(beta_est) + 1
+  C <- length(m)
+  aic <- -2 * LL + 2 * k
+  bic <- -2 * LL + k * log(C)
+
+  # residuals
+  residuals <- m - N^(X %*% alpha_est) * (n/N)^(Z %*% beta_est)  # should it be different type ???
+
+  # fitted
+  fitted <- N^(X %*% alpha_est) * (n/N)^(Z %*% beta_est)
+
+  results <- list(method = 'mle',
+                  coefficients = coef,
+                  xi_est = xi_est,
+                  se = NULL,
+                  vcov_method = vcov,
+                  vcov = cov_matrix,
+                  conf_int_xi = setNames(confint_xi, c('lower', 'upper')),
+                  conf_int_alpha = data.frame(lower = lower_alpha, upper = upper_alpha),
+                  iter = optimization$counts,
+                  convergence = optimization$convergence,
+                  aic = aic,
+                  bic = bic,
+                  residuals = residuals,
+                  fitted = fitted,
+                  m = m,
+                  n = n,
+                  N = N)
+
+  return(results)
 
 }
 

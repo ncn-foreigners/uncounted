@@ -197,29 +197,29 @@ estimate_hidden_pop <- function(
     if (is.null(X)==FALSE){
       message("Covariates won't be included in the ", method," estimation method.")
     }
-    if(results$estimates[2] < 0 || results$estimates[2] > 1 ){
+    if(results$coefficients[1] < 0 || results$coefficients[1] > 1 ){
       message('Estimated alpha parameter lies out of the expected interval (0,1).')
     }
-    if(results$estimates[3] < 0 || results$estimates[3] > 1 ){
+    if(results$coefficients[2] < 0 || results$coefficients[2] > 1 ){
       message('Estimated beta parameter lies out of the expected interval (0,1).')
     }
   }
 
   if (method == 'mle') {
-    if (any(results$estimates$alpha < 0 | results$estimates$alpha > 1)) {
+    if (any(results$coefficients$alpha < 0 | results$coefficients$alpha > 1)) {
       message('The estimated parameter(s) alpha are outside the expected interval (0,1).')
-      if (length(results$estimates$alpha) > 1) {
-        if (sum(results$estimates$alpha) > 0 && sum(results$estimates$alpha) < 1) {
+      if (length(results$coefficients$alpha) > 1) {
+        if (sum(results$coefficients$alpha) > 0 && sum(results$coefficients$alpha) < 1) {
           message('The sum of the estimated parameters alpha lies within the expected interval (0,1).')
         } else {
           message('The sum of the estimated parameters alpha lies outside the expected interval (0,1).')
         }
       }
     }
-    if (any(results$estimates$beta < 0 | results$estimates$beta > 1)) {
+    if (any(results$coefficients$beta < 0 | results$coefficients$beta > 1)) {
       message('The estimated parameter(s) beta are outside the expected interval (0,1).')
-      if (length(results$estimates$beta) > 1) {
-        if (sum(results$estimates$beta) > 0 && sum(results$estimates$beta) < 1) {
+      if (length(results$ecoefficients$beta) > 1) {
+        if (sum(results$coefficients$beta) > 0 && sum(results$coefficients$beta) < 1) {
           message('The sum of the estimated parameters beta lies within the expected interval (0,1).')
         } else {
           message('The sum of the estimated parameters beta lies outside the expected interval (0,1).')
@@ -227,6 +227,8 @@ estimate_hidden_pop <- function(
       }
     }
   }
+
+  class(results) <- 'hidden'
 
   return(results)
 
