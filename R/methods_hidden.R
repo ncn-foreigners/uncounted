@@ -32,7 +32,7 @@ summary.hidden <- function(results) {
     conf_int_beta = results$conf_int_beta,
     vcov_method = results$vcov_method,
     vcov = results$vcov,
-    se = results$se,
+    se_coef = results$se_coef,
     iter = results$iter,
     convergence = results$convergence,
     aic = results$aic,
@@ -74,10 +74,11 @@ print.summary.hidden <- function(results){
 
   coef_table <- data.frame(
     name = names(coef),
-    estimate = as.numeric(coef)
+    Estimate = as.numeric(coef)
   )
   conf_all <- rbind(results$conf_int_alpha, results$conf_int_beta)
   coef_table <- merge(coef_table, conf_all, by = 'name')
+  coef_table <- merge(coef_table, results$se_coef, by = 'name')
   rownames(coef_table) <- coef_table$name
   coef_table$name <- NULL
 
@@ -85,10 +86,10 @@ print.summary.hidden <- function(results){
   print(coef_table)
   cat('\n')
 
-  cat('Covariance matrix estimation method:', results$vcov_method,'\n')
-  cat('Covariance matrix:\n')
-  print(results$vcov)
-  cat('\n')
+  # cat('Covariance matrix estimation method:', results$vcov_method,'\n')
+  # cat('Covariance matrix:\n')
+  # print(results$vcov)
+  # cat('\n')
 
 #  cat('Standard errors:\n')
 #  print(results$se)

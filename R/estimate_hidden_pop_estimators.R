@@ -29,29 +29,29 @@ ols_model <- function(m,
     cov_matrix <- vcov(ols_fit)
   }
 
-  # standard error for alpha_est
-  st_alpha <- sqrt(cov_matrix[1,1])
-  st_beta <- sqrt(cov_matrix[2,2])
+  # standard errors for coefficients
+  se_coef <- data.frame(name = c('alpha', 'beta'),
+                        Std.error = sqrt(diag(cov_matrix)))
 
   # standard error for xi    -  method similar to confidence intervals
-  st_xi <- sum(as.numeric(N)^as.vector(st_alpha))
+ # se_xi <- sum(as.numeric(N)^as.vector(st_alpha))
 
   # confidence intervals for alpha
   ci_alpha <- confint(ols_fit)[1,]
   conf_int_alpha <- data.frame(name = 'alpha',
-                               lower = ci_alpha[1],
-                               upper = ci_alpha[2])
+                               Lower = ci_alpha[1],
+                               Upper = ci_alpha[2])
 
   # confidence intervals for beta
   ci_beta <- confint(ols_fit)[2,]
   conf_int_beta <- data.frame(name = 'beta',
-                              lower = ci_beta[1],
-                              upper = ci_beta[2])
+                              Lower = ci_beta[1],
+                              Upper = ci_beta[2])
 
 
   # confidence intervals for xi - M estimate
-  conf_int_xi <- data.frame(lower = sum(N^ci_alpha[1]),
-                            upper = sum(N^ci_alpha[2]))
+  conf_int_xi <- data.frame(Lower = sum(N^ci_alpha[1]),
+                            Upper = sum(N^ci_alpha[2]))
 
 
   # AIC, BIC values
@@ -61,7 +61,8 @@ ols_model <- function(m,
   results <- list(method = 'ols',
                   coefficients = coef,
                   xi_est = xi_est,
-                  se = NULL,
+                  se_xi = NULL,
+                  se_coef = se_coef,
                   vcov_method = vcov,
                   vcov = cov_matrix,
                   conf_int_xi = conf_int_xi,
@@ -123,28 +124,28 @@ nls_model <- function(m,
     cov_matrix <- vcov(nls_fit)
   }
 
-  # standard error for alpha_est
-  st_alpha <- sqrt(cov_matrix[1,1])
-  st_beta <- sqrt(cov_matrix[2,2])
+  # standard errors for coefficients
+  se_coef <- data.frame(name = c('alpha', 'beta'),
+                        Std.error = sqrt(diag(cov_matrix)))
 
   # standard error for xi
-  st_xi <- sum(as.numeric(N)^as.vector(st_alpha))
+  #st_xi <- sum(as.numeric(N)^as.vector(st_alpha))
 
   # confidence intervals for alpha
   ci_alpha <- confint(nls_fit)[1,]
   conf_int_alpha <- data.frame(name = 'alpha',
-                               lower = ci_alpha[1],
-                               upper = ci_alpha[2])
+                               Lower = ci_alpha[1],
+                               Upper = ci_alpha[2])
 
   # confidence intervals for beta
   ci_beta <- confint(nls_fit)[2,]
   conf_int_beta <- data.frame(name = 'beta',
-                              lower = ci_beta[1],
-                              upper = ci_beta[2])
+                              Lower = ci_beta[1],
+                              Upper = ci_beta[2])
 
   # confidence intervals for xi - M estimate
-  conf_int_xi <- data.frame(lower = sum(N^ci_alpha[1]),
-                            upper = sum(N^ci_alpha[2]))
+  conf_int_xi <- data.frame(Lower = sum(N^ci_alpha[1]),
+                            Upper = sum(N^ci_alpha[2]))
 
 
   # AIC, BIC values
@@ -154,7 +155,7 @@ nls_model <- function(m,
   results <- list(method = 'nls',
                   coefficients = coef,
                   xi_est = xi_est,
-                  se = NULL,
+                  se_coef = se_coef,
                   vcov_method = vcov,
                   vcov = cov_matrix,
                   conf_int_xi = conf_int_xi,
@@ -202,29 +203,29 @@ glm_model <- function(m,
     cov_matrix <- vcov(glm_fit)
   }
 
-  # standard error for alpha_est
-  st_alpha <- sqrt(cov_matrix[1,1])
-  st_beta <- sqrt(cov_matrix[2,2])
+  # standard errors for coefficients
+  se_coef <- data.frame(name = c('alpha', 'beta'),
+                        Std.error = sqrt(diag(cov_matrix)))
 
   # standard error for xi    -  method similar to confidence intervals
-  st_xi <- sum(as.numeric(N)^as.vector(st_alpha))
+  #st_xi <- sum(as.numeric(N)^as.vector(st_alpha))
 
 
   # confidence intervals for alpha
   ci_alpha <- confint(glm_fit)[1,]
   conf_int_alpha <- data.frame(name = 'alpha',
-                               lower = ci_alpha[1],
-                               upper = ci_alpha[2])
+                               Lower = ci_alpha[1],
+                               Upper = ci_alpha[2])
 
   # confidence intervals for beta
   ci_beta <- confint(glm_fit)[2,]
   conf_int_beta <- data.frame(name = 'beta',
-                              lower = ci_beta[1],
-                              upper = ci_beta[2])
+                              Lower = ci_beta[1],
+                              Upper = ci_beta[2])
 
   # confidence intervals for xi - M estimate
-  conf_int_xi <- data.frame(lower = sum(N^ci_alpha[1]),
-                            upper = sum(N^ci_alpha[2]))
+  conf_int_xi <- data.frame(Lower = sum(N^ci_alpha[1]),
+                            Upper = sum(N^ci_alpha[2]))
 
   # AIC, BIC values
   aic <- AIC(glm_fit)
@@ -233,7 +234,7 @@ glm_model <- function(m,
   results <- list(method = 'glm - Poisson',
                   coefficients = coef,
                   xi_est = xi_est,
-                  se = NULL,
+                  se_coef = se_coef,
                   vcov_method = vcov,
                   vcov = cov_matrix,
                   conf_int_xi = conf_int_xi,
@@ -439,48 +440,52 @@ zhang_model_cov <- function(m,
   }
 
   # standard error and confidence intervals for alpha_est coordinates
-  st_alpha <- rep(NA, length(alpha_est))
+  se_alpha <- rep(NA, length(alpha_est))
   z <- qnorm(0.975)
   lower_alpha <- rep(NA, length(alpha_est))
   upper_alpha <- rep(NA, length(alpha_est))
   for (i in 1:length(alpha_est)){
     var_alpha <- cov_matrix[i,i]
-    st_alpha[i] <- sqrt(var_alpha)
-    lower_alpha[i] <- alpha_est[i] - z*st_alpha[i]
-    upper_alpha[i] <- alpha_est[i] + z*st_alpha[i]
+    se_alpha[i] <- sqrt(var_alpha)
+    lower_alpha[i] <- alpha_est[i] - z*se_alpha[i]
+    upper_alpha[i] <- alpha_est[i] + z*se_alpha[i]
   }
 
   conf_int_alpha <- data.frame(
     name = names(alpha_est),
-    lower = lower_alpha,
-    upper = upper_alpha
+    Lower = lower_alpha,
+    Upper = upper_alpha
   )
 
   # for beta
-  st_beta <- rep(NA, length(beta_est))
+  se_beta <- rep(NA, length(beta_est))
   z <- qnorm(0.975)
   lower_beta <- rep(NA, length(beta_est))
   upper_beta <- rep(NA, length(beta_est))
   for (j in 1:length(beta_est)){
     i <- p1 + j
     var_beta <- cov_matrix[i,i]
-    st_beta[j] <- sqrt(var_beta)
-    lower_beta[j] <- beta_est[j] - z*st_beta[j]
-    upper_beta[j] <- beta_est[j] + z*st_beta[j]
+    se_beta[j] <- sqrt(var_beta)
+    lower_beta[j] <- beta_est[j] - z*se_beta[j]
+    upper_beta[j] <- beta_est[j] + z*se_beta[j]
   }
 
   conf_int_beta <- data.frame(
     name = names(beta_est),
-    lower = lower_beta,
-    upper = upper_beta
+    Lower = lower_beta,
+    Upper = upper_beta
   )
 
+  # standard errors for coefficients
+  se_coef <- data.frame(name = c(paste0('alpha', seq_along(alpha_est)), paste0('beta', seq_along(beta_est))),
+                        Std.error = c(se_alpha, se_beta))
+
   # standard error for xi
-  st_xi <- sum(as.numeric(N)^as.vector(X %*% st_alpha))
+  #st_xi <- sum(as.numeric(N)^as.vector(X %*% se_alpha))
 
   # confidence intervals for xi
-  conf_int_xi <- data.frame(lower = sum(as.numeric(N)^as.vector(X %*% lower_alpha)),
-                           upper = sum(as.numeric(N)^as.vector(X %*% upper_alpha)))
+  conf_int_xi <- data.frame(Lower = sum(as.numeric(N)^as.vector(X %*% lower_alpha)),
+                           Upper = sum(as.numeric(N)^as.vector(X %*% upper_alpha)))
 
   # AIC, BIC values
   LL <- log_lik_zhang_model_cov(alpha_est, beta_est, phi_est, m, n, N, X,Z)
@@ -498,7 +503,7 @@ zhang_model_cov <- function(m,
   results <- list(method = 'mle',
                   coefficients = coef,
                   xi_est = xi_est,
-                  se = NULL,
+                  se_coef = se_coef,
                   vcov_method = vcov,
                   vcov = cov_matrix,
                   conf_int_xi = conf_int_xi,
