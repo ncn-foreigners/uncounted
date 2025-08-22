@@ -34,7 +34,7 @@ ols_model <- function(m,
                         Std.error = sqrt(diag(cov_matrix)))
 
   # standard error for xi    -  method similar to confidence intervals
- # se_xi <- sum(as.numeric(N)^as.vector(st_alpha))
+  # se_xi <- sum(as.numeric(N)^as.vector(st_alpha))
 
   # confidence intervals for alpha
   ci_alpha <- confint(ols_fit)[1,]
@@ -48,15 +48,20 @@ ols_model <- function(m,
                               Lower = ci_beta[1],
                               Upper = ci_beta[2])
 
-
   # confidence intervals for xi - M estimate
   conf_int_xi <- data.frame(Lower = sum(N^ci_alpha[1]),
                             Upper = sum(N^ci_alpha[2]))
 
-
   # AIC, BIC values
   aic <- AIC(ols_fit)
   bic <- BIC(ols_fit)
+
+  # summary lm
+  summary_stat <- list(resid_se = summary(ols_fit)$sigma,
+                       df_resid = summary(ols_fit)$df[2],
+                       r_squared = summary(ols_fit)$r.squared,
+                       adj_r_squared = summary(ols_fit)$adj.r.squared,
+                       f_stat = summary(ols_fit)$fstatistic)
 
   results <- list(method = 'ols',
                   coefficients = coef,
@@ -68,12 +73,14 @@ ols_model <- function(m,
                   conf_int_xi = conf_int_xi,
                   conf_int_alpha = conf_int_alpha,
                   conf_int_beta = conf_int_beta,
-                  iter = NA,
-                  convergence = NA,
                   aic = aic,
                   bic = bic,
+                  summary_stat = summary_stat,
                   residuals = ols_fit$residuals,
                   fitted = fitted(ols_fit),
+                  # resid_stand = rstandard(ols_fit),
+                  # cooks = cooks.distance(ols_fit),
+                  # leverage = hatvalues(ols_fit),
                   m = m,
                   n = n,
                   N = N)
@@ -152,6 +159,12 @@ nls_model <- function(m,
   aic <- AIC(nls_fit)
   bic <- BIC(nls_fit)
 
+  # summary nls
+  summary_stat <- list(resid_se = summary(nls_fit)$sigma,
+                         df = summary(nls_fit)$df[2],
+                         iter = nls_fit$convInfo$finIter,
+                         convergence = nls_fit$convInfo$isConv)
+
   results <- list(method = 'nls',
                   coefficients = coef,
                   xi_est = xi_est,
@@ -161,10 +174,9 @@ nls_model <- function(m,
                   conf_int_xi = conf_int_xi,
                   conf_int_alpha = conf_int_alpha,
                   conf_int_beta = conf_int_beta,
-                  iter = nls_fit$convInfo$finIter,
-                  convergence = nls_fit$convInfo$isConv,
                   aic = aic,
                   bic = bic,
+                  summary_stat = summary_stat,
                   residuals = resid(nls_fit),
                   fitted = fitted(nls_fit),
                   m = m,
@@ -231,6 +243,13 @@ glm_model <- function(m,
   aic <- AIC(glm_fit)
   bic <- BIC(glm_fit)
 
+  # summary glm
+  summary_stat <- list(resid_deviance = summary(glm_fit)$deviance,
+                         df_resid = summary(glm_fit)$df.residual,
+                         null_deviance = summary(glm_fit)$null.deviance,
+                         df_null = summary(glm_fit)$df.null,
+                         iter = summary(glm_fit)$iter)
+
   results <- list(method = 'glm - Poisson',
                   coefficients = coef,
                   xi_est = xi_est,
@@ -240,12 +259,14 @@ glm_model <- function(m,
                   conf_int_xi = conf_int_xi,
                   conf_int_alpha = conf_int_alpha,
                   conf_int_beta = conf_int_beta,
-                  iter = NULL,
-                  convergence = NULL,
+                  summary_stat = summary_stat,
                   aic = aic,
                   bic = bic,
                   residuals = resid(glm_fit),   # which type?
                   fitted = fitted(glm_fit),
+                  # resid_stand = rstandard(glm_fit),
+                  # cooks = cooks.distance(glm_fit),
+                  # leverage = hatvalues(glm_fit),
                   m = m,
                   n = n,
                   N = N)
@@ -432,6 +453,41 @@ zhang_model_cov <- function(m,
   hessian <- optimization$hessian
 
   # covariance matrix
+
+
+  # mle robust covariance matrix
+  robust_mle <- function(opt, m, n, N, X, Z){
+
+    p1 <- ncol(X)
+    p2 <- ncol(Z)
+
+    grad_i <- function(param){
+
+      result <- lapply(1:length(m), function(i){
+        grad_log_lik_zhang_model_cov(
+          alpha = param[1 : p1],
+          beta = param[(p1+1) : (p1+p2)],
+          phi = param[p1+p2+1],
+          m = m[i],
+          n = n[i],
+          N = N[i],
+          matrix(X[i, ], nrow = 1),
+          matrix(Z[i, ], nrow = 1)
+        )})
+
+      return(result)
+    }
+
+    grads <- do.call(cbind, grad_i(opt$par))
+
+    H <- opt$hessian
+    inv_H <- MASS::ginv(H)
+
+    I <- grads %*% t(grads)
+
+    return(inv_H %*% I %*% inv_H)
+  }
+
   if (vcov == 'robust') {
     #cov_matrix <- sandwich::vcovHC(glm_fit, type = 'HC1')
     cov_matrix <- robust_mle(optimization, m,n,N, X,Z)
@@ -500,6 +556,10 @@ zhang_model_cov <- function(m,
   # fitted
   fitted <- N^(X %*% alpha_est) * (n/N)^(Z %*% beta_est)
 
+  # summary mle
+  summary_stat <- list(convergence = optimization$convergence,
+                       iter = optimization$counts)
+
   results <- list(method = 'mle',
                   coefficients = coef,
                   xi_est = xi_est,
@@ -509,8 +569,7 @@ zhang_model_cov <- function(m,
                   conf_int_xi = conf_int_xi,
                   conf_int_alpha = conf_int_alpha,
                   conf_int_beta = conf_int_beta,
-                  iter = optimization$counts,
-                  convergence = optimization$convergence,
+                  summary_stat = summary_stat,
                   aic = aic,
                   bic = bic,
                   residuals = residuals,
@@ -544,35 +603,3 @@ robust_vcov_nls_hc1 <- function(nls_model){
 }
 
 
-# mle robust covariance matrix
-robust_mle <- function(opt, m, n, N, X, Z){
-
-  p1 <- ncol(X)
-  p2 <- ncol(Z)
-
-  grad_i <- function(param){
-
-    result <- lapply(1:length(m), function(i){
-      grad_log_lik_zhang_model_cov(
-        alpha = param[1 : p1],
-        beta = param[(p1+1) : (p1+p2)],
-        phi = param[p1+p2+1],
-        m = m[i],
-        n = n[i],
-        N = N[i],
-        matrix(X[i, ], nrow = 1),
-        matrix(Z[i, ], nrow = 1)
-      )})
-
-    return(result)
-  }
-
-  grads <- do.call(cbind, grad_i(opt$par))
-
-  H <- opt$hessian
-  inv_H <- MASS::ginv(H)
-
-  I <- grads %*% t(grads)
-
-  return(inv_H %*% I %*% inv_H)
-}
