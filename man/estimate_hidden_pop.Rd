@@ -103,7 +103,6 @@ where \eqn{\alpha} and \eqn{\beta} are parameters that should theoretically lie 
 data(foreigners_pl)
 
 model_data <- subset(foreigners_pl, year == 2018 & half == 1)
-model_data <- aggregate(cbind(border, police, pesel) ~ country, model_data, sum)
 
 # Basic Zhang model estimation using GLM (recommended)
 result_zhang <- estimate_hidden_pop(
