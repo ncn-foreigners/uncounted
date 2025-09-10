@@ -1,47 +1,127 @@
 
+#' @title Print method for \code{hidden} object
+#'
+#' @description Print method for the object of class \code{hidden}.
+#'
+#' @param x an object of class \code{hidden} returned by the main estimation function \code{estimate_hidden_pop()}
+#'
+#' @examples
+#' \dontrun{
+#' # Load Polish irregular migration data
+#' data(foreigners_pl)
+#'
+#' model_data <- subset(foreigners_pl, year == 2018 & half == 1)
+#'
+#' # Basic Zhang model estimation using GLM (recommended)
+#' result_zhang <- estimate_hidden_pop(
+#'   data = model_data,
+#'   observed = ~ border,
+#'   auxiliary = ~ police,
+#'   reference_pop = ~ pesel,
+#'   method = "mle",
+#'   family = "poisson"
+#' )
+#'
+#' print(result_zhang)
+#'
+#' }
+#'
 #'@export
-print.hidden <- function(results){
+print.hidden <- function(x){
 
-  cat('Number of observations:', length(results$m), '\n')
+  cat('Number of observations:', length(x$m), '\n')
   #if (!is.null(results$uniq_county)){
   #  cat('Number of unique countries:', results$n_countries, '\n\n')   ### need to change the main function
   #}
 
-  cat('Total observed m:', sum(results$m), '\n')
-  cat('Total observed n:', sum(results$n), '\n')
-  cat('Total observed N:', sum(results$N), '\n\n')
+  cat('Total observed m:', sum(x$m), '\n')
+  cat('Total observed n:', sum(x$n), '\n')
+  cat('Total observed N:', sum(x$N), '\n\n')
 
-  cat('Target parameter estimate:', results$xi_est, '\n')
+  cat('Target parameter estimate:', x$xi_est, '\n')
   cat('Target parameter confidence interval: \n')
-  print(results$conf_int_xi)
+  print(x$conf_int_xi)
   cat('\n')
 
   cat('Coefficients:\n')
-  print(results$coefficients)
+  print(x$coefficients)
 
 }
 
+
+
+#' @title Summary method for class 'hidden'
+#'
+#' @description The function constructs a summary list for objects of class \code{hidden}.
+#'
+#' @param object an object of class \code{hidden} returned by the main estimation function \code{estimate_hidden_pop()}
+#'
+#' @return An object of class \code{summary.hidden}, which is a list containing:
+#' \itemize{
+#' \item \code{method} - estimation method used
+#' \item \code{coefficients} - estimation coefficients
+#' \item \code{xi_est} - estimate of the target parameter
+#' \item \code{conf_int_xi}, \code{conf_int_alpha}, \code{conf_int_beta} - confidence intervals
+#' \item \code{vcov}, \code{vcov_method} - estimated variance-covariance matrix and method used
+#' \item \code{se_coef} - standard errors for coefficients
+#' \item \code{summary stat} - list of model-specific statistics
+#' \item \code{aic}, \code{bic} - model selection criteria values
+#' \item \code{residuals}, \code{fitted}, \code{m}, \code{n}, \code{N} - fitted values, residuals and observed data
+#' }
+#'
+#'@details This function is typically used to prepare a structured summary that can then be printed using \code{print.summary.hidden()}.
+#'Depending on the chosen estimation method in \code{estimate_hidden_pop()} function the following model statistics are calculated:
+#'\itemize{
+#' \item \strong{'ols'}: residual standard error, degrees of freedom, R-squared, adjusted R-squared, F-statistic and its p-value;
+#' \item \strong{'nls'}: residual standard error, degrees of freedom, number of iterations, convergence status;
+#' \item \strong{'glm'} - Poisson: null deviance, residual deviance, degrees of freedom, number of Fisher scoring iterations;
+#' \item \strong{'mle'} - Zhang model: convergence status.
+#' }
+#' Other elements such as estimated coefficients, confidence intervals, standard errors, variance-covariance matrix, AIC, BIC, fitted values and residuals
+#' are also included, regardless of the estimation method.
+#'
+#' @examples
+#' \dontrun{
+#' # Load Polish irregular migration data
+#' data(foreigners_pl)
+#'
+#' model_data <- subset(foreigners_pl, year == 2018 & half == 1)
+#'
+#' # Basic Zhang model estimation using GLM (recommended)
+#' result_zhang <- estimate_hidden_pop(
+#'   data = model_data,
+#'   observed = ~ border,
+#'   auxiliary = ~ police,
+#'   reference_pop = ~ pesel,
+#'   method = "mle",
+#'   family = "poisson"
+#' )
+#'
+#' summary(result_zhang)
+#'
+#' }
+#'
 #'@export
-summary.hidden <- function(results) {
+summary.hidden <- function(object) {
 
   summary_list <- list(
-    method = results$method,
-    coefficients = results$coefficients,
-    xi_est = results$xi_est,
-    conf_int_xi = results$conf_int_xi,
-    conf_int_alpha = results$conf_int_alpha,
-    conf_int_beta = results$conf_int_beta,
-    vcov_method = results$vcov_method,
-    vcov = results$vcov,
-    se_coef = results$se_coef,
-    summary_stat = results$summary_stat,
-    aic = results$aic,
-    bic = results$bic,
-    residuals = results$residuals,
-    fitted = results$fitted,
-    m = results$m,
-    n = results$n,
-    N = results$N
+    method = object$method,
+    coefficients = object$coefficients,
+    xi_est = object$xi_est,
+    conf_int_xi = object$conf_int_xi,
+    conf_int_alpha = object$conf_int_alpha,
+    conf_int_beta = object$conf_int_beta,
+    vcov_method = object$vcov_method,
+    vcov = object$vcov,
+    se_coef = object$se_coef,
+    summary_stat = object$summary_stat,
+    aic = object$aic,
+    bic = object$bic,
+    residuals = object$residuals,
+    fitted = object$fitted,
+    m = object$m,
+    n = object$n,
+    N = object$N
   )
 
   class(summary_list) <- 'summary.hidden'
@@ -49,36 +129,71 @@ summary.hidden <- function(results) {
 }
 
 
+
+
+#' @title Print method for summary.hidden objects
+#'
+#' @description Print method for the \code{summary.hidden} object.
+#'
+#' @param x An object of class \code{summary.hidden} returned by \code{summary.hidden()}.
+#'
+#' @details
+#' The function displays a formatted summary of the estimation results.
+#' The output content depends on the estimation method used
+#' in the \code{estimate_hidden_pop()} function and subsequently on the structure created by \code{summary.hidden}.
+#'
+#' @examples
+#' \dontrun{
+#' # Load Polish irregular migration data
+#' data(foreigners_pl)
+#'
+#' model_data <- subset(foreigners_pl, year == 2018 & half == 1)
+#'
+#' # Basic Zhang model estimation using GLM (recommended)
+#' result_zhang <- estimate_hidden_pop(
+#'   data = model_data,
+#'   observed = ~ border,
+#'   auxiliary = ~ police,
+#'   reference_pop = ~ pesel,
+#'   method = "mle",
+#'   family = "poisson"
+#' )
+#'
+#' s <- summary(result_zhang)
+#' print(s)
+#'
+#' }
+#'
 #'@export
-print.summary.hidden <- function(results){
+print.summary.hidden <- function(x){
 
-  cat('Estimation method:', results$method, '\n\n')
+  cat('Estimation method:', x$method, '\n\n')
 
-  cat('Number of observations:', length(results$m), '\n')
+  cat('Number of observations:', length(x$m), '\n')
 #  cat('Number of unique countries:', results$n_countries, '\n\n')
 
-  cat('Total observed m:', sum(results$m), '\n')
-  cat('Total observed n:', sum(results$n), '\n')
-  cat('Total observed N:', sum(results$N), '\n\n')
+  cat('Total observed m:', sum(x$m), '\n')
+  cat('Total observed n:', sum(x$n), '\n')
+  cat('Total observed N:', sum(x$N), '\n\n')
 
-  cat('Target parameter estimate:', results$xi_est, '\n')
+  cat('Target parameter estimate:', x$xi_est, '\n')
   cat('Target parameter confidence interval:', '\n')
-  print(results$conf_int_xi, row.names = FALSE)
+  print(x$conf_int_xi, row.names = FALSE)
   cat('\n')
 
-  if (results$method == 'mle'){
-    coef <- c(results$coefficients$alpha, results$coefficients$beta)
+  if (x$method == 'mle'){
+    coef <- c(x$coefficients$alpha, x$coefficients$beta)
   } else {
-    coef <- results$coefficients
+    coef <- x$coefficients
   }
 
   coef_table <- data.frame(
     name = names(coef),
     Estimate = as.numeric(coef)
   )
-  conf_all <- rbind(results$conf_int_alpha, results$conf_int_beta)
+  conf_all <- rbind(x$conf_int_alpha, x$conf_int_beta)
   coef_table <- merge(coef_table, conf_all, by = 'name')
-  coef_table <- merge(coef_table, results$se_coef, by = 'name')
+  coef_table <- merge(coef_table, x$se_coef, by = 'name')
 
   coef_table$t.val <- coef_table$Estimate / coef_table$Std.error
   coef_table$p.val <- 2 * (1 - pnorm(abs(coef_table$t.val)))
@@ -91,50 +206,50 @@ print.summary.hidden <- function(results){
   print(coef_table)
   cat('\n')
 
-  # cat('Covariance matrix estimation method:', results$vcov_method,'\n')
+  # cat('Covariance matrix estimation method:', x$vcov_method,'\n')
   # cat('Covariance matrix:\n')
-  # print(results$vcov)
+  # print(x$vcov)
   # cat('\n')
 
 #  cat('Standard errors:\n')
-#  print(results$se)
+#  print(x$se)
 #  cat('\n')
 
 
-  if(results$method == 'ols'){
+  if(x$method == 'ols'){
 
-    cat('Residual standard error:', round(results$summary_stat$resid_se, 3), 'on', results$summary_stat$df_resid, 'degrees od freedom \n')
-    cat('Multiple R-squared: ', round(results$summary_stat$r_squared, 4),
-        ',\t Adjusted R-squared:', round(results$summary_stat$adj_r_squared, 4), '\n')
-    f_stat <- results$summary_stat$f_stat
+    cat('Residual standard error:', round(x$summary_stat$resid_se, 3), 'on', x$summary_stat$df_resid, 'degrees od freedom \n')
+    cat('Multiple R-squared: ', round(x$summary_stat$r_squared, 4),
+        ',\t Adjusted R-squared:', round(x$summary_stat$adj_r_squared, 4), '\n')
+    f_stat <- x$summary_stat$f_stat
     cat('F-statistic: ', round(f_stat[1], 2), 'on', f_stat[2], 'and', f_stat[3], 'DF, ',
         'p-value: ', pf(f_stat[1], f_stat[2], f_stat[3], lower.tail = FALSE), '\n')
 
-  } else if(results$method == 'nls'){
+  } else if(x$method == 'nls'){
 
-    cat('Residual standard error:', round(results$summary_stat$resid_se, 3), 'on', results$summary_stat$df, 'degrees of freedom\n')
-    cat('Number of iterations to convergence:', results$summary_stat$iter, '\n')
-    cat('Achieved convergence:', results$summary_stat$convergence, '\n')
+    cat('Residual standard error:', round(x$summary_stat$resid_se, 3), 'on', x$summary_stat$df, 'degrees of freedom\n')
+    cat('Number of iterations to convergence:', x$summary_stat$iter, '\n')
+    cat('Achieved convergence:', x$summary_stat$convergence, '\n')
 
-  }  else if(results$method == 'glm - Poisson'){
+  }  else if(x$method == 'glm - Poisson'){
 
     # null deviance
-    cat('Null deviance:', round(results$summary_stat$null_deviance,4), 'on', results$summary_stat$df_null, 'degrees of freedom\n')
+    cat('Null deviance:', round(x$summary_stat$null_deviance,4), 'on', x$summary_stat$df_null, 'degrees of freedom\n')
     # residual deviance
-    cat('Residual deviance:', round(results$summary_stat$resid_deviance, 4), 'on', results$summary_stat$df_resid, 'degrees of freedom \n')
+    cat('Residual deviance:', round(x$summary_stat$resid_deviance, 4), 'on', x$summary_stat$df_resid, 'degrees of freedom \n')
     # number of Fisher scoring iterations
-    cat('Number of Fisher scoring iterations:', results$summary_stat$iter, '\n')
+    cat('Number of Fisher scoring iterations:', x$summary_stat$iter, '\n')
 
-  } else if(results$method == 'mle'){
+  } else if(x$method == 'mle'){
 
-    if (results$summary_stat$convergence == 0) {
+    if (x$summary_stat$convergence == 0) {
       cat('Convergence achieved.\n')
     } else {
       cat('Warning: convergence not achieved.\n')
     }
   }
 
-  cat('AIC:', results$aic, '\t BIC:', results$bic, '\n\n')
+  cat('AIC:', x$aic, '\t BIC:', x$bic, '\n\n')
 
 }
 
