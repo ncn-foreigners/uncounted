@@ -1,4 +1,3 @@
-
 #' @title Print method for \code{hidden} object
 #'
 #' @description Print method for the object of class \code{hidden}.
@@ -30,9 +29,9 @@
 print.hidden <- function(x){
 
   cat('Number of observations:', length(x$m), '\n')
-  #if (!is.null(results$uniq_county)){
-  #  cat('Number of unique countries:', results$n_countries, '\n\n')   ### need to change the main function
-  #}
+  if (!is.null(x$countries)){
+   cat('Number of unique countries:', length(unique(x$countries)), '\n\n')
+  }
 
   cat('Total observed m:', sum(x$m), '\n')
   cat('Total observed n:', sum(x$n), '\n')

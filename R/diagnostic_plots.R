@@ -1,11 +1,16 @@
+#' @importFrom ggplot2 ggplot aes geom_point geom_smooth geom_hline geom_vline labs theme_classic theme element_rect stat_qq stat_qq_line coord_cartesian
+#' @importFrom ggrepel  geom_text_repel
+#' @importFrom gridExtra grid.arrange
+#'
 #' @title Plot diagnostics for a \code{hidden} object
 #'
 #' @description Diagnostic plotting method for objects of class \code{hidden}.
-#' Depending on the estimation method used in \code{estimate_hidden_pop()} function, different sets of dignostic
+#' Depending on the estimation method used in \code{estimate_hidden_pop()} function, different sets of diagnostic
 #' plots are displayed.
 #'
 #' @param x an object of class \code{hidden} returned by the main estimation function \code{estimate_hidden_pop()}
 #' @param which optional integer indication which plot should be displayed. If \code{NULL}, the default set of plots is shown.
+#' @param label logical. If \code{TRUE} adds observation labels (country names) to the plots (only if country information is in the object).
 #'
 #' @details
 #' The function displays model diagnostics depending on the estimation method used.
@@ -40,7 +45,7 @@
 #'
 #' }
 #'@export
-plot.hidden <- function(x, which = NULL){
+plot.hidden <- function(x, which = NULL, label = FALSE){
 
   if (x$method == 'ols') {
 
@@ -49,7 +54,8 @@ plot.hidden <- function(x, which = NULL){
                      residuals = x$residuals,
                      resid_stand = x$resid_stand,
                      cooks = x$cooks,
-                     leverage = x$leverage)
+                     leverage = x$leverage,
+                     nationality = x$countries)
 
     # 1 residuals vs fitted
     p1 <- ggplot(df, aes(x = fitted, y = residuals)) +
@@ -58,6 +64,7 @@ plot.hidden <- function(x, which = NULL){
       labs(title = 'Residuals vs Fitted values', x = 'Fitted values', y = 'Residuals') +
       theme_classic() +
       theme(panel.border = element_rect(fill = NA))
+    if (label && !is.null(x$countries)) p1 <- p1 + geom_text_repel(data = df, aes(label = nationality))
 
     # 2 q-q residuals
     p2 <- ggplot(df, aes(sample = residuals)) +
@@ -74,6 +81,7 @@ plot.hidden <- function(x, which = NULL){
       labs(title = 'Scale-Location', x = 'Fitted values', y = '√|Standardized residuals|') +
       theme_classic() +
       theme(panel.border = element_rect(fill = NA))
+    if (label && !is.null(x$countries)) p3 <- p3 + geom_text_repel(data = df, aes(label = nationality))
 
     # 4 residuals vs leverage
     h_seq <- seq(min(df$leverage), max(df$leverage) + 0.025, length.out = 100)
@@ -103,6 +111,7 @@ plot.hidden <- function(x, which = NULL){
       coord_cartesian(xlim = c(-0.001, max(df$leverage) + 0.001), ylim = c(min(df$resid_stand) - 1, max(df$resid_stand) + 1)) +
       theme_classic() +
       theme(panel.border = element_rect(fill = NA))
+    if (label && !is.null(x$countries)) p4 <- p4 + geom_text_repel(data = df, aes(label = nationality))
 
     # 5 observed vs fitted
     p5 <- ggplot(df, aes(x = fitted, y = observed)) +
@@ -111,6 +120,7 @@ plot.hidden <- function(x, which = NULL){
       labs(title = 'Observed vs Fitted', x = 'Fitted', y = 'Observed') +
       theme_classic() +
       theme(panel.border = element_rect(fill = NA))
+    if (label && !is.null(x$countries)) p5 <- p5 + geom_text_repel(data = df, aes(label = nationality))
 
     if (!is.null(which) && which %in% seq(1:5)){
       plot <- switch(which, '1' = p1, '2' = p2, '3' = p3, '4' = p4, '5' = p5)
@@ -123,7 +133,8 @@ plot.hidden <- function(x, which = NULL){
 
     df <- data.frame(fitted = x$fitted,
                      observed = x$m,
-                     residuals = x$residuals)
+                     residuals = x$residuals,
+                     nationality = x$countries)
 
     # 1 residuals vs fitted
     p1 <- ggplot(df, aes(x = fitted, y = residuals)) +
@@ -132,6 +143,7 @@ plot.hidden <- function(x, which = NULL){
       labs(title = 'Residuals vs Fitted values', x = 'Fitted values', y = 'Residuals') +
       theme_classic() +
       theme(panel.border = element_rect(fill = NA))
+    if (label && !is.null(x$countries)) p1 <- p1 + geom_text_repel(data = df, aes(label = nationality))
 
     # 2 q-q residuals
     p2 <- ggplot(df, aes(sample = residuals)) +
@@ -148,6 +160,7 @@ plot.hidden <- function(x, which = NULL){
       labs(title = 'Observed vs Fitted', x = 'Fitted', y = 'Observed') +
       theme_classic() +
       theme(panel.border = element_rect(fill = NA))
+    if (label && !is.null(x$countries)) p3 <- p3 + geom_text_repel(data = df, aes(label = nationality))
 
     if (!is.null(which) && which %in% seq(1:3)){
       plot <- switch(which, '1' = p1, '2' = p2, '3' = p3)
@@ -163,7 +176,8 @@ plot.hidden <- function(x, which = NULL){
                      residuals = x$residuals,     # deviance residuals
                      resid_stand = x$resid_stand, # standardized deviance residuals
                      cooks = x$cooks,
-                     leverage = x$leverage)
+                     leverage = x$leverage,
+                     nationality = x$countries)
                      # pearson = (results$m - results$fitted)/sqrt(results$fitted),
                      # anscombe = (3*results$m^(2/3)-3*results$fitted^(2/3))/(2 * results$fitted^(1/6))
 
@@ -174,6 +188,7 @@ plot.hidden <- function(x, which = NULL){
       labs(title = 'Residuals vs Fitted values', x = 'Fitted values', y = 'Residuals') +
       theme_classic() +
       theme(panel.border = element_rect(fill = NA))
+    if (label && !is.null(x$countries)) p1 <- p1 + geom_text_repel(data = df, aes(label = nationality))
 
     # 2 q-q residuals
     p2 <- ggplot(df, aes(sample = resid_stand)) +
@@ -190,6 +205,7 @@ plot.hidden <- function(x, which = NULL){
       labs(title = 'Scale-Location', x = 'Fitted values', y = '√|Standardized residuals|') +
       theme_classic() +
       theme(panel.border = element_rect(fill = NA))
+    if (label && !is.null(x$countries)) p3 <- p3 + geom_text_repel(data = df, aes(label = nationality))
 
     # 4 residuals vs leverage
     h_seq <- seq(min(df$leverage), max(df$leverage) + 0.025, length.out = 100)
@@ -219,6 +235,7 @@ plot.hidden <- function(x, which = NULL){
       coord_cartesian(xlim = c(-0.001, max(df$leverage) + 0.001), ylim = c(min(df$resid_stand) - 1, max(df$resid_stand) + 1)) +
       theme_classic() +
       theme(panel.border = element_rect(fill = NA))
+    if (label && !is.null(x$countries)) p4 <- p4 + geom_text_repel(data = df, aes(label = nationality))
 
     # 5 observed vs fitted
     p5 <- ggplot(df, aes(x = fitted, y = observed)) +
@@ -227,6 +244,7 @@ plot.hidden <- function(x, which = NULL){
       labs(title = 'Observed vs Fitted', x = 'Fitted', y = 'Observed') +
       theme_classic() +
       theme(panel.border = element_rect(fill = NA))
+    if (label && !is.null(x$countries)) p5 <- p5 + geom_text_repel(data = df, aes(label = nationality))
 
     if (!is.null(which) && which %in% seq(1:5)){
       plot <- switch(which, '1' = p1, '2' = p2, '3' = p3, '4' = p4, '5' = p5)
@@ -241,7 +259,8 @@ plot.hidden <- function(x, which = NULL){
     df <- data.frame(fitted = x$fitted,
                      observed = x$m,
                      residuals = x$residuals,
-                     anscombe = (3*phi*(1 + x$m/phi)^(2/3) - (1 + x$fitted/phi)^(2/3) + 3*(x$m^(2/3) - x$fitted^(2/3)))/ (2*(x$fitted + x$fitted^2/phi))^(1/6))
+                     anscombe = (3*phi*(1 + x$m/phi)^(2/3) - (1 + x$fitted/phi)^(2/3) + 3*(x$m^(2/3) - x$fitted^(2/3)))/ (2*(x$fitted + x$fitted^2/phi))^(1/6),
+                     nationality = x$countries)
                      # pearson = (results$m-results$fitted)/sqrt(results$fitted - results$fitted^2/phi),
                      # deviance = sign(results$m - results$fitted)*(2*(results$m*log(results$m/results$fitted) - (results$m + 1/phi)*log((results$m + 1/phi)/(results$fitted + 1/phi))))^(1/2)
 
@@ -253,6 +272,7 @@ plot.hidden <- function(x, which = NULL){
       labs(title = 'Observed vs Fitted', x = '√Fitted', y = '√Observed') +
       theme_classic() +
       theme(panel.border = element_rect(fill = NA))
+    if (label && !is.null(x$countries)) p1 <- p1 + geom_text_repel(data = df, aes(label = nationality))
 
     # 2 -- normal QQ plot for Anscombe residuals
     p2 <- ggplot(df, aes(sample = anscombe)) +
@@ -270,6 +290,7 @@ plot.hidden <- function(x, which = NULL){
       labs(title = 'Absolute Anscombe residuals vs √Fitted', x = '√Fitted', y = '|Anscombe|') +
       theme_classic() +
       theme(panel.border = element_rect(fill = NA))
+    if (label && !is.null(x$countries)) p3 <- p3 + geom_text_repel(data = df, aes(label = nationality))
 
     # 4 -- comparison of square fitted and Anscombe residuals
     p4 <- ggplot(df, aes(x = sqrt(fitted), y = anscombe)) +
@@ -279,6 +300,7 @@ plot.hidden <- function(x, which = NULL){
       labs(title = 'Anscombe residuals vs √Fitted', x = '√Fitted', y = 'Anscombe') +
       theme_classic() +
       theme(panel.border = element_rect(fill = NA))
+    if (label && !is.null(x$countries)) p4 <- p4 + geom_text_repel(data = df, aes(label = nationality))
 
     if (!is.null(which) && which %in% seq(1:4)){
       plot <- switch(which, '1' = p1, '2' = p2, '3' = p3, '4' = p4)
