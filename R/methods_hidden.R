@@ -40,7 +40,8 @@ print.hidden <- function(x){
   cat('Target parameter estimate:', x$xi_est, '\n')
   cat('Target parameter confidence interval: \n')
   print(x$conf_int_xi)
-  cat('\n')
+  cat('Target parameter standard error:', x$se_xi)
+  cat('\n\n')
 
   cat('Coefficients:\n')
   print(x$coefficients)
@@ -63,6 +64,7 @@ print.hidden <- function(x){
 #' \item \code{conf_int_xi}, \code{conf_int_alpha}, \code{conf_int_beta} - confidence intervals
 #' \item \code{vcov}, \code{vcov_method} - estimated variance-covariance matrix and method used
 #' \item \code{se_coef} - standard errors for coefficients
+#' \item \code{se_xi} - standard error for target parameter
 #' \item \code{summary stat} - list of model-specific statistics
 #' \item \code{aic}, \code{bic} - model selection criteria values
 #' \item \code{residuals}, \code{fitted}, \code{m}, \code{n}, \code{N} - fitted values, residuals and observed data
@@ -113,6 +115,7 @@ summary.hidden <- function(object) {
     vcov_method = object$vcov_method,
     vcov = object$vcov,
     se_coef = object$se_coef,
+    se_xi = object$se_xi,
     summary_stat = object$summary_stat,
     aic = object$aic,
     bic = object$bic,
@@ -169,7 +172,9 @@ print.summary.hidden <- function(x){
   cat('Estimation method:', x$method, '\n\n')
 
   cat('Number of observations:', length(x$m), '\n')
-#  cat('Number of unique countries:', results$n_countries, '\n\n')
+  if (!is.null(x$countries)){
+    cat('Number of unique countries:', length(unique(x$countries)), '\n\n')
+  }
 
   cat('Total observed m:', sum(x$m), '\n')
   cat('Total observed n:', sum(x$n), '\n')
@@ -178,7 +183,8 @@ print.summary.hidden <- function(x){
   cat('Target parameter estimate:', x$xi_est, '\n')
   cat('Target parameter confidence interval:', '\n')
   print(x$conf_int_xi, row.names = FALSE)
-  cat('\n')
+  cat('Target parameter standard error:', x$se_xi)
+  cat('\n\n')
 
   if (x$method == 'mle'){
     coef <- c(x$coefficients$alpha, x$coefficients$beta)

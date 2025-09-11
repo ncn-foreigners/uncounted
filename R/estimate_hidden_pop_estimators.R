@@ -33,8 +33,9 @@ ols_model <- function(m,
   se_coef <- data.frame(name = c('alpha', 'beta'),
                         Std.error = sqrt(diag(cov_matrix)))
 
-  # standard error for xi    -  method similar to confidence intervals
-  # se_xi <- sum(as.numeric(N)^as.vector(st_alpha))
+  # standard error for xi - delta method
+  se_alpha <- se_coef$Std.error[se_coef$name == 'alpha']
+  se_xi <- abs(sum(N^alpha_est * log(N))) * se_alpha
 
   # confidence intervals for alpha
   ci_alpha <- confint(ols_fit)[1,]
@@ -66,7 +67,7 @@ ols_model <- function(m,
   results <- list(method = 'ols',
                   coefficients = coef,
                   xi_est = xi_est,
-                  se_xi = NULL,
+                  se_xi = se_xi,
                   se_coef = se_coef,
                   vcov_method = vcov,
                   vcov = cov_matrix,
@@ -135,8 +136,9 @@ nls_model <- function(m,
   se_coef <- data.frame(name = c('alpha', 'beta'),
                         Std.error = sqrt(diag(cov_matrix)))
 
-  # standard error for xi
-  #st_xi <- sum(as.numeric(N)^as.vector(st_alpha))
+  # standard error for xi - delta method
+  se_alpha <- se_coef$Std.error[se_coef$name == 'alpha']
+  se_xi <- abs(sum(N^alpha_est * log(N))) * se_alpha
 
   # confidence intervals for alpha
   ci_alpha <- confint(nls_fit)[1,]
@@ -169,6 +171,7 @@ nls_model <- function(m,
                   coefficients = coef,
                   xi_est = xi_est,
                   se_coef = se_coef,
+                  se_xi = se_xi,
                   vcov_method = vcov,
                   vcov = cov_matrix,
                   conf_int_xi = conf_int_xi,
@@ -219,9 +222,9 @@ glm_model <- function(m,
   se_coef <- data.frame(name = c('alpha', 'beta'),
                         Std.error = sqrt(diag(cov_matrix)))
 
-  # standard error for xi    -  method similar to confidence intervals
-  #st_xi <- sum(as.numeric(N)^as.vector(st_alpha))
-
+  # standard error for xi - delta method
+  se_alpha <- se_coef$Std.error[se_coef$name == 'alpha']
+  se_xi <- abs(sum(N^alpha_est * log(N))) * se_alpha
 
   # confidence intervals for alpha
   ci_alpha <- confint(glm_fit)[1,]
@@ -254,6 +257,7 @@ glm_model <- function(m,
                   coefficients = coef,
                   xi_est = xi_est,
                   se_coef = se_coef,
+                  se_xi = se_xi,
                   vcov_method = vcov,
                   vcov = cov_matrix,
                   conf_int_xi = conf_int_xi,
@@ -454,7 +458,6 @@ zhang_model_cov <- function(m,
 
   # covariance matrix
 
-
   # mle robust covariance matrix
   robust_mle <- function(opt, m, n, N, X, Z){
 
@@ -536,8 +539,9 @@ zhang_model_cov <- function(m,
   se_coef <- data.frame(name = c(paste0('alpha', seq_along(alpha_est)), paste0('beta', seq_along(beta_est))),
                         Std.error = c(se_alpha, se_beta))
 
-  # standard error for xi
-  #st_xi <- sum(as.numeric(N)^as.vector(X %*% se_alpha))
+  # standard error for xi - delta method  --- NEED TO INCLUDE COVARIATES
+  # se_alpha <- se_coef$Std.error[se_coef$name == 'alpha']
+  # se_xi <- abs(sum(N^alpha_est * ln(N))) * se_alpha
 
   # confidence intervals for xi
   conf_int_xi <- data.frame(Lower = sum(as.numeric(N)^as.vector(X %*% lower_alpha)),
@@ -564,6 +568,7 @@ zhang_model_cov <- function(m,
                   coefficients = coef,
                   xi_est = xi_est,
                   se_coef = se_coef,
+                  se_xi = NULL,
                   vcov_method = vcov,
                   vcov = cov_matrix,
                   conf_int_xi = conf_int_xi,
