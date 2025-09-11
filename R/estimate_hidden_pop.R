@@ -136,7 +136,8 @@ estimate_hidden_pop <- function(
     cov_beta  = NULL,   # ~ x1 + x2  allow for covariates
     method = 'ols',     # various method for fit / ols (linear regression), nls, glm (poisson regression), mle
     vcov = 'hessian',     # or robust - (method to estimate standard errors)
-    family = 'gaussian'     # poisson, nb etc
+    family = 'gaussian',     # poisson, nb etc
+    countries = NULL   # string column name with country of origin names, optional, but useful in plots
 ){
 
   if (!method %in% c("ols", "nls", 'glm', "mle")) {
@@ -172,6 +173,7 @@ estimate_hidden_pop <- function(
   m <- data[[m_var]]
   n <- data[[n_var]]
   N <- data[[N_var]]
+  countries <- data[[countries]]
 
   # covariates
   X <- if (is.null(cov_alpha)==FALSE){model.matrix(cov_alpha, data)} else NULL
@@ -243,6 +245,8 @@ estimate_hidden_pop <- function(
       }
     }
   }
+
+  results$countries <- countries
 
   class(results) <- 'hidden'
 
