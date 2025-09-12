@@ -44,17 +44,12 @@ ols_model <- function(m,
   se_alpha <- se_coef$Std.error[se_coef$name == 'alpha']
   se_xi <- abs(sum(N^alpha_est * log(N))) * se_alpha
 
-  # confidence intervals for alpha
+  # confidence intervals for coefficients
   ci_alpha <- confint(ols_fit)[1,]
-  conf_int_alpha <- data.frame(name = 'alpha',
-                               Lower = ci_alpha[1],
-                               Upper = ci_alpha[2])
-
-  # confidence intervals for beta
   ci_beta <- confint(ols_fit)[2,]
-  conf_int_beta <- data.frame(name = 'beta',
-                              Lower = ci_beta[1],
-                              Upper = ci_beta[2])
+  conf_int_coef <- data.frame(name = c('alpha', 'beta'),
+                               Lower = c(ci_alpha[1], ci_beta[1]),
+                               Upper = c(ci_alpha[2], ci_beta[2]))
 
   # confidence intervals for xi - M estimate
   conf_int_xi <- data.frame(Lower = sum(N^ci_alpha[1]),
@@ -69,7 +64,9 @@ ols_model <- function(m,
                        df_resid = summary(ols_fit)$df[2],
                        r_squared = summary(ols_fit)$r.squared,
                        adj_r_squared = summary(ols_fit)$adj.r.squared,
-                       f_stat = summary(ols_fit)$fstatistic)
+                       f_stat = summary(ols_fit)$fstatistic,
+                       aic = aic,
+                       bic = bic)
 
   results <- list(method = 'ols',
                   coefficients = coef,
@@ -79,10 +76,7 @@ ols_model <- function(m,
                   vcov_method = vcov,
                   vcov = cov_matrix,
                   conf_int_xi = conf_int_xi,
-                  conf_int_alpha = conf_int_alpha,
-                  conf_int_beta = conf_int_beta,
-                  aic = aic,
-                  bic = bic,
+                  conf_int_coef = conf_int_coef,
                   summary_stat = summary_stat,
                   residuals = ols_fit$residuals,
                   fitted = fitted(ols_fit),
@@ -156,17 +150,12 @@ nls_model <- function(m,
   se_alpha <- se_coef$Std.error[se_coef$name == 'alpha']
   se_xi <- abs(sum(N^alpha_est * log(N))) * se_alpha
 
-  # confidence intervals for alpha
+  # confidence intervals for coefficients
   ci_alpha <- confint(nls_fit)[1,]
-  conf_int_alpha <- data.frame(name = 'alpha',
-                               Lower = ci_alpha[1],
-                               Upper = ci_alpha[2])
-
-  # confidence intervals for beta
   ci_beta <- confint(nls_fit)[2,]
-  conf_int_beta <- data.frame(name = 'beta',
-                              Lower = ci_beta[1],
-                              Upper = ci_beta[2])
+  conf_int_coef <- data.frame(name = c('alpha', 'beta'),
+                              Lower = c(ci_alpha[1], ci_beta[1]),
+                              Upper = c(ci_alpha[2], ci_beta[2]))
 
   # confidence intervals for xi - M estimate
   conf_int_xi <- data.frame(Lower = sum(N^ci_alpha[1]),
@@ -179,9 +168,11 @@ nls_model <- function(m,
 
   # summary nls
   summary_stat <- list(resid_se = summary(nls_fit)$sigma,
-                         df = summary(nls_fit)$df[2],
-                         iter = nls_fit$convInfo$finIter,
-                         convergence = nls_fit$convInfo$isConv)
+                       df = summary(nls_fit)$df[2],
+                       iter = nls_fit$convInfo$finIter,
+                       convergence = nls_fit$convInfo$isConv,
+                       aic = aic,
+                       bic = bic)
 
   results <- list(method = 'nls',
                   coefficients = coef,
@@ -191,10 +182,7 @@ nls_model <- function(m,
                   vcov_method = vcov,
                   vcov = cov_matrix,
                   conf_int_xi = conf_int_xi,
-                  conf_int_alpha = conf_int_alpha,
-                  conf_int_beta = conf_int_beta,
-                  aic = aic,
-                  bic = bic,
+                  conf_int_coef = conf_int_coef,
                   summary_stat = summary_stat,
                   residuals = resid(nls_fit),
                   fitted = fitted(nls_fit),
@@ -251,17 +239,12 @@ glm_model <- function(m,
   se_alpha <- se_coef$Std.error[se_coef$name == 'alpha']
   se_xi <- abs(sum(N^alpha_est * log(N))) * se_alpha
 
-  # confidence intervals for alpha
+  # confidence intervals for coefficients
   ci_alpha <- confint(glm_fit)[1,]
-  conf_int_alpha <- data.frame(name = 'alpha',
-                               Lower = ci_alpha[1],
-                               Upper = ci_alpha[2])
-
-  # confidence intervals for beta
   ci_beta <- confint(glm_fit)[2,]
-  conf_int_beta <- data.frame(name = 'beta',
-                              Lower = ci_beta[1],
-                              Upper = ci_beta[2])
+  conf_int_coef <- data.frame(name = c('alpha', 'beta'),
+                               Lower = c(ci_alpha[1], ci_beta[1]),
+                               Upper = c(ci_alpha[2], ci_beta[2]))
 
   # confidence intervals for xi - M estimate
   conf_int_xi <- data.frame(Lower = sum(N^ci_alpha[1]),
@@ -273,10 +256,12 @@ glm_model <- function(m,
 
   # summary glm
   summary_stat <- list(resid_deviance = summary(glm_fit)$deviance,
-                         df_resid = summary(glm_fit)$df.residual,
-                         null_deviance = summary(glm_fit)$null.deviance,
-                         df_null = summary(glm_fit)$df.null,
-                         iter = summary(glm_fit)$iter)
+                       df_resid = summary(glm_fit)$df.residual,
+                       null_deviance = summary(glm_fit)$null.deviance,
+                       df_null = summary(glm_fit)$df.null,
+                       iter = summary(glm_fit)$iter,
+                       aic = aic,
+                       bic = bic)
 
   results <- list(method = 'glm - Poisson',
                   coefficients = coef,
@@ -286,11 +271,8 @@ glm_model <- function(m,
                   vcov_method = vcov,
                   vcov = cov_matrix,
                   conf_int_xi = conf_int_xi,
-                  conf_int_alpha = conf_int_alpha,
-                  conf_int_beta = conf_int_beta,
+                  conf_int_coef = conf_int_coef,
                   summary_stat = summary_stat,
-                  aic = aic,
-                  bic = bic,
                   residuals = residuals(glm_fit, type = 'deviance'),
                   fitted = fitted(glm_fit),
                   resid_stand = rstandard(glm_fit, type = 'deviance'),
@@ -494,11 +476,12 @@ zhang_model_cov <- function(m,
     by_covariates <- NULL
   }
 
-
   names(alpha_est) <- paste0("alpha", seq_along(alpha_est))
   names(beta_est) <- paste0("beta", seq_along(beta_est))
 
-  coef <- list(alpha = alpha_est, beta = beta_est, phi = phi_est)
+  coef <- c(setNames(alpha_est, paste0('alpha', seq_along(alpha_est))),
+            setNames(beta_est, paste0('beta', seq_along(beta_est))),
+            phi = phi_est)
 
   hessian <- optimization$hessian
 
@@ -556,11 +539,9 @@ zhang_model_cov <- function(m,
     upper_alpha[i] <- alpha_est[i] + z*se_alpha[i]
   }
 
-  conf_int_alpha <- data.frame(
-    name = names(alpha_est),
-    Lower = lower_alpha,
-    Upper = upper_alpha
-  )
+  ci_alpha <- data.frame(name = names(alpha_est),
+                         Lower = lower_alpha,
+                         Upper = upper_alpha)
 
   # for beta
   se_beta <- rep(NA, length(beta_est))
@@ -575,15 +556,26 @@ zhang_model_cov <- function(m,
     upper_beta[j] <- beta_est[j] + z*se_beta[j]
   }
 
-  conf_int_beta <- data.frame(
-    name = names(beta_est),
-    Lower = lower_beta,
-    Upper = upper_beta
-  )
+  ci_beta <- data.frame(name = names(beta_est),
+                        Lower = lower_beta,
+                        Upper = upper_beta)
+
+  # for phi
+  se_phi <- cov_matrix[p1+p2+1, p1+p2+1]
+  lower_phi <- phi_est - z*se_phi
+  upper_phi <- phi_est + z*se_phi
+  ci_phi <- data.frame(name = 'phi',
+                       Lower = lower_phi,
+                       Upper = upper_phi)
+
+  # confidence intervals for coefficients
+  conf_int_coef <- data.frame(name = c(names(alpha_est), names(beta_est),'phi'),
+                              Lower = c(ci_alpha$Lower, ci_beta$Lower, ci_phi$Lower),
+                              Upper = c(ci_alpha$Upper, ci_beta$Upper, ci_phi$Upper))
 
   # standard errors for coefficients
-  se_coef <- data.frame(name = c(paste0('alpha', seq_along(alpha_est)), paste0('beta', seq_along(beta_est))),
-                        Std.error = c(se_alpha, se_beta))
+  se_coef <- data.frame(name = c(paste0('alpha', seq_along(alpha_est)), paste0('beta', seq_along(beta_est)), 'phi'),
+                        Std.error = c(se_alpha, se_beta, se_phi))
 
   # standard error for xi
   N_Xalpha <- as.numeric(N)^as.vector(X %*% alpha_est)
@@ -609,7 +601,9 @@ zhang_model_cov <- function(m,
 
   # summary mle
   summary_stat <- list(convergence = optimization$convergence,
-                       iter = optimization$counts)
+                       iter = optimization$counts,
+                       aic = aic,
+                       bic = bic)
 
   results <- list(method = 'mle',
                   coefficients = coef,
@@ -619,11 +613,8 @@ zhang_model_cov <- function(m,
                   vcov_method = vcov,
                   vcov = cov_matrix,
                   conf_int_xi = conf_int_xi,
-                  conf_int_alpha = conf_int_alpha,
-                  conf_int_beta = conf_int_beta,
+                  conf_int_coef = conf_int_coef,
                   summary_stat = summary_stat,
-                  aic = aic,
-                  bic = bic,
                   residuals = residuals,
                   fitted = fitted,
                   m = m,
