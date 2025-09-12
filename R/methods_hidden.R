@@ -105,23 +105,27 @@ print.hidden <- function(x){
 #'@export
 summary.hidden <- function(object) {
 
-  # creating coefficients table
-  if (object$method == 'mle'){
-    coef <- c(object$coefficients$alpha, object$coefficients$beta)
-  } else {
-    coef <- object$coefficients
-  }
+  # # creating coefficients table
+  # if (object$method == 'mle'){
+  #   coef <- c(object$coefficients$alpha, object$coefficients$beta)
+  # } else {
+  #   coef <- object$coefficients
+  # }
 
   coef_table <- data.frame(
-    name = names(coef),
-    Estimate = as.numeric(coef)
+    name = names(object$coefficients),
+    Estimate = as.numeric(object$coefficients)
   )
-  conf_all <- rbind(object$conf_int_alpha, object$conf_int_beta)
+  conf_all <- object$conf_int_coef
   coef_table <- merge(coef_table, conf_all, by = 'name')
   coef_table <- merge(coef_table, object$se_coef, by = 'name')
 
-  coef_table$t.val <- coef_table$Estimate / coef_table$Std.error
-  coef_table$p.val <- 2 * (1 - pnorm(abs(coef_table$t.val)))
+  coef_table$Estimate <- round(coef_table$Estimate, 5)
+  coef_table$Lower <- round(coef_table$Lower, 5)
+  coef_table$Upper <- round(coef_table$Upper, 5)
+  coef_table$Std.error <- round(coef_table$Std.error, 5)
+  coef_table$t.val <- round(coef_table$Estimate / coef_table$Std.error,3)
+  coef_table$p.val <- format.pval(2 * (1 - pnorm(abs(coef_table$t.val))),  digits = 4, eps = 2e-16)
 
   rownames(coef_table) <- coef_table$name
   coef_table$name <- NULL
@@ -133,15 +137,12 @@ summary.hidden <- function(object) {
     coefficients = coefficients,
     xi_est = object$xi_est,
     conf_int_xi = object$conf_int_xi,
-    conf_int_alpha = object$conf_int_alpha,
-    conf_int_beta = object$conf_int_beta,
+    conf_int_coef = object$conf_int_coef,
     vcov_method = object$vcov_method,
     vcov = object$vcov,
     se_coef = object$se_coef,
     se_xi = object$se_xi,
     summary_stat = object$summary_stat,
-    aic = object$aic,
-    bic = object$bic,
     residuals = object$residuals,
     fitted = object$fitted,
     m = object$m,
@@ -257,7 +258,7 @@ print.summary.hidden <- function(x){
     }
   }
 
-  cat('AIC:', x$aic, '\t BIC:', x$bic, '\n\n')
+  cat('AIC:', x$summary_stat$aic, '\t BIC:', x$summary_stat$bic, '\n\n')
 
 }
 
