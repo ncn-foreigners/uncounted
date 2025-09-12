@@ -539,9 +539,10 @@ zhang_model_cov <- function(m,
   se_coef <- data.frame(name = c(paste0('alpha', seq_along(alpha_est)), paste0('beta', seq_along(beta_est))),
                         Std.error = c(se_alpha, se_beta))
 
-  # standard error for xi - delta method  --- NEED TO INCLUDE COVARIATES
-  # se_alpha <- se_coef$Std.error[se_coef$name == 'alpha']
-  # se_xi <- abs(sum(N^alpha_est * ln(N))) * se_alpha
+  # standard error for xi
+  N_Xalpha <- as.numeric(N)^as.vector(X %*% alpha_est)
+  grad_g_alpha <- t(X) %*% (log(N) * N_Xalpha)
+  se_xi <- se_alpha %*% abs(grad_g_alpha)
 
   # confidence intervals for xi
   conf_int_xi <- data.frame(Lower = sum(as.numeric(N)^as.vector(X %*% lower_alpha)),
@@ -568,7 +569,7 @@ zhang_model_cov <- function(m,
                   coefficients = coef,
                   xi_est = xi_est,
                   se_coef = se_coef,
-                  se_xi = NULL,
+                  se_xi = se_xi,
                   vcov_method = vcov,
                   vcov = cov_matrix,
                   conf_int_xi = conf_int_xi,
