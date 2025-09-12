@@ -6,7 +6,8 @@
 ols_model <- function(m,
                       n,
                       N,
-                      vcov = 'hessian'){
+                      vcov = 'hessian',
+                      countries){
 
   df <- data.frame(
     y = m,
@@ -19,6 +20,12 @@ ols_model <- function(m,
   alpha_est <- unname(coef(ols_fit)[1])
   beta_est <- unname(coef(ols_fit)[2])
   xi_est <- sum(N^alpha_est)
+
+  # estimates by nationality
+  irreg_estimates <- N^alpha_est
+  by_nat_split <- data.frame(country = countries,
+                       irreg_estimate = irreg_estimates)
+  by_nationality <- aggregate(irreg_estimate ~ country, data = by_nat_split, sum)
 
   coef <- c(alpha = alpha_est, beta = beta_est)
 
@@ -84,7 +91,9 @@ ols_model <- function(m,
                   leverage = hatvalues(ols_fit),
                   m = m,
                   n = n,
-                  N = N)
+                  N = N,
+                  countries = countries,
+                  by_nationality = by_nationality)
 
   return(results)
 }
@@ -95,7 +104,8 @@ ols_model <- function(m,
 nls_model <- function(m,
                       n,
                       N,
-                      vcov = 'hessian'){
+                      vcov = 'hessian',
+                      countries){
 
   df_nls <- data.frame(
     y = m,
@@ -122,6 +132,12 @@ nls_model <- function(m,
   alpha_est <- estim_nls['alpha']
   beta_est <- estim_nls['beta']
   xi_est <- sum(N^alpha_est)
+
+  # estimates by nationality
+  irreg_estimates <- N^alpha_est
+  by_nat_split <- data.frame(country = countries,
+                             irreg_estimate = irreg_estimates)
+  by_nationality <- aggregate(irreg_estimate ~ country, data = by_nat_split, sum)
 
   coef <- c(alpha_est, beta_est)
 
@@ -184,7 +200,9 @@ nls_model <- function(m,
                   fitted = fitted(nls_fit),
                   m = m,
                   n = n,
-                  N = N)
+                  N = N,
+                  countries = countries,
+                  by_nationality = by_nationality)
 
   return(results)
 
@@ -195,7 +213,8 @@ nls_model <- function(m,
 glm_model <- function(m,
                       n,
                       N,
-                      vcov = 'hessian'){
+                      vcov = 'hessian',
+                      countries){
 
   df <- data.frame(
     y = m,
@@ -208,6 +227,12 @@ glm_model <- function(m,
   alpha_est <- unname(coef(glm_fit)[1])
   beta_est <- unname(coef(glm_fit)[2])
   xi_est <- sum(N^alpha_est)
+
+  # estimates by nationality
+  irreg_estimates <- N^alpha_est
+  by_nat_split <- data.frame(country = countries,
+                             irreg_estimate = irreg_estimates)
+  by_nationality <- aggregate(irreg_estimate ~ country, data = by_nat_split, sum)
 
   coef <- c(alpha = alpha_est, beta = beta_est)
 
@@ -273,7 +298,9 @@ glm_model <- function(m,
                   leverage = hatvalues(glm_fit),
                   m = m,
                   n = n,
-                  N = N)
+                  N = N,
+                  countries = countries,
+                  by_nationality = by_nationality)
 
   return(results)
 
@@ -289,6 +316,7 @@ zhang_model_cov <- function(m,
                             X = NULL,
                             Z = NULL,
                             vcov = 'hessian',
+                            countries,
                             family = 'poisson'){
 
   log_lik_zhang_model_cov <- function(alpha, beta, phi, m, n, N, X, Z){
@@ -449,6 +477,12 @@ zhang_model_cov <- function(m,
   phi_est <- unname(optimization$par[p1+p2+1])
   xi_est <- sum(as.numeric(N)^as.vector(X %*% alpha_est))     # target parameter estimator
 
+  # estimates by nationality
+  irreg_estimates <- as.numeric(N)^as.vector(X %*% alpha_est)
+  by_nat_split <- data.frame(country = countries,
+                             irreg_estimate = irreg_estimates)
+  by_nationality <- aggregate(irreg_estimate ~ country, data = by_nat_split, sum)
+
   names(alpha_est) <- paste0("alpha", seq_along(alpha_est))
   names(beta_est) <- paste0("beta", seq_along(beta_est))
 
@@ -582,7 +616,9 @@ zhang_model_cov <- function(m,
                   fitted = fitted,
                   m = m,
                   n = n,
-                  N = N)
+                  N = N,
+                  countries = countries,
+                  by_nationality = by_nationality)
 
   return(results)
 

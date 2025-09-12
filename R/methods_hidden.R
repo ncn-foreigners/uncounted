@@ -105,9 +105,32 @@ print.hidden <- function(x){
 #'@export
 summary.hidden <- function(object) {
 
+  # creating coefficients table
+  if (object$method == 'mle'){
+    coef <- c(object$coefficients$alpha, object$coefficients$beta)
+  } else {
+    coef <- object$coefficients
+  }
+
+  coef_table <- data.frame(
+    name = names(coef),
+    Estimate = as.numeric(coef)
+  )
+  conf_all <- rbind(object$conf_int_alpha, object$conf_int_beta)
+  coef_table <- merge(coef_table, conf_all, by = 'name')
+  coef_table <- merge(coef_table, object$se_coef, by = 'name')
+
+  coef_table$t.val <- coef_table$Estimate / coef_table$Std.error
+  coef_table$p.val <- 2 * (1 - pnorm(abs(coef_table$t.val)))
+
+  rownames(coef_table) <- coef_table$name
+  coef_table$name <- NULL
+  colnames(coef_table) <- c('Estimate', 'Lower', 'Upper', 'Std. Error', 't value', 'Pr(>|t|)')
+  coefficients <- coef_table
+
   summary_list <- list(
     method = object$method,
-    coefficients = object$coefficients,
+    coefficients = coefficients,
     xi_est = object$xi_est,
     conf_int_xi = object$conf_int_xi,
     conf_int_alpha = object$conf_int_alpha,
@@ -123,7 +146,8 @@ summary.hidden <- function(object) {
     fitted = object$fitted,
     m = object$m,
     n = object$n,
-    N = object$N
+    N = object$N,
+    by_nationality = object$by_nationality
   )
 
   class(summary_list) <- 'summary.hidden'
@@ -186,29 +210,8 @@ print.summary.hidden <- function(x){
   cat('Target parameter standard error:', x$se_xi)
   cat('\n\n')
 
-  if (x$method == 'mle'){
-    coef <- c(x$coefficients$alpha, x$coefficients$beta)
-  } else {
-    coef <- x$coefficients
-  }
-
-  coef_table <- data.frame(
-    name = names(coef),
-    Estimate = as.numeric(coef)
-  )
-  conf_all <- rbind(x$conf_int_alpha, x$conf_int_beta)
-  coef_table <- merge(coef_table, conf_all, by = 'name')
-  coef_table <- merge(coef_table, x$se_coef, by = 'name')
-
-  coef_table$t.val <- coef_table$Estimate / coef_table$Std.error
-  coef_table$p.val <- 2 * (1 - pnorm(abs(coef_table$t.val)))
-
-  rownames(coef_table) <- coef_table$name
-  coef_table$name <- NULL
-  colnames(coef_table) <- c('Estimate', 'Lower', 'Upper', 'Std. Error', 't value', 'Pr(>|t|)')
-
   cat('Coefficients:\n')
-  print(coef_table)
+  print(x$coefficients)
   cat('\n')
 
   # cat('Covariance matrix estimation method:', x$vcov_method,'\n')

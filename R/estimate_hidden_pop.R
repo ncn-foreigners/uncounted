@@ -205,10 +205,10 @@ estimate_hidden_pop <- function(
 
 
   results <- switch(method,
-                    'ols' = ols_model(m, n, N, vcov = vcov),
-                    'nls' = nls_model(m, n, N, vcov = vcov),
-                    'glm' = glm_model(m, n, N, vcov = vcov),
-                    'mle' = zhang_model_cov(m, n, N, X, Z, vcov = vcov))
+                    'ols' = ols_model(m, n, N, vcov = vcov, countries),
+                    'nls' = nls_model(m, n, N, vcov = vcov, countries),
+                    'glm' = glm_model(m, n, N, vcov = vcov, countries),
+                    'mle' = zhang_model_cov(m, n, N, X, Z, vcov = vcov, countries))
 
 
   if (method %in% c('ols', 'nls', 'glm')){
@@ -246,7 +246,6 @@ estimate_hidden_pop <- function(
     }
   }
 
-  results$countries <- countries
 
   class(results) <- 'hidden'
 
