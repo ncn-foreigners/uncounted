@@ -317,6 +317,7 @@ zhang_model_cov <- function(m,
                             Z = NULL,
                             vcov = 'hessian',
                             countries,
+                            df_cov,
                             family = 'poisson'){
 
   log_lik_zhang_model_cov <- function(alpha, beta, phi, m, n, N, X, Z){
@@ -463,7 +464,6 @@ zhang_model_cov <- function(m,
   }
 
   # optimization
-
   optimization <- optim(
     par = start_par,
     fn = neg_log_lik,
@@ -482,6 +482,18 @@ zhang_model_cov <- function(m,
   by_nat_split <- data.frame(country = countries,
                              irreg_estimate = irreg_estimates)
   by_nationality <- aggregate(irreg_estimate ~ country, data = by_nat_split, sum)
+
+
+  # estimates by covariates
+  if(!is.null(df_cov)){
+    covariate_vars <- colnames(df_cov)
+    df_cov$irreg_estimate <- as.vector(irreg_estimates)
+    formula <- as.formula(paste0('irreg_estimate ~', paste(covariate_vars, collapse = '+')))
+    by_covariates <- aggregate(formula, data = df_cov, sum)
+  } else {
+    by_covariates <- NULL
+  }
+
 
   names(alpha_est) <- paste0("alpha", seq_along(alpha_est))
   names(beta_est) <- paste0("beta", seq_along(beta_est))
@@ -618,7 +630,8 @@ zhang_model_cov <- function(m,
                   n = n,
                   N = N,
                   countries = countries,
-                  by_nationality = by_nationality)
+                  by_nationality = by_nationality,
+                  by_covariates = by_covariates)
 
   return(results)
 

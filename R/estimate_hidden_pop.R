@@ -178,6 +178,13 @@ estimate_hidden_pop <- function(
   # covariates
   X <- if (is.null(cov_alpha)==FALSE){model.matrix(cov_alpha, data)} else NULL
   Z <- if (is.null(cov_beta)==FALSE){model.matrix(cov_beta, data)} else NULL
+  # columns to use in estimates by covariates
+  cov_vars_alpha <-  if(!is.null(cov_alpha)) all.vars(cov_alpha) else character(0)
+  cov_vars_beta <-  if(!is.null(cov_beta)) all.vars(cov_beta) else character(0)
+  covariate_vars <- unique(c(cov_vars_alpha , cov_vars_beta))
+  df_cov <- if(length(covariate_vars) > 0) df_cov <- data[, covariate_vars, drop = FALSE] else NULL
+
+
 
   if (any(is.na(m)) || any(is.na(n)) || any(is.na(N)) || any(is.na(X)) || any(is.na(Z))) {
     stop('Input data contains missing values (NA). Please handle missing data before estimation.')
@@ -208,7 +215,7 @@ estimate_hidden_pop <- function(
                     'ols' = ols_model(m, n, N, vcov = vcov, countries),
                     'nls' = nls_model(m, n, N, vcov = vcov, countries),
                     'glm' = glm_model(m, n, N, vcov = vcov, countries),
-                    'mle' = zhang_model_cov(m, n, N, X, Z, vcov = vcov, countries))
+                    'mle' = zhang_model_cov(m, n, N, X, Z, vcov = vcov, countries, df_cov))
 
 
   if (method %in% c('ols', 'nls', 'glm')){
