@@ -231,20 +231,24 @@ estimate_hidden_pop <- function(
   }
 
   if (method == 'mle') {
-    if (any(results$coefficients$alpha < 0 | results$coefficients$alpha > 1)) {
+
+    alpha_vals <- results$coefficients[startsWith(names(results$coefficients), 'alpha')]
+    beta_vals <- results$coefficients[startsWith(names(results$coefficients), 'beta')]
+
+    if (any(alpha_vals < 0 | alpha_vals > 1)) {
       message('The estimated parameter(s) alpha are outside the expected interval (0,1).')
-      if (length(results$coefficients$alpha) > 1) {
-        if (sum(results$coefficients$alpha) > 0 && sum(results$coefficients$alpha) < 1) {
+      if (length(alpha_vals) > 1) {
+        if (sum(alpha_vals) > 0 && sum(alpha_vals) < 1) {
           message('The sum of the estimated parameters alpha lies within the expected interval (0,1).')
         } else {
           message('The sum of the estimated parameters alpha lies outside the expected interval (0,1).')
         }
       }
     }
-    if (any(results$coefficients$beta < 0 | results$coefficients$beta > 1)) {
+    if (any(beta_vals < 0 | beta_vals > 1)) {
       message('The estimated parameter(s) beta are outside the expected interval (0,1).')
-      if (length(results$ecoefficients$beta) > 1) {
-        if (sum(results$coefficients$beta) > 0 && sum(results$coefficients$beta) < 1) {
+      if (length(beta_vals) > 1) {
+        if (sum(beta_vals) > 0 && sum(beta_vals) < 1) {
           message('The sum of the estimated parameters beta lies within the expected interval (0,1).')
         } else {
           message('The sum of the estimated parameters beta lies outside the expected interval (0,1).')
