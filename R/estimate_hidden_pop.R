@@ -150,6 +150,10 @@ estimate_hidden_pop <- function(
 
   variable <- function(name) {
 
+    if (is.null(name)) {
+      return(NULL)
+    }
+
     if (inherits(name, 'formula')) {
       all.vars(name)[1]
     } else if (is.character(name)) {
@@ -157,6 +161,7 @@ estimate_hidden_pop <- function(
     } else {
       stop('Incorrect argument was given: observed, auxiliary, reference_pop must be a formula or a character string (variable name).')
     }
+
   }
 
   m_var <- variable(observed)
