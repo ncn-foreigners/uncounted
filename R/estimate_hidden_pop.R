@@ -173,7 +173,7 @@ estimate_hidden_pop <- function(
   m <- data[[m_var]]
   n <- data[[n_var]]
   N <- data[[N_var]]
-  countries <- data[[countries]]
+  countries <- if(!is.null(countries)) data[[countries]] else NULL
 
   # covariates
   X <- if (is.null(cov_alpha)==FALSE){model.matrix(cov_alpha, data)} else NULL

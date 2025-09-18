@@ -22,10 +22,14 @@ ols_model <- function(m,
   xi_est <- sum(N^alpha_est)
 
   # estimates by nationality
-  irreg_estimates <- N^alpha_est
-  by_nat_split <- data.frame(country = countries,
-                       irreg_estimate = irreg_estimates)
-  by_nationality <- aggregate(irreg_estimate ~ country, data = by_nat_split, sum)
+  if(!is.null(countries)){
+    irreg_estimates <- N^alpha_est
+    by_nat_split <- data.frame(country = countries,
+                               irreg_estimate = irreg_estimates)
+    by_nationality <- aggregate(irreg_estimate ~ country, data = by_nat_split, sum)
+  } else {
+    by_nationality <- NULL
+  }
 
   coef <- c(alpha = alpha_est, beta = beta_est)
 
@@ -128,10 +132,14 @@ nls_model <- function(m,
   xi_est <- sum(N^alpha_est)
 
   # estimates by nationality
-  irreg_estimates <- N^alpha_est
-  by_nat_split <- data.frame(country = countries,
-                             irreg_estimate = irreg_estimates)
-  by_nationality <- aggregate(irreg_estimate ~ country, data = by_nat_split, sum)
+  if(!is.null(countries)){
+    irreg_estimates <- N^alpha_est
+    by_nat_split <- data.frame(country = countries,
+                               irreg_estimate = irreg_estimates)
+    by_nationality <- aggregate(irreg_estimate ~ country, data = by_nat_split, sum)
+  } else {
+    by_nationality <- NULL
+  }
 
   coef <- c(alpha_est, beta_est)
 
@@ -217,10 +225,14 @@ glm_model <- function(m,
   xi_est <- sum(N^alpha_est)
 
   # estimates by nationality
-  irreg_estimates <- N^alpha_est
-  by_nat_split <- data.frame(country = countries,
-                             irreg_estimate = irreg_estimates)
-  by_nationality <- aggregate(irreg_estimate ~ country, data = by_nat_split, sum)
+  if(!is.null(countries)){
+    irreg_estimates <- N^alpha_est
+    by_nat_split <- data.frame(country = countries,
+                               irreg_estimate = irreg_estimates)
+    by_nationality <- aggregate(irreg_estimate ~ country, data = by_nat_split, sum)
+  } else {
+    by_nationality <- NULL
+  }
 
   coef <- c(alpha = alpha_est, beta = beta_est)
 
@@ -460,10 +472,14 @@ zhang_model_cov <- function(m,
   xi_est <- sum(as.numeric(N)^as.vector(X %*% alpha_est))     # target parameter estimator
 
   # estimates by nationality
-  irreg_estimates <- as.numeric(N)^as.vector(X %*% alpha_est)
-  by_nat_split <- data.frame(country = countries,
-                             irreg_estimate = irreg_estimates)
-  by_nationality <- aggregate(irreg_estimate ~ country, data = by_nat_split, sum)
+    if(!is.null(countries)){
+    irreg_estimates <- as.numeric(N)^as.vector(X %*% alpha_est)
+    by_nat_split <- data.frame(country = countries,
+                               irreg_estimate = irreg_estimates)
+    by_nationality <- aggregate(irreg_estimate ~ country, data = by_nat_split, sum)
+  } else {
+    by_nationality <- NULL
+  }
 
 
   # estimates by covariates
