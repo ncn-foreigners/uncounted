@@ -1,4 +1,4 @@
-#' @importFrom ggplot2 ggplot aes geom_point geom_smooth geom_hline geom_vline labs theme_classic theme element_rect stat_qq stat_qq_line coord_cartesian
+#' @importFrom ggplot2 ggplot aes geom_point geom_smooth geom_hline geom_vline labs theme_classic theme element_rect stat_qq stat_qq_line coord_cartesian geom_line
 #' @importFrom ggrepel  geom_text_repel
 #' @importFrom gridExtra grid.arrange
 #'
@@ -54,8 +54,10 @@ plot.hidden <- function(x, which = NULL, label = FALSE){
                      residuals = x$residuals,
                      resid_stand = x$resid_stand,
                      cooks = x$cooks,
-                     leverage = x$leverage,
-                     nationality = x$countries)
+                     leverage = x$leverage)
+    if (!is.null(x$countries)) {
+      df$nationality <- x$countries
+    }
 
     # 1 residuals vs fitted
     p1 <- ggplot(df, aes(x = fitted, y = residuals)) +
@@ -133,8 +135,10 @@ plot.hidden <- function(x, which = NULL, label = FALSE){
 
     df <- data.frame(fitted = x$fitted,
                      observed = x$m,
-                     residuals = x$residuals,
-                     nationality = x$countries)
+                     residuals = x$residuals)
+    if (!is.null(x$countries)) {
+      df$nationality <- x$countries
+    }
 
     # 1 residuals vs fitted
     p1 <- ggplot(df, aes(x = fitted, y = residuals)) +
@@ -176,10 +180,12 @@ plot.hidden <- function(x, which = NULL, label = FALSE){
                      residuals = x$residuals,     # deviance residuals
                      resid_stand = x$resid_stand, # standardized deviance residuals
                      cooks = x$cooks,
-                     leverage = x$leverage,
-                     nationality = x$countries)
+                     leverage = x$leverage)
                      # pearson = (results$m - results$fitted)/sqrt(results$fitted),
                      # anscombe = (3*results$m^(2/3)-3*results$fitted^(2/3))/(2 * results$fitted^(1/6))
+    if (!is.null(x$countries)) {
+      df$nationality <- x$countries
+    }
 
     # 1 residuals vs fitted
     p1 <- ggplot(df, aes(x = fitted, y = residuals)) +
@@ -255,15 +261,16 @@ plot.hidden <- function(x, which = NULL, label = FALSE){
 
   } else if (x$method == 'mle') {
 
-    phi <- x$coefficients$phi
+    phi <- x$coefficients[length(x$coefficients)]
     df <- data.frame(fitted = x$fitted,
                      observed = x$m,
                      residuals = x$residuals,
-                     anscombe = (3*phi*(1 + x$m/phi)^(2/3) - (1 + x$fitted/phi)^(2/3) + 3*(x$m^(2/3) - x$fitted^(2/3)))/ (2*(x$fitted + x$fitted^2/phi))^(1/6),
-                     nationality = x$countries)
+                     anscombe = (3*phi*(1 + x$m/phi)^(2/3) - (1 + x$fitted/phi)^(2/3) + 3*(x$m^(2/3) - x$fitted^(2/3)))/ (2*(x$fitted + x$fitted^2/phi))^(1/6))
                      # pearson = (results$m-results$fitted)/sqrt(results$fitted - results$fitted^2/phi),
                      # deviance = sign(results$m - results$fitted)*(2*(results$m*log(results$m/results$fitted) - (results$m + 1/phi)*log((results$m + 1/phi)/(results$fitted + 1/phi))))^(1/2)
-
+    if (!is.null(x$countries)) {
+      df$nationality <- x$countries
+    }
 
     # 1 -- observed vs fitted (square root)
     p1 <- ggplot(df, aes(x = sqrt(fitted), y = sqrt(observed))) +
