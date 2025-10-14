@@ -304,27 +304,28 @@ glm_model <- function(m,
 
 ## mle model
 
-zhang_model_cov <- function(m,
-                            n,
-                            N,
-                            X = NULL,
-                            Z = NULL,
-                            vcov = 'hessian',
-                            countries,
-                            df_cov,
-                            family = 'poisson'){
+mle_estim <- function(m,
+                      n,
+                      N,
+                      X = NULL,
+                      Z = NULL,
+                      vcov = 'hessian',
+                      countries,
+                      df_cov,
+                      family){
 
-  log_lik_zhang_model_cov <- function(alpha, beta, phi, m, n, N, X, Z){
+  log_lik_cov <- function(alpha, beta, phi=NULL, m, n, N, X, Z, family){
 
     mu <- N^(as.vector(X %*% alpha)) * (n/N)^(as.vector(Z %*% beta))
 
     # check point
     if (any(!is.finite(mu)) || any(mu <= 0)) return(Inf)   # obvious why, log(mu) if mu <= 0  -> error
-    if (!is.finite(phi) || phi <= 0) return(Inf)           # if phi = 0, then lgamma(phi)= Inf
+    if (family == 'nb' & (!is.finite(phi) || phi <= 0)) return(Inf)           # if phi = 0, then lgamma(phi)= Inf
 
-    val <- m * log(mu) + phi * log(phi) -
-      (m + phi) * log(mu + phi) +
-      lgamma(m + phi) - lfactorial(m) - lgamma(phi)
+    val <- switch(family, 'poisson' = m * log(mu) - mu - lfactorial(m),
+                  'nb' = m * log(mu) + phi * log(phi) -
+                    (m + phi) * log(mu + phi) +
+                    lgamma(m + phi) - lfactorial(m) - lgamma(phi))
 
     # check if there are any inf
     if (any(!is.finite(val))) return(Inf)
@@ -332,7 +333,7 @@ zhang_model_cov <- function(m,
     return(sum(val))
   }
 
-  grad_log_lik_zhang_model_cov <- function(alpha, beta, phi, m, n ,N, X, Z){
+  grad_log_lik_cov <- function(alpha, beta, phi = NULL, m, n ,N, X, Z, family){
 
     mu <- N^(as.vector(X %*% alpha)) * (n/N)^(as.vector(Z %*% beta))
 
@@ -341,72 +342,39 @@ zhang_model_cov <- function(m,
 
     # check point
     if (any(mu <= 0) || any(!is.finite(mu)) ||   # obvious
-        phi <= 0 || !is.finite(phi)) {           # obvious
+        (family == 'nb' & (phi <= 0 || !is.finite(phi)))) {           # obvious
       return(rep(NA, ncol(X) + ncol(Z) + 1))     # to have correct gradient dimension and still try to go into optim()
     }
 
-    d_mu <- m/mu - (m + phi)/(phi + mu)
+    d_mu <- switch(family, 'poisson' = m/mu - 1,
+                   'nb' = m/mu - (m + phi)/(phi + mu))
     d_alpha <- d_mu * mu * logN
     d_beta <- d_mu * mu * logRatio
 
-    log_mu_phi <- log(mu + phi)
-    log_m_phi  <- log(m + phi)
-
-    # check point
-    if (any(!is.finite(log_mu_phi)) ||        # to avoid problems in sum d_phi
-        any(!is.finite(log_m_phi))) {
-      return(rep(NA, ncol(X) + ncol(Z) + 1))  # to have correct gradient dimension and still try to go into optim()
+    if (family == 'nb'){
+      log_mu_phi <- log(mu + phi)
+      log_m_phi  <- log(m + phi)
     }
 
-    d_phi <- 1/(2*phi) - m/(mu + phi) - log(mu + phi)- phi/(mu + phi) + log(m + phi) + (m + phi - 0.5)/(m + phi)
+    # check point
+    if(family == 'nb'){
+      if (any(!is.finite(log_mu_phi)) ||        # to avoid problems in sum d_phi
+          any(!is.finite(log_m_phi))) {
+        return(rep(NA, ncol(X) + ncol(Z) + 1))  # to have correct gradient dimension and still try to go into optim()
+      }}
+
+    if (family =='nb') {
+      d_phi <- 1/(2*phi) - m/(mu + phi) - log(mu + phi)- phi/(mu + phi) + log(m + phi) + (m + phi - 0.5)/(m + phi)
+    }
 
     grad_alpha <- as.vector(t(X) %*% d_alpha)
     grad_beta <- as.vector(t(Z) %*% d_beta)
-    grad_phi <- sum(d_phi)
+    if (family == 'nb') {grad_phi <- sum(d_phi)}
 
-    return(c(grad_alpha, grad_beta, grad_phi))
+    grads <- switch(family, 'poisson' = c(grad_alpha, grad_beta),
+                    'nb' = c(grad_alpha, grad_beta, grad_phi))
 
-  }
-
-  hess_log_lik_zhang_model_cov <- function(alpha, beta, phi, m, n ,N, X, Z){
-
-    mu <- N^(as.vector(X %*% alpha)) * (n/N)^(as.vector(Z %*% beta))
-
-    logN <- log(N)
-    logRatio <- log(n/N)
-
-    # check point
-    if (any(mu <= 0) || phi <= 0 || any(!is.finite(mu))) {
-      return(matrix(NA, nrow = ncol(X) + ncol(Z) + 1, ncol = ncol(X) + ncol(Z) + 1))
-    }          # similar to gradient check point
-
-    d_mu <- m/mu - (m + phi)/(phi + mu)
-    d_mu2 <- -m/mu^2 + (m + phi)/(mu + phi)^2
-
-    d_alpha2 <- d_mu2 * (mu * logN)^2 + d_mu * mu * logN^2
-    d_beta2 <- d_mu2 * (mu * logRatio)^2 + d_mu * mu * logRatio^2
-    d_phi2 <- 1/(2*phi^2) - (2*mu - m + phi)/(mu + phi)^2 + (mu + phi+ 0.5)/(m + phi)^2
-
-    d_alpha_beta <- d_mu2 * mu^2 * logN * logRatio + d_mu * mu * logN * logRatio
-    d_alpha_phi <- mu * logN * (m - mu)/(mu + phi)^2
-    d_beta_phi <- mu * logRatio * (m - mu)/(mu + phi)^2
-
-    # include covariates
-    H11 <- t(X) %*% (d_alpha2 * X)
-    H12 <- t(X) %*% (d_alpha_beta * Z)
-    H13 <- matrix(t(X) %*% d_alpha_phi, ncol=1)
-
-    H22 <- t(Z) %*% (d_beta2 * Z)
-    H23 <- matrix(t(Z) %*% d_beta_phi, ncol=1)
-
-    H33 <- matrix(sum(d_phi2), ncol=1, nrow=1)
-
-    # full hessian matrix
-    top_row <- cbind(H11, H12, H13)
-    middle_row <- cbind(H12, H22, H23)
-    bottom_row <- cbind(t(H13), t(H23), H33)
-
-    return(rbind(top_row, middle_row, bottom_row))
+    return(grads)
 
   }
 
@@ -422,39 +390,40 @@ zhang_model_cov <- function(m,
     x2 = log(n/N)
   )
 
-  if (family == 'poisson'){
-    glm_fit <- glm(y ~ x1 + x2 - 1, data = df, family = poisson(link = 'log'))
-  }
+  glm_fit <- glm(y ~ x1 + x2 - 1, data = df, family = poisson(link = 'log'))
 
   starting <- coef(glm_fit)
   if (any(!is.finite(starting))) stop('GLM - infinite values')
 
   alpha_start <- rep(starting[1], p1)  # if X, Z are given, alpha and beta must be vectors of correct length
   beta_start <- rep(starting[2], p2)
-  phi_start <- 1/var(glm_fit$residuals)
-  start_par <- c(alpha_start, beta_start, phi_start)
+  start_par <- switch(family, 'poisson' = c(alpha_start, beta_start),
+                      'nb' = c(alpha_start, beta_start, 1/var(glm_fit$residuals)))
 
   # negative log-likelihood, gradient and hessian
 
   neg_log_lik <- function(param){     # we will take start_par as param in optim function
     alpha <- param[1:p1]
     beta <- param[(p1+1):(p1+p2)]
-    phi <- param[p1+p2+1]
-    -log_lik_zhang_model_cov(alpha, beta, phi, m, n, N, X, Z)
+    phi <- switch(family, 'poisson' = NULL,
+                  'nb' = param[p1+p2+1])
+    -log_lik_cov(alpha, beta, phi, m, n, N, X, Z, family)
   }
 
   neg_grad_log_lik <- function(param){
     alpha <- param[1:p1]
     beta <- param[(p1+1):(p1+p2)]
-    phi <- param[p1+p2+1]
-    -grad_log_lik_zhang_model_cov(alpha, beta, phi, m, n, N, X, Z)
+    phi <- switch(family, 'poisson' = NULL,
+                  'nb' = param[p1+p2+1])
+    -grad_log_lik_cov(alpha, beta, phi, m, n, N, X, Z, family)
   }
 
   neg_hess_log_lik <- function(param){
     alpha <- param[1:p1]
     beta <- param[(p1+1):(p1+p2)]
-    phi <- param[p1+p2+1]
-    -hess_log_lik_zhang_model_cov(alpha, beta, phi, m, n, N, X, Z)
+    phi <- switch(family, 'poisson' = NULL,
+                  'nb' = param[p1+p2+1])
+    -hess_log_lik_cov(alpha, beta, phi, m, n, N, X, Z, family)
   }
 
   # optimization
@@ -468,12 +437,12 @@ zhang_model_cov <- function(m,
 
   alpha_est <- unname(optimization$par[1:p1])
   beta_est <- unname(optimization$par[(p1+1):(p1+p2)])
-  phi_est <- unname(optimization$par[p1+p2+1])
+  if (family == 'nb'){phi_est <- unname(optimization$par[p1+p2+1])}
   xi_est <- sum(as.numeric(N)^as.vector(X %*% alpha_est))     # target parameter estimator
 
   # estimates by nationality
   irreg_estimates <- as.numeric(N)^as.vector(X %*% alpha_est)
-    if(!is.null(countries)){
+  if(!is.null(countries)){
     by_nat_split <- data.frame(country = countries,
                                irreg_estimate = irreg_estimates)
     by_nationality <- aggregate(irreg_estimate ~ country, data = by_nat_split, sum)
@@ -495,9 +464,11 @@ zhang_model_cov <- function(m,
   names(alpha_est) <- paste0("alpha", seq_along(alpha_est))
   names(beta_est) <- paste0("beta", seq_along(beta_est))
 
-  coef <- c(setNames(alpha_est, paste0('alpha', seq_along(alpha_est))),
-            setNames(beta_est, paste0('beta', seq_along(beta_est))),
-            phi = phi_est)
+  coef <- switch(family, 'poisson' = c(setNames(alpha_est, paste0('alpha', seq_along(alpha_est))),
+                                       setNames(beta_est, paste0('beta', seq_along(beta_est)))),
+                 'nb' = c(setNames(alpha_est, paste0('alpha', seq_along(alpha_est))),
+                          setNames(beta_est, paste0('beta', seq_along(beta_est))),
+                          phi = phi_est))
 
   hessian <- optimization$hessian
 
@@ -511,16 +482,20 @@ zhang_model_cov <- function(m,
 
     grad_i <- function(param){
 
+      phi_rob <- switch(family, 'poisson' = NULL,
+                        'nb' = param[p1+p2+1])
+
       result <- lapply(1:length(m), function(i){
-        grad_log_lik_zhang_model_cov(
+        grad_log_lik_cov(
           alpha = param[1 : p1],
           beta = param[(p1+1) : (p1+p2)],
-          phi = param[p1+p2+1],
+          phi = phi_rob,
           m = m[i],
           n = n[i],
           N = N[i],
           matrix(X[i, ], nrow = 1),
-          matrix(Z[i, ], nrow = 1)
+          matrix(Z[i, ], nrow = 1),
+          family
         )})
 
       return(result)
@@ -577,21 +552,28 @@ zhang_model_cov <- function(m,
                         Upper = upper_beta)
 
   # for phi
-  se_phi <- cov_matrix[p1+p2+1, p1+p2+1]
-  lower_phi <- phi_est - z*se_phi
-  upper_phi <- phi_est + z*se_phi
-  ci_phi <- data.frame(name = 'phi',
-                       Lower = lower_phi,
-                       Upper = upper_phi)
+  if(family == 'nb'){
+    se_phi <- cov_matrix[p1+p2+1, p1+p2+1]
+    lower_phi <- phi_est - z*se_phi
+    upper_phi <- phi_est + z*se_phi
+    ci_phi <- data.frame(name = 'phi',
+                         Lower = lower_phi,
+                         Upper = upper_phi)
+  }
 
   # confidence intervals for coefficients
-  conf_int_coef <- data.frame(name = c(names(alpha_est), names(beta_est),'phi'),
-                              Lower = c(ci_alpha$Lower, ci_beta$Lower, ci_phi$Lower),
-                              Upper = c(ci_alpha$Upper, ci_beta$Upper, ci_phi$Upper))
+  conf_int_coef <- switch(family, 'poisson' = data.frame(name = c(names(alpha_est), names(beta_est)),
+                                                         Lower = c(ci_alpha$Lower, ci_beta$Lower),
+                                                         Upper = c(ci_alpha$Upper, ci_beta$Upper)),
+                          'nb' = data.frame(name = c(names(alpha_est), names(beta_est),'phi'),
+                                            Lower = c(ci_alpha$Lower, ci_beta$Lower, ci_phi$Lower),
+                                            Upper = c(ci_alpha$Upper, ci_beta$Upper, ci_phi$Upper)))
 
   # standard errors for coefficients
-  se_coef <- data.frame(name = c(paste0('alpha', seq_along(alpha_est)), paste0('beta', seq_along(beta_est)), 'phi'),
-                        Std.error = c(se_alpha, se_beta, se_phi))
+  se_coef <- switch(family, 'poisson' = data.frame(name = c(paste0('alpha', seq_along(alpha_est)), paste0('beta', seq_along(beta_est))),
+                                                   Std.error = c(se_alpha, se_beta)),
+                    'nb' = data.frame(name = c(paste0('alpha', seq_along(alpha_est)), paste0('beta', seq_along(beta_est)), 'phi'),
+                                      Std.error = c(se_alpha, se_beta, se_phi)))
 
   # standard error for xi
   N_Xalpha <- as.numeric(N)^as.vector(X %*% alpha_est)
@@ -600,10 +582,11 @@ zhang_model_cov <- function(m,
 
   # confidence intervals for xi
   conf_int_xi <- data.frame(Lower = sum(as.numeric(N)^as.vector(X %*% lower_alpha)),
-                           Upper = sum(as.numeric(N)^as.vector(X %*% upper_alpha)))
+                            Upper = sum(as.numeric(N)^as.vector(X %*% upper_alpha)))
 
   # AIC, BIC values
-  LL <- log_lik_zhang_model_cov(alpha_est, beta_est, phi_est, m, n, N, X,Z)
+  LL <- switch(family, 'poisson' = log_lik_cov(alpha_est, beta_est, NULL, m, n, N, X,Z, family),
+               'nb' = log_lik_cov(alpha_est, beta_est, phi_est, m, n, N, X,Z, family))
   k <- length(alpha_est) + length(beta_est) + 1
   C <- length(m)
   aic <- -2 * LL + 2 * k
@@ -621,7 +604,7 @@ zhang_model_cov <- function(m,
                        aic = aic,
                        bic = bic)
 
-  results <- list(method = 'mle',
+  results <- list(method = paste0('mle - ', family),
                   coefficients = coef,
                   xi_est = xi_est,
                   se_coef = se_coef,
