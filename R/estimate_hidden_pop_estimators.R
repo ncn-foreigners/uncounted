@@ -1,6 +1,9 @@
 #' @importFrom sandwich vcovHC
 #' @importFrom stats confint qnorm residuals setNames var vcov lm nls glm coef model.matrix
 #' @importFrom utils capture.output
+#' @importFrom boot boot
+#' @importFrom fwb fwb
+#' @importFrom fANCOVA wild.boot
 
 ## the OLS model
 ols_model <- function(m,
@@ -9,11 +12,36 @@ ols_model <- function(m,
                       vcov = 'hessian',
                       countries){
 
-  df <- data.frame(
-    y = m,
-    x1 = log(N),
-    x2 = log(n/N)
-  )
+  df <- data.frame(y = m,
+                   x1 = log(N),
+                   x2 = log(n/N))
+
+  ols_fit_fun <- function(data = df, weights = NULL, indices = NULL){
+
+    if (!is.null(weights)) {
+      weights <- weights
+      ols_fit <- lm(log(y) ~ x1 + x2 - 1, data = data, weights = weights)
+    } else if (!is.null(indices)) {
+        data <- data[indices, ]
+        ols_fit <- lm(log(y) ~ x1 + x2 - 1, data = data)
+    } else {
+      ols_fit <- lm(log(y) ~ x1 + x2 - 1, data = data)
+    }
+
+    alpha_est <- unname(coef(ols_fit)[1])
+    beta_est <- unname(coef(ols_fit)[2])
+    xi_est <- sum(N^alpha_est)
+
+    return(c(alpha_est, beta_est, xi_est))
+  }
+
+  ols_fit_nonpar <- function(data, indices = indices) {
+    ols_fit_fun(data = data, indices = indices)
+  }
+
+  ols_fit_fwb <- function(data, weights = weights) {
+    ols_fit_fun(data = data, weights = weights)
+  }
 
   ols_fit <- lm(log(y) ~ x1 + x2 - 1, data = df)
 
@@ -36,8 +64,37 @@ ols_model <- function(m,
   # covariance matrix
   if (vcov == 'robust') {
     cov_matrix <- sandwich::vcovHC(ols_fit, type = "HC1")
-  } else {
+  } else if (vcov == 'hessian') {
     cov_matrix <- vcov(ols_fit)
+  } else if (vcov == 'nonparametric') {
+    nonpar_results <- boot(data = df, statistic = ols_fit_nonpar, R = 1000)
+    cov_matrix <- cov(nonpar_results$t[,1:2]) # dla alpha i beta
+    # se_xi <- sd(nonpar_results[,3])
+  } else if (vcov == 'wild') {
+    fitted_vals <- fitted(ols_fit)
+    n <- nrow(df)
+    R <- 1000
+    wild_residuals <- wild.boot(ols_fit$residuals, R)
+    alpha_boot <- numeric(R)
+    beta_boot <- numeric(R)
+    xi_boot <- numeric(R)
+
+    for (i in 1:R) {
+      y_boot <- fitted_vals + wild_residuals[, i]
+      boot_fit <- lm(y_boot ~ x1 + x2 - 1, data = df)
+      coef_wild <- coef(boot_fit)
+      alpha_boot[i] <- unname(coef_wild[1])
+      beta_boot[i] <- unname(coef_wild[2])
+      xi_boot[i] <- sum(N^alpha_boot[i])
+    }
+
+    boot_matrix <- cbind(alpha_boot, beta_boot)
+    cov_matrix <- cov(boot_matrix)
+    # se_xi <- sd(xi_boot)
+  } else if (vcov == 'fwb') {
+    fwb_results <- fwb(data = df, statistic = ols_fit_fwb, R = 1000)
+    cov_matrix <- cov(fwb_results[,1:2]) # dla alpha i beta
+    # se_xi <- sd(fwb_results[,3])
   }
 
   # standard errors for coefficients
@@ -46,7 +103,7 @@ ols_model <- function(m,
 
   # standard error for xi - delta method
   se_alpha <- se_coef$Std.error[se_coef$name == 'alpha']
-  se_xi <- abs(sum(N^alpha_est * log(N))) * se_alpha
+  se_xi <- abs(sum(N^alpha_est * log(N))) * se_alpha   #  TUTAJ POMYSLEC JAK Z BOOTSTRAPEM
 
   # confidence intervals for coefficients
   ci_alpha <- confint(ols_fit)[1,]

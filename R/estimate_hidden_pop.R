@@ -144,8 +144,8 @@ estimate_hidden_pop <- function(
     stop("Invalid estimation method. Choose 'ols', 'nls', 'glm', 'mle'.")
   }
 
-  if (!vcov %in% c("hessian", "robust")) {
-    stop("Invalid vcov method. Choose 'hessian' or 'robust'.")
+  if (!vcov %in% c("hessian", "robust", 'nonparametric', 'wild', 'fwb')) {
+    stop("Invalid vcov method. Choose 'hessian', 'robust', 'nonparametric', 'wild' or 'fwb'.")
   }
 
   variable <- function(name) {
