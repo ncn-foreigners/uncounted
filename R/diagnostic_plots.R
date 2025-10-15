@@ -259,18 +259,19 @@ plot.hidden <- function(x, which = NULL, label = FALSE){
       grid.arrange(p1, p2, p3, p4, ncol = 2, nrow = 2)
     }
 
-  } else if (x$method == 'mle') {
+  } else if (x$method %in% c('mle - poisson', 'mle - nb')) {
 
     phi <- x$coefficients[length(x$coefficients)]
     df <- data.frame(fitted = x$fitted,
                      observed = x$m,
-                     residuals = x$residuals,
-                     anscombe = (3*phi*(1 + x$m/phi)^(2/3) - (1 + x$fitted/phi)^(2/3) + 3*(x$m^(2/3) - x$fitted^(2/3)))/ (2*(x$fitted + x$fitted^2/phi))^(1/6))
+                     residuals = x$residuals)
                      # pearson = (results$m-results$fitted)/sqrt(results$fitted - results$fitted^2/phi),
                      # deviance = sign(results$m - results$fitted)*(2*(results$m*log(results$m/results$fitted) - (results$m + 1/phi)*log((results$m + 1/phi)/(results$fitted + 1/phi))))^(1/2)
     if (!is.null(x$countries)) {
       df$nationality <- x$countries
     }
+    df$anscombe <- switch(x$method, 'mle - nb' = (3*phi*(1 + x$m/phi)^(2/3) - (1 + x$fitted/phi)^(2/3) + 3*(x$m^(2/3) - x$fitted^(2/3)))/ (2*(x$fitted + x$fitted^2/phi))^(1/6),
+                          'mle - poisson' = (3*x$m^(2/3)-3*x$fitted^(2/3))/(2 * x$fitted^(1/6)))
 
     # 1 -- observed vs fitted (square root)
     p1 <- ggplot(df, aes(x = sqrt(fitted), y = sqrt(observed))) +
