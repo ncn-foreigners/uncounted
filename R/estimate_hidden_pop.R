@@ -216,6 +216,14 @@ estimate_hidden_pop <- function(
     stop(sprintf("Columns %s, %s, and %s must be numeric. Check input data types.", m_var, n_var, N_var))
   }
 
+  family <- switch(family,
+                   p = 'poisson', poisson = 'poisson',
+                   nb = 'nb', negbin = 'nb',
+                   family)
+  if(!(family %in% c('poisson', 'nb'))){
+    stop("Argument 'family' must be either 'poisson' or 'negbin'.")
+
+  }
 
   results <- switch(method,
                     'ols' = ols_model(m, n, N, vcov = vcov, countries),
