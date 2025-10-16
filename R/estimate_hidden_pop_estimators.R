@@ -72,7 +72,6 @@ ols_model <- function(m,
     # se_xi <- sd(nonpar_results[,3])
   } else if (vcov == 'wild') {
     fitted_vals <- fitted(ols_fit)
-    n <- nrow(df)
     R <- 1000
     wild_residuals <- wild.boot(ols_fit$residuals, R)
     alpha_boot <- numeric(R)
@@ -92,8 +91,8 @@ ols_model <- function(m,
     cov_matrix <- cov(boot_matrix)
     # se_xi <- sd(xi_boot)
   } else if (vcov == 'fwb') {
-    fwb_results <- fwb(data = df, statistic = ols_fit_fwb, R = 1000)
-    cov_matrix <- cov(fwb_results[,1:2]) # dla alpha i beta
+    fwb_results <- fwb(data = df, statistic = ols_fit_fwb, R = 1000, verbose = FALSE)
+    cov_matrix <- cov(fwb_results[,1:2])
     # se_xi <- sd(fwb_results[,3])
   }
 
@@ -206,6 +205,11 @@ nls_model <- function(m,
   } else {
     cov_matrix <- vcov(nls_fit)
   }
+  # } else if (vcov == 'nonparametric') {
+  #
+  # } else if (vcov == 'wild') {
+  #
+  # }
 
   # standard errors for coefficients
   se_coef <- data.frame(name = c('alpha', 'beta'),
@@ -371,7 +375,9 @@ mle_estim <- function(m,
                       df_cov,
                       family){
 
-  log_lik_cov <- function(alpha, beta, phi=NULL, m, n, N, X, Z, family){
+  log_lik_cov <- function(alpha, beta, phi=NULL, m, n, N, X, Z, family, weights = NULL){
+
+    if(is.null(weights)) weights <- rep(1, length(m))
 
     mu <- N^(as.vector(X %*% alpha)) * (n/N)^(as.vector(Z %*% beta))
 
@@ -387,10 +393,12 @@ mle_estim <- function(m,
     # check if there are any inf
     if (any(!is.finite(val))) return(Inf)
 
-    return(sum(val))
+    return(sum(weights * val))
   }
 
-  grad_log_lik_cov <- function(alpha, beta, phi = NULL, m, n ,N, X, Z, family){
+  grad_log_lik_cov <- function(alpha, beta, phi = NULL, m, n ,N, X, Z, family, weights = NULL){
+
+    if(is.null(weights)) weights <- rep(1, length(m))
 
     mu <- N^(as.vector(X %*% alpha)) * (n/N)^(as.vector(Z %*% beta))
 
@@ -408,15 +416,10 @@ mle_estim <- function(m,
     d_alpha <- d_mu * mu * logN
     d_beta <- d_mu * mu * logRatio
 
-    if (family == 'nb'){
-      log_mu_phi <- log(mu + phi)
-      log_m_phi  <- log(m + phi)
-    }
-
     # check point
     if(family == 'nb'){
-      if (any(!is.finite(log_mu_phi)) ||        # to avoid problems in sum d_phi
-          any(!is.finite(log_m_phi))) {
+      if (any(!is.finite(log(mu + phi))) ||        # to avoid problems in sum d_phi
+          any(!is.finite(log(m + phi)))) {
         return(rep(NA, ncol(X) + ncol(Z) + 1))  # to have correct gradient dimension and still try to go into optim()
       }}
 
@@ -424,19 +427,18 @@ mle_estim <- function(m,
       d_phi <- 1/(2*phi) - m/(mu + phi) - log(mu + phi)- phi/(mu + phi) + log(m + phi) + (m + phi - 0.5)/(m + phi)
     }
 
-    grad_alpha <- as.vector(t(X) %*% d_alpha)
-    grad_beta <- as.vector(t(Z) %*% d_beta)
-    if (family == 'nb') {grad_phi <- sum(d_phi)}
+    grad_alpha <- as.vector(t(X) %*% (weights * d_alpha))
+    grad_beta <- as.vector(t(Z) %*% (weights * d_beta))
+    if (family == 'nb') grad_phi <- sum(weights * d_phi)
 
     grads <- switch(family, 'poisson' = c(grad_alpha, grad_beta),
                     'nb' = c(grad_alpha, grad_beta, grad_phi))
-
     return(grads)
 
   }
 
-  if (is.null(X)==TRUE)  {X <- matrix(1, nrow = length(n), ncol = 1)}
-  if (is.null(Z)==TRUE)  {Z <- matrix(1, nrow = length(n), ncol = 1)}
+  if (is.null(X)) X <- matrix(1, nrow = length(n), ncol = 1)
+  if (is.null(Z)) Z <- matrix(1, nrow = length(n), ncol = 1)
 
   p1 <- ncol(X)
   p2 <- ncol(Z)
@@ -449,16 +451,15 @@ mle_estim <- function(m,
 
   glm_fit <- glm(y ~ x1 + x2 - 1, data = df, family = poisson(link = 'log'))
 
+  # starting points for optimization
   starting <- coef(glm_fit)
   if (any(!is.finite(starting))) stop('GLM - infinite values')
-
   alpha_start <- rep(starting[1], p1)  # if X, Z are given, alpha and beta must be vectors of correct length
   beta_start <- rep(starting[2], p2)
   start_par <- switch(family, 'poisson' = c(alpha_start, beta_start),
                       'nb' = c(alpha_start, beta_start, 1/var(glm_fit$residuals)))
 
   # negative log-likelihood, gradient and hessian
-
   neg_log_lik <- function(param){     # we will take start_par as param in optim function
     alpha <- param[1:p1]
     beta <- param[(p1+1):(p1+p2)]
@@ -475,14 +476,6 @@ mle_estim <- function(m,
     -grad_log_lik_cov(alpha, beta, phi, m, n, N, X, Z, family)
   }
 
-  neg_hess_log_lik <- function(param){
-    alpha <- param[1:p1]
-    beta <- param[(p1+1):(p1+p2)]
-    phi <- switch(family, 'poisson' = NULL,
-                  'nb' = param[p1+p2+1])
-    -hess_log_lik_cov(alpha, beta, phi, m, n, N, X, Z, family)
-  }
-
   # optimization
   optimization <- optim(
     par = start_par,
@@ -494,7 +487,7 @@ mle_estim <- function(m,
 
   alpha_est <- unname(optimization$par[1:p1])
   beta_est <- unname(optimization$par[(p1+1):(p1+p2)])
-  if (family == 'nb'){phi_est <- unname(optimization$par[p1+p2+1])}
+  if (family == 'nb') phi_est <- unname(optimization$par[p1+p2+1])
   xi_est <- sum(as.numeric(N)^as.vector(X %*% alpha_est))     # target parameter estimator
 
   # estimates by nationality
@@ -506,7 +499,6 @@ mle_estim <- function(m,
   } else {
     by_nationality <- NULL
   }
-
 
   # estimates by covariates
   if(!is.null(df_cov)){
@@ -527,9 +519,78 @@ mle_estim <- function(m,
                           setNames(beta_est, paste0('beta', seq_along(beta_est))),
                           phi = phi_est))
 
+
+  # covariance matrix calculation
+  # hessian
   hessian <- optimization$hessian
 
-  # covariance matrix
+  # function to use in bootstrap
+  mle_fit_fun <- function(data, weights = NULL, indices = NULL){
+
+    if(!is.null(indices)) data <- data[indices,]
+    if(!is.null(weights)) weights <- weights
+
+    m <- data$m
+    n <- data$n
+    N <- data$N
+    X <- as.matrix(data[, grepl('^X', names(data)), drop = FALSE])
+    Z <- as.matrix(data[, grepl('^Z', names(data)), drop = FALSE])
+    if (ncol(X) == 0) X <- matrix(1, nrow = length(m), ncol = 1)
+    if (ncol(Z) == 0) Z <- matrix(1, nrow = length(m), ncol = 1)
+    p1 <- ncol(X)
+    p2 <- ncol(Z)
+
+    # starting values
+    df_boot <- data.frame(y = m,
+                          x1 = log(N),
+                          x2 = log(n/N))
+
+    glm_fit_boot <- glm(y ~ x1 + x2 - 1, data = df_boot, family = poisson(link = 'log'))
+
+    starting_boot <- coef(glm_fit_boot)
+    if (any(!is.finite(starting_boot))) stop('GLM - infinite values')
+
+    alpha_start_boot <- rep(starting_boot[1], p1)
+    beta_start_boot <- rep(starting_boot[2], p2)
+    start_par_boot <- switch(family, 'poisson' = c(alpha_start_boot, beta_start_boot),
+                        'nb' = c(alpha_start_boot, beta_start_boot, 1/var(glm_fit_boot$residuals)))
+
+    # optimization - mle calculation
+    optimization <- optim(par = start_par_boot,
+                          fn = function(par){
+                            alpha <- par[1:p1]
+                            beta <- par[(p1 + 1):(p1 + p2)]
+                            phi <- if (family == 'nb') {par[p1 + p2 + 1]} else NULL
+                            -log_lik_cov(alpha, beta, phi, m, n, N, X, Z, family, weights)
+                          },
+                          gr = function(par) {
+                            alpha <- par[1:p1]
+                            beta <- par[(p1 + 1):(p1 + p2)]
+                            phi <- if (family == 'nb') par[p1 + p2 + 1] else NULL
+                            -grad_log_lik_cov(alpha, beta, phi, m, n, N, X, Z, family, weights)
+                          },
+                          method = 'BFGS',
+                          hessian = FALSE)
+
+    alpha_est <- unname(optimization$par[1:p1])
+    beta_est <- unname(optimization$par[(p1+1):(p1+p2)])
+    if (family == 'nb'){phi_est <- unname(optimization$par[p1+p2+1])}
+    xi_est <- sum(as.numeric(N)^as.vector(X %*% alpha_est))
+
+    coef_boot <- switch(family, 'poisson' = c(alpha_est, beta_est, xi_est),
+                        'nb' = c(alpha_est, beta_est, phi_est, xi_est))
+
+    return(coef_boot)
+  }
+
+  # support functions to have indices/weights as the second argument
+  mle_fit_nonpar <- function(data, indices) {
+    mle_fit_fun(data = data, indices = indices)
+  }
+
+  mle_fit_fwb <- function(data, weights) {
+    mle_fit_fun(data = data, weights = weights)
+  }
 
   # mle robust covariance matrix
   robust_mle <- function(opt, m, n, N, X, Z){
@@ -569,48 +630,141 @@ mle_estim <- function(m,
   }
 
   if (vcov == 'robust') {
-    #cov_matrix <- sandwich::vcovHC(glm_fit, type = 'HC1')
-    cov_matrix <- robust_mle(optimization, m,n,N, X,Z)
-  } else {
+    cov_matrix <- robust_mle(optimization, m, n, N, X, Z)
+  } else if (vcov == 'hessian'){
     cov_matrix <- tryCatch(solve(hessian), error = function(e) NULL)
+  } else if (vcov == 'nonparametric') {
+
+    df_boot <- cbind(data.frame(m = m, n = n, N = N), as.data.frame(X), as.data.frame(Z))
+    names(df_boot)[4:(3 + p1)] <- paste0('X', 1:p1)
+    names(df_boot)[(4 + p1):(3 + p1 + p2)] <- paste0('Z', 1:p2)
+
+    nonpar_results <- boot(data = df_boot, statistic = mle_fit_nonpar, R = 1000)
+
+    if (family == 'nb') {
+      cov_matrix <- cov(nonpar_results$t[, 1:(p1 + p2 + 1)])
+    } else if (family == 'poisson'){
+      cov_matrix <- cov(nonpar_results$t[, 1:(p1 + p2)])
+    }
+
+  } else if (vcov == 'wild') {
+    residuals <- m - N^(X %*% alpha_est) * (n/N)^(Z %*% beta_est)
+    fitted <- N^(X %*% alpha_est) * (n/N)^(Z %*% beta_est)
+    R <- 1000
+    wild_residuals <- wild.boot(residuals, R)
+    alpha_boot <- matrix(NA, nrow = R, ncol = p1)
+    beta_boot  <- matrix(NA, nrow = R, ncol = p2)
+    if(family == 'nb') {phi_boot <- numeric(R)}
+    xi_boot <- numeric(R)
+
+    for (i in 1:R) {
+      y_boot <- round(pmax(fitted + wild_residuals[, i], 0))
+      data_boot <- data.frame(m = y_boot, n = n, N = N)
+      data_boot <- cbind(data_boot, as.data.frame(X)); names(data_boot)[4:(3 + p1)] <- paste0('X', 1:p1)
+      data_boot <- cbind(data_boot, as.data.frame(Z)); names(data_boot)[(4 + p1):(3 + p1 + p2)] <- paste0('Z', 1:p2)
+
+      # est <- mle_fit_fun(data_boot)
+      # alpha_boot[i, ] <- est[1:p1]
+      # beta_boot[i, ] <- est[(p1 + 1):(p1 + p2)]
+      # if (family == 'nb') {
+      #   phi_boot[i] <- est[p1 + p2 + 1]
+      #   xi_boot[i] <- est[p1 + p2 + 2]
+      # } else if (family =='poisson') {
+      #   xi_boot[i] <- est[p1 + p2 + 1]
+      # }
+      tryCatch({est <- mle_fit_fun(data_boot)
+      alpha_boot[i, ] <- est[1:p1]
+      beta_boot[i, ] <- est[(p1 + 1):(p1 + p2)]
+      if (family == 'nb') {
+        phi_boot[i] <- est[p1 + p2 + 1]
+        xi_boot[i] <- est[p1 + p2 + 2]
+      } else if (family =='poisson') {
+        xi_boot[i] <- est[p1 + p2 + 1]
+      }
+      }, error = function(e) {})
+    }
+
+    if (family == 'nb') {
+      cov_matrix <- cov(cbind(alpha_boot, beta_boot, phi_boot))
+    } else if (family == 'poisson') {
+      cov_matrix <- cov(cbind(alpha_boot, beta_boot))
+    }
+
+  } else if (vcov == 'fwb') {
+
+    df_boot <- cbind(data.frame(m = m, n = n, N = N), as.data.frame(X), as.data.frame(Z))
+    fwb_results <- fwb(data = df_boot, statistic = mle_fit_fwb, R = 1000, verbose = FALSE)
+    if (family == 'nb') {
+      cov_matrix <- cov(fwb_results$t[, 1:(p1 + p2 + 1)])
+    } else if (family == 'poisson'){
+      cov_matrix <- cov(fwb_results$t[, 1:(p1 + p2)])
+    }
+
   }
 
   # standard error and confidence intervals for alpha_est coordinates
-  se_alpha <- rep(NA, length(alpha_est))
-  z <- qnorm(0.975)
-  lower_alpha <- rep(NA, length(alpha_est))
-  upper_alpha <- rep(NA, length(alpha_est))
-  for (i in 1:length(alpha_est)){
-    var_alpha <- cov_matrix[i,i]
-    se_alpha[i] <- sqrt(var_alpha)
-    lower_alpha[i] <- alpha_est[i] - z*se_alpha[i]
-    upper_alpha[i] <- alpha_est[i] + z*se_alpha[i]
+  if (vcov %in% c('hessian', 'robust')){
+    se_alpha <- rep(NA, length(alpha_est))
+    z <- qnorm(0.975)
+    lower_alpha <- rep(NA, length(alpha_est))
+    upper_alpha <- rep(NA, length(alpha_est))
+    for (i in 1:length(alpha_est)){
+      var_alpha <- cov_matrix[i,i]
+      se_alpha[i] <- sqrt(var_alpha)
+      lower_alpha[i] <- alpha_est[i] - z*se_alpha[i]
+      upper_alpha[i] <- alpha_est[i] + z*se_alpha[i]
+    }
+  } else if (vcov == 'nonparametric') {
+    se_alpha <- apply(nonpar_results$t[,1:p1, drop = FALSE], 2, sd, na.rm = TRUE)
+    lower_alpha <- apply(nonpar_results$t[,1:p1, drop = FALSE], 2, quantile, probs = 0.025, na.rm = TRUE)
+    upper_alpha <- apply(nonpar_results$t[,1:p1, drop = FALSE], 2, quantile, probs = 0.975, na.rm = TRUE)
+  } else if (vcov == 'wild') {
+    se_alpha <- apply(alpha_boot, 2, sd, na.rm = TRUE)
+    lower_alpha <- apply(alpha_boot, 2, quantile, probs = 0.025, na.rm = TRUE)
+    upper_alpha <- apply(alpha_boot, 2, quantile, probs = 0.975, na.rm = TRUE)
+  } else if (vcov == 'fwb') {
+    se_alpha <- apply(fwb_results$t[,1:p1, drop = FALSE], 2, sd, na.rm = TRUE)
+    lower_alpha <- apply(fwb_results$t[,1:p1, drop = FALSE], 2, quantile, probs = 0.025, na.rm = TRUE)
+    upper_alpha <- apply(fwb_results$t[,1:p1, drop = FALSE], 2, quantile, probs = 0.975, na.rm = TRUE)
   }
 
   ci_alpha <- data.frame(name = names(alpha_est),
                          Lower = lower_alpha,
                          Upper = upper_alpha)
-
   # for beta
-  se_beta <- rep(NA, length(beta_est))
-  z <- qnorm(0.975)
-  lower_beta <- rep(NA, length(beta_est))
-  upper_beta <- rep(NA, length(beta_est))
-  for (j in 1:length(beta_est)){
-    i <- p1 + j
-    var_beta <- cov_matrix[i,i]
-    se_beta[j] <- sqrt(var_beta)
-    lower_beta[j] <- beta_est[j] - z*se_beta[j]
-    upper_beta[j] <- beta_est[j] + z*se_beta[j]
+  if (vcov %in% c('hessian', 'robust')){
+    se_beta <- rep(NA, length(beta_est))
+    z <- qnorm(0.975)
+    lower_beta <- rep(NA, length(beta_est))
+    upper_beta <- rep(NA, length(beta_est))
+    for (j in 1:length(beta_est)){
+      i <- p1 + j
+      var_beta <- cov_matrix[i,i]
+      se_beta[j] <- sqrt(var_beta)
+      lower_beta[j] <- beta_est[j] - z*se_beta[j]
+      upper_beta[j] <- beta_est[j] + z*se_beta[j]
+    }
+  } else if (vcov == 'nonparametric') {
+    se_beta <- apply(nonpar_results$t[,(p1 + 1):(p1+p2), drop = FALSE], 2, sd, na.rm = TRUE)
+    lower_beta <- apply(nonpar_results$t[,(p1 + 1):(p1+p2), drop = FALSE], 2, quantile, probs = 0.025, na.rm = TRUE)
+    upper_beta <- apply(nonpar_results$t[,(p1 + 1):(p1+p2), drop = FALSE], 2, quantile, probs = 0.975, na.rm = TRUE)
+  } else if (vcov == 'wild') {
+    se_beta <- apply(beta_boot, 2, sd, na.rm = TRUE)
+    lower_beta <- apply(beta_boot, 2, quantile, probs = 0.025, na.rm = TRUE)
+    upper_beta <- apply(beta_boot, 2, quantile, probs = 0.975, na.rm = TRUE)
+  } else if (vcov == 'fwb') {
+    se_beta <- apply(fwb_results$t[,(p1 + 1):(p1+p2), drop = FALSE], 2, sd, na.rm = TRUE)
+    lower_beta <- apply(fwb_results$t[,(p1 + 1):(p1+p2), drop = FALSE], 2, quantile, probs = 0.025, na.rm = TRUE)
+    upper_beta <- apply(fwb_results$t[,(p1 + 1):(p1+p2), drop = FALSE], 2, quantile, probs = 0.975, na.rm = TRUE)
   }
 
   ci_beta <- data.frame(name = names(beta_est),
                         Lower = lower_beta,
                         Upper = upper_beta)
-
   # for phi
   if(family == 'nb'){
     se_phi <- cov_matrix[p1+p2+1, p1+p2+1]
+    z <- qnorm(0.975)
     lower_phi <- phi_est - z*se_phi
     upper_phi <- phi_est + z*se_phi
     ci_phi <- data.frame(name = 'phi',
@@ -632,14 +786,27 @@ mle_estim <- function(m,
                     'nb' = data.frame(name = c(paste0('alpha', seq_along(alpha_est)), paste0('beta', seq_along(beta_est)), 'phi'),
                                       Std.error = c(se_alpha, se_beta, se_phi)))
 
-  # standard error for xi
-  N_Xalpha <- as.numeric(N)^as.vector(X %*% alpha_est)
-  grad_g_alpha <- t(X) %*% (log(N) * N_Xalpha)
-  se_xi <- se_alpha %*% abs(grad_g_alpha)
+  # standard error and confidence intervals for xi
+  if (vcov %in% c('hessian', 'robust')){
+    N_Xalpha <- as.numeric(N)^as.vector(X %*% alpha_est)
+    grad_g_alpha <- t(X) %*% (log(N) * N_Xalpha)
+    se_xi <- se_alpha %*% abs(grad_g_alpha)
 
-  # confidence intervals for xi
-  conf_int_xi <- data.frame(Lower = sum(as.numeric(N)^as.vector(X %*% lower_alpha)),
-                            Upper = sum(as.numeric(N)^as.vector(X %*% upper_alpha)))
+    conf_int_xi <- data.frame(Lower = sum(as.numeric(N)^as.vector(X %*% lower_alpha)),
+                              Upper = sum(as.numeric(N)^as.vector(X %*% upper_alpha)))
+  } else if (vcov == 'nonparametric') {
+    se_xi <- sd(nonpar_results$t[, ncol(nonpar_results$t)])
+    conf_int_xi<- data.frame(Lower = quantile(nonpar_results$t[, ncol(nonpar_results$t)], probs = 0.027),
+                             Upper = quantile(nonpar_results$t[, ncol(nonpar_results$t)], probs = 0.975))
+  } else if (vcov == 'wild') {
+    se_xi <- sd(xi_boot)
+    conf_int_xi <- data.frame(Lower = quantile(xi_boot, probs = 0.027),
+                              Upper = quantile(xi_boot, probs = 0.975))
+  } else if (vcov == 'fwb') {
+    se_xi <- sd(fwb_results$t[, ncol(fwb_results$t)])
+    conf_int_xi<- data.frame(Lower = quantile(fwb_results$t[, ncol(fwb_results$t)], probs = 0.027),
+                             Upper = quantile(fwb_results$t[, ncol(fwb_results$t)], probs = 0.975))
+  }
 
   # AIC, BIC values
   LL <- switch(family, 'poisson' = log_lik_cov(alpha_est, beta_est, NULL, m, n, N, X,Z, family),
