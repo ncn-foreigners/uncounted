@@ -153,7 +153,7 @@ estimate_hidden_pop <- function(
     message("Currently the bias corrected estimator is not available in the selected estimation method. Estimate without correction will be returned.")
   }
 
-  if (method == 'mle' & !(bias_corr %in% c('with_alpha_bias', 'no_alpha_bias'))) {
+  if (method == 'mle' && !(is.null(bias_corr) || bias_corr %in% c('with_alpha_bias', 'no_alpha_bias'))) {
     stop("For method = 'mle', bias_corr must be either 'with_alpha_bias' or 'no_alpha_bias'.")
   }
 
