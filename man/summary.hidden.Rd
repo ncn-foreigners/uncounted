@@ -18,6 +18,7 @@ An object of class \code{summary.hidden}, which is a list containing:
 \item \code{conf_int_xi}, \code{conf_int_alpha}, \code{conf_int_beta} - confidence intervals
 \item \code{vcov}, \code{vcov_method} - estimated variance-covariance matrix and method used
 \item \code{se_coef} - standard errors for coefficients
+\item \code{se_xi} - standard error for target parameter
 \item \code{summary stat} - list of model-specific statistics
 \item \code{aic}, \code{bic} - model selection criteria values
 \item \code{residuals}, \code{fitted}, \code{m}, \code{n}, \code{N} - fitted values, residuals and observed data

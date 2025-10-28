@@ -4,16 +4,18 @@
 \alias{plot.hidden}
 \title{Plot diagnostics for a \code{hidden} object}
 \usage{
-\method{plot}{hidden}(x, which = NULL)
+\method{plot}{hidden}(x, which = NULL, label = FALSE)
 }
 \arguments{
 \item{x}{an object of class \code{hidden} returned by the main estimation function \code{estimate_hidden_pop()}}
 
 \item{which}{optional integer indication which plot should be displayed. If \code{NULL}, the default set of plots is shown.}
+
+\item{label}{logical. If \code{TRUE} adds observation labels (country names) to the plots (only if country information is in the object).}
 }
 \description{
 Diagnostic plotting method for objects of class \code{hidden}.
-Depending on the estimation method used in \code{estimate_hidden_pop()} function, different sets of dignostic
+Depending on the estimation method used in \code{estimate_hidden_pop()} function, different sets of diagnostic
 plots are displayed.
 }
 \details{

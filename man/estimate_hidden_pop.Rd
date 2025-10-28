@@ -13,7 +13,9 @@ estimate_hidden_pop(
   cov_beta = NULL,
   method = "ols",
   vcov = "hessian",
-  family = "gaussian"
+  family = "poisson",
+  bias_corr = NULL,
+  countries = NULL
 )
 }
 \arguments{
