@@ -373,7 +373,8 @@ mle_estim <- function(m,
                       vcov = 'hessian',
                       countries,
                       df_cov,
-                      family){
+                      family,
+                      bias_corr){
 
   log_lik_cov <- function(alpha, beta, phi=NULL, m, n, N, X, Z, family, weights = NULL){
 
@@ -555,7 +556,6 @@ mle_estim <- function(m,
     start_par_boot <- switch(family, 'poisson' = c(alpha_start_boot, beta_start_boot),
                         'nb' = c(alpha_start_boot, beta_start_boot, 1/var(glm_fit_boot$residuals)))
 
-    # optimization - mle calculation
     optimization <- optim(par = start_par_boot,
                           fn = function(par){
                             alpha <- par[1:p1]
@@ -731,6 +731,7 @@ mle_estim <- function(m,
   ci_alpha <- data.frame(name = names(alpha_est),
                          Lower = lower_alpha,
                          Upper = upper_alpha)
+
   # for beta
   if (vcov %in% c('hessian', 'robust')){
     se_beta <- rep(NA, length(beta_est))
@@ -761,6 +762,7 @@ mle_estim <- function(m,
   ci_beta <- data.frame(name = names(beta_est),
                         Lower = lower_beta,
                         Upper = upper_beta)
+
   # for phi
   if(family == 'nb'){
     se_phi <- cov_matrix[p1+p2+1, p1+p2+1]
@@ -785,6 +787,42 @@ mle_estim <- function(m,
                                                    Std.error = c(se_alpha, se_beta)),
                     'nb' = data.frame(name = c(paste0('alpha', seq_along(alpha_est)), paste0('beta', seq_along(beta_est)), 'phi'),
                                       Std.error = c(se_alpha, se_beta, se_phi)))
+
+  # bias corrected estimator
+  if (!is.null(bias_corr)){
+
+    if (vcov %in% c('hessian', 'robust') & bias_corr == 'with_alpha_bias'){
+      df_boot <- cbind(data.frame(m = m, n = n, N = N), as.data.frame(X), as.data.frame(Z))
+      fwb_results <- fwb(data = df_boot, statistic = mle_fit_fwb, R = 1000, verbose = FALSE)
+      bias_alpha <- mean(fwb_results$t[,1]) - alpha_est
+    } else if (vcov %in% c('nonparametric', 'fwb', 'wild') & bias_corr == 'with_alpha_bias'){
+      bias_alpha <- switch(vcov,
+         nonparametric = mean(nonpar_results$t[,1]) - alpha_est,
+         fwb = mean(fwb_results$t[,1]) - alpha_est,
+         wild = mean(alpha_boot) - alpha_est
+      )
+    }
+
+    var_alpha_est <-  cov_matrix[1,1] # bo na razie bez uwzglednienia zmiennych pomocniczych
+
+    bias_approx <- switch(bias_corr,
+      with_alpha_bias = sum(N^alpha_est * log(N) * bias_alpha + (N^alpha_est * log(N)^2 * (var_alpha_est + bias_alpha^2))/2),
+      no_alpha_bias = sum((N^alpha_est * log(N)^2 * var_alpha_est)/2))  # when bias_alpha_est = 0
+
+    xi_est <- xi_est - bias_approx
+
+    # # dla poprawionego:
+    # # if vcov = hessian / robust:
+    # #     nie ma znaczenia dla plug-in estymatora
+    # if (vcov == 'nonparametric'){
+    #   nonpar_results$t[,ncol(nonpar_results$t)] <- nonpar_results$t[,ncol(nonpar_results$t)] - bias_approx
+    # } else if (vcov == 'fwb'){
+    #   fwb_results$t[,ncol(fwb_results$t)] <- fwb_results$t[,ncol(fwb_results$t)] - bias_approx
+    # } else if (vcov == 'wild'){
+    #   xi_boot <- xi_boot - bias_approx
+    # }
+    # # próbka poprzednia bootstrapowa <-  próbka poprzednia bootstrapowa - bias_approx
+  }
 
   # standard error and confidence intervals for xi
   if (vcov %in% c('hessian', 'robust')){
