@@ -149,6 +149,18 @@ estimate_hidden_pop <- function(
     stop("Invalid vcov method. Choose 'hessian', 'robust', 'nonparametric', 'wild' or 'fwb'.")
   }
 
+  if (method %in% c('ols', 'nls', 'glm') & !is.null(bias_corr)) {
+    message("Currently the bias corrected estimator is not available in the selected estimation method. Estimate without correction will be returned.")
+  }
+
+  if (method == 'mle' & !(bias_corr %in% c('with_alpha_bias', 'no_alpha_bias'))) {
+    stop("For method = 'mle', bias_corr must be either 'with_alpha_bias' or 'no_alpha_bias'.")
+  }
+
+  if (vcov %in% c('nonparametric', 'wild', 'fwb') & method %in% c('ols', 'nls', 'glm')) {
+    stop("Currently bootstrap methods are not available in the selected estimation method. Choose 'hessian' or 'robust' vcov method or change estimation method to 'mle'.")
+  }
+
   variable <- function(name) {
 
     if (is.null(name)) {
