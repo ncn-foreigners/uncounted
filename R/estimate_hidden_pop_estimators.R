@@ -693,11 +693,13 @@ mle_estim <- function(m,
   } else if (vcov == 'fwb') {
 
     df_boot <- cbind(data.frame(m = m, n = n, N = N), as.data.frame(X), as.data.frame(Z))
+    names(df_boot)[4:(3 + p1)] <- paste0('X', 1:p1)
+    names(df_boot)[(4 + p1):(3 + p1 + p2)] <- paste0('Z', 1:p2)
     fwb_results <- fwb(data = df_boot, statistic = mle_fit_fwb, R = 1000, verbose = FALSE)
     if (family == 'nb') {
-      cov_matrix <- cov(fwb_results$t[, 1:(p1 + p2 + 1)])
+      cov_matrix <- cov(fwb_results$t[, 1:(p1 + p2 + 1), drop = FALSE])
     } else if (family == 'poisson'){
-      cov_matrix <- cov(fwb_results$t[, 1:(p1 + p2)])
+      cov_matrix <- cov(fwb_results$t[, 1:(p1 + p2), drop = FALSE])
     }
 
   }
@@ -765,7 +767,7 @@ mle_estim <- function(m,
 
   # for phi
   if(family == 'nb'){
-    se_phi <- cov_matrix[p1+p2+1, p1+p2+1]
+    se_phi <- sqrt(cov_matrix[p1+p2+1, p1+p2+1])
     z <- qnorm(0.975)
     lower_phi <- phi_est - z*se_phi
     upper_phi <- phi_est + z*se_phi
@@ -794,22 +796,30 @@ mle_estim <- function(m,
     if (vcov %in% c('hessian', 'robust') & bias_corr == 'with_alpha_bias'){
       df_boot <- cbind(data.frame(m = m, n = n, N = N), as.data.frame(X), as.data.frame(Z))
       fwb_results <- fwb(data = df_boot, statistic = mle_fit_fwb, R = 1000, verbose = FALSE)
-      bias_alpha <- mean(fwb_results$t[,1]) - alpha_est
+      bias_alpha <- colMeans(fwb_results$t[,1:p1, drop = FALSE]) - alpha_est
     } else if (vcov %in% c('nonparametric', 'fwb', 'wild') & bias_corr == 'with_alpha_bias'){
       bias_alpha <- switch(vcov,
-         nonparametric = mean(nonpar_results$t[,1]) - alpha_est,
-         fwb = mean(fwb_results$t[,1]) - alpha_est,
-         wild = mean(alpha_boot) - alpha_est
+         nonparametric = colMeans(nonpar_results$t[,1:p1, drop = FALSE]) - alpha_est,
+         fwb = colMeans(fwb_results$t[,1:p1, drop = FALSE]) - alpha_est,
+         wild = colMeans(alpha_boot) - alpha_est
       )
     }
 
-    var_alpha_est <-  cov_matrix[1,1] # bo na razie bez uwzglednienia zmiennych pomocniczych
+    cov_matrix_alpha <- cov_matrix[1:p1,1:p1, drop = FALSE]
+    var_alpha_est <- diag(X %*% cov_matrix_alpha %*% t(X))
 
     bias_approx <- switch(bias_corr,
-      with_alpha_bias = sum(N^alpha_est * log(N) * bias_alpha + (N^alpha_est * log(N)^2 * (var_alpha_est + bias_alpha^2))/2),
-      no_alpha_bias = sum((N^alpha_est * log(N)^2 * var_alpha_est)/2))  # when bias_alpha_est = 0
+      with_alpha_bias = N^as.vector(X %*% alpha_est) * log(N) * (X %*% bias_alpha) + (N^as.vector(X %*% alpha_est) * log(N)^2 * (var_alpha_est + (X %*% bias_alpha)^2))/2,
+      no_alpha_bias = (N^as.vector(X %*% alpha_est) * log(N)^2 * var_alpha_est)/2)  # when bias_alpha_est = 0
 
-    xi_est <- xi_est - bias_approx
+    # cat('Summary as.vector(X %*% alpha_est):\n')
+    # print(summary(as.vector(X %*% alpha_est)))
+    # cat('Summary bias_approx (as vector):\n')
+    # print(summary(bias_approx))
+    # cat('Sum of bias_approx:\n')
+    # print(sum(bias_approx))
+
+    xi_est <- xi_est - sum(bias_approx)
 
     # # dla poprawionego:
     # # if vcov = hessian / robust:
