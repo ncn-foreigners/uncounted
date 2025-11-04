@@ -46,6 +46,12 @@ print.hidden <- function(x){
   cat('Coefficients:\n')
   print(x$coefficients)
 
+  if (!is.null(x$by_covariates)){
+    cat('\n')
+    cat('Results by covariates: \n')
+    print(x$by_covariates)
+  }
+
 }
 
 
@@ -161,7 +167,8 @@ summary.hidden <- function(object) {
     m = object$m,
     n = object$n,
     N = object$N,
-    by_nationality = object$by_nationality
+    by_nationality = object$by_nationality,
+    by_covariates = object$by_covariates
   )
 
   class(summary_list) <- 'summary.hidden'
@@ -223,6 +230,12 @@ print.summary.hidden <- function(x){
   print(x$conf_int_xi, row.names = FALSE)
   cat('Target parameter standard error:', x$se_xi)
   cat('\n\n')
+
+  if (!is.null(x$by_covariates)){
+    cat('Results by covariates: \n')
+    print(x$by_covariates)
+    cat('\n\n')
+  }
 
   cat('Coefficients (population / alpha):\n')
   print(x$coef_alpha)
