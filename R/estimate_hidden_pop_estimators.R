@@ -816,9 +816,8 @@ mle_estim <- function(m,
     # cat('Summary bias_approx (as vector):\n')
     # print(summary(bias_approx))
     # cat('Sum of bias_approx:\n')
-    # print(sum(bias_approx))
 
-    xi_est <- xi_est - sum(bias_approx)
+    xi_est_bc <- if (!is.null(bias_corr)) xi_est - sum(bias_approx) else NULL
 
     # # dla poprawionego:
     # # if vcov = hessian / robust:
@@ -878,6 +877,7 @@ mle_estim <- function(m,
   results <- list(method = paste0('mle - ', family),
                   coefficients = coef,
                   xi_est = xi_est,
+                  xi_est_bc = xi_est_bc,
                   se_coef = se_coef,
                   se_xi = se_xi,
                   vcov_method = vcov,

@@ -38,6 +38,9 @@ print.hidden <- function(x){
   cat('Total observed N:', sum(x$N), '\n\n')
 
   cat('Target parameter estimate:', x$xi_est, '\n')
+  if(!is.null(x$xi_est_bc)){
+    cat('Bias-corrected target parameter estimate:', x$xi_est_bc, '\n')
+  }
   cat('Target parameter confidence interval: \n')
   print(x$conf_int_xi, row.names = FALSE)
   cat('Target parameter standard error:', x$se_xi)
@@ -155,6 +158,7 @@ summary.hidden <- function(object) {
     coef_beta = coef_beta,
     coef_phi = coef_phi,
     xi_est = object$xi_est,
+    xi_est_bc = object$xi_est_bc,
     conf_int_xi = object$conf_int_xi,
     conf_int_coef = object$conf_int_coef,
     vcov_method = object$vcov_method,
@@ -226,6 +230,9 @@ print.summary.hidden <- function(x){
   cat('Total observed N:', sum(x$N), '\n\n')
 
   cat('Target parameter estimate:', x$xi_est, '\n')
+  if(!is.null(x$xi_est_bc)){
+    cat('Bias-corrected target parameter estimate:', x$xi_est_bc, '\n')
+  }
   cat('Target parameter confidence interval:', '\n')
   print(x$conf_int_xi, row.names = FALSE)
   cat('Target parameter standard error:', x$se_xi)
