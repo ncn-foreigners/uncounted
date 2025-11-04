@@ -520,7 +520,6 @@ mle_estim <- function(m,
                           setNames(beta_est, paste0('beta', seq_along(beta_est))),
                           phi = phi_est))
 
-
   # covariance matrix calculation
   # hessian
   hessian <- optimization$hessian
@@ -891,6 +890,8 @@ mle_estim <- function(m,
                   m = m,
                   n = n,
                   N = N,
+                  X = X,
+                  Z = Z,
                   countries = countries,
                   by_nationality = by_nationality,
                   by_covariates = by_covariates)

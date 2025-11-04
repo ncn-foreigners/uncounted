@@ -132,9 +132,22 @@ summary.hidden <- function(object) {
   colnames(coef_table) <- c('Estimate', 'Lower', 'Upper', 'Std. Error', 't value', 'Pr(>|t|)')
   coefficients <- coef_table
 
+  coef_alpha <- coefficients[startsWith(rownames(coefficients),'alpha'),]
+  # coef_alpha)int <- coefficients[startsWith(rownames(coefficients),'alpha'),]
+  # rownames(coef_alpha_int) <- colnames(object$X)
+  # intercept_alpha <- coef_alpha_int['(Intercept)', 'Estimate']
+  # coef_alpha <- coef_alpha_int
+  # coef_alpha$Estimate <- intercept_alpha + coef_alpha_int$Estimate * (rownames(coef_alpha_int) != "(Intercept)")
+
+  coef_beta <- coefficients[startsWith(rownames(coefficients),'beta'),]
+
+  coef_phi <- if (object$method == 'mle - nb') coefficients[rownames(coefficients)=='phi',] else NULL
+
   summary_list <- list(
     method = object$method,
-    coefficients = coefficients,
+    coef_alpha = coef_alpha,
+    coef_beta = coef_beta,
+    coef_phi = coef_phi,
     xi_est = object$xi_est,
     conf_int_xi = object$conf_int_xi,
     conf_int_coef = object$conf_int_coef,
@@ -211,9 +224,19 @@ print.summary.hidden <- function(x){
   cat('Target parameter standard error:', x$se_xi)
   cat('\n\n')
 
-  cat('Coefficients:\n')
-  print(x$coefficients)
+  cat('Coefficients (population / alpha):\n')
+  print(x$coef_alpha)
   cat('\n')
+
+  cat('Coefficients (detection / beta):\n')
+  print(x$coef_beta)
+  cat('\n')
+
+  if (x$method == 'mle - nb'){
+    cat('Coefficients (heterogeneity / phi):\n')
+    print(x$coef_phi)
+    cat('\n')
+  }
 
   # cat('Covariance matrix estimation method:', x$vcov_method,'\n')
   # cat('Covariance matrix:\n')
@@ -240,7 +263,7 @@ print.summary.hidden <- function(x){
     cat('Number of iterations to convergence:', x$summary_stat$iter, '\n')
     cat('Achieved convergence:', x$summary_stat$convergence, '\n')
 
-  }  else if(x$method == 'glm - Poisson'){
+  }  else if(startsWith(x$method, 'glm')){
 
     # null deviance
     cat('Null deviance:', round(x$summary_stat$null_deviance,4), 'on', x$summary_stat$df_null, 'degrees of freedom\n')
@@ -249,7 +272,7 @@ print.summary.hidden <- function(x){
     # number of Fisher scoring iterations
     cat('Number of Fisher scoring iterations:', x$summary_stat$iter, '\n')
 
-  } else if(x$method == 'mle'){
+  } else if(startsWith(x$method, 'mle')){
 
     if (x$summary_stat$convergence == 0) {
       cat('Convergence achieved.\n')
