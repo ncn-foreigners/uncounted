@@ -39,7 +39,7 @@ print.hidden <- function(x){
 
   cat('Target parameter estimate:', x$xi_est, '\n')
   cat('Target parameter confidence interval: \n')
-  print(x$conf_int_xi)
+  print(x$conf_int_xi, row.names = FALSE)
   cat('Target parameter standard error:', x$se_xi)
   cat('\n\n')
 
@@ -262,4 +262,20 @@ print.summary.hidden <- function(x){
 
 }
 
+
+
+
+
+# AIC
+#'@export
+AIC.hidden <- function(x){
+  return(x$summary_stat$aic)
+}
+
+
+# BIC
+#'@export
+BIC.hidden <- function(x){
+  return(x$summary_stat$bic)
+}
 
