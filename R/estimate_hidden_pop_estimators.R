@@ -817,7 +817,7 @@ mle_estim <- function(m,
     # print(summary(bias_approx))
     # cat('Sum of bias_approx:\n')
 
-    xi_est_bc <- if (!is.null(bias_corr)) xi_est - sum(bias_approx) else NULL
+    # xi_est_bc <- if (!is.null(bias_corr)) xi_est - sum(bias_approx) else NULL
 
     # # dla poprawionego:
     # # if vcov = hessian / robust:
@@ -831,6 +831,8 @@ mle_estim <- function(m,
     # }
     # # próbka poprzednia bootstrapowa <-  próbka poprzednia bootstrapowa - bias_approx
   }
+
+  xi_est_bc <- if (!is.null(bias_corr)) xi_est - sum(bias_approx) else NULL
 
   # standard error and confidence intervals for xi
   if (vcov %in% c('hessian', 'robust')){
