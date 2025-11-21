@@ -492,11 +492,11 @@ mle_estim <- function(m,
   xi_est <- sum(as.numeric(N)^as.vector(X %*% alpha_est))     # target parameter estimator
 
   # estimates by nationality
-  irreg_estimates <- as.numeric(N)^as.vector(X %*% alpha_est)
+  M_estimates <- as.numeric(N)^as.vector(X %*% alpha_est)
   if(!is.null(countries)){
     by_nat_split <- data.frame(country = countries,
-                               irreg_estimate = irreg_estimates)
-    by_nationality <- aggregate(irreg_estimate ~ country, data = by_nat_split, sum)
+                               estimate = M_estimates)
+    by_nationality <- aggregate(estimate ~ country, data = by_nat_split, sum)
   } else {
     by_nationality <- NULL
   }
@@ -504,8 +504,8 @@ mle_estim <- function(m,
   # estimates by covariates
   if(!is.null(df_cov)){
     covariate_vars <- colnames(df_cov)
-    df_cov$irreg_estimate <- as.vector(irreg_estimates)
-    formula <- as.formula(paste0('irreg_estimate ~', paste(covariate_vars, collapse = '+')))
+    df_cov$estimate <- as.vector(M_estimates)
+    formula <- as.formula(paste0('estimate ~', paste(covariate_vars, collapse = '+')))
     by_covariates <- aggregate(formula, data = df_cov, sum)
   } else {
     by_covariates <- NULL
@@ -790,35 +790,38 @@ mle_estim <- function(m,
                                       Std.error = c(se_alpha, se_beta, se_phi)))
 
   # bias corrected estimator
-  if (!is.null(bias_corr)){
+  if (bias_corr){
 
-    if (vcov %in% c('hessian', 'robust') & bias_corr == 'with_alpha_bias'){
+    # bootstrap estimation of alpha bias
+    if (vcov %in% c('hessian', 'robust')){
       df_boot <- cbind(data.frame(m = m, n = n, N = N), as.data.frame(X), as.data.frame(Z))
       fwb_results <- fwb(data = df_boot, statistic = mle_fit_fwb, R = 1000, verbose = FALSE)
-      bias_alpha <- colMeans(fwb_results$t[,1:p1, drop = FALSE]) - alpha_est
-    } else if (vcov %in% c('nonparametric', 'fwb', 'wild') & bias_corr == 'with_alpha_bias'){
-      bias_alpha <- switch(vcov,
+      alpha_bias <- colMeans(fwb_results$t[,1:p1, drop = FALSE]) - alpha_est
+    } else if (vcov %in% c('nonparametric', 'fwb', 'wild')){
+      alpha_bias <- switch(vcov,
          nonparametric = colMeans(nonpar_results$t[,1:p1, drop = FALSE]) - alpha_est,
          fwb = colMeans(fwb_results$t[,1:p1, drop = FALSE]) - alpha_est,
          wild = colMeans(alpha_boot) - alpha_est
       )
     }
 
-    cov_matrix_alpha <- cov_matrix[1:p1,1:p1, drop = FALSE]
-    var_alpha_est <- diag(X %*% cov_matrix_alpha %*% t(X))
+    # variance for alpha
+    alpha_covmat <- cov_matrix[1:p1,1:p1, drop = FALSE]
+    alpha_var <- diag(X %*% alpha_covmat %*% t(X))
 
-    bias_approx <- switch(bias_corr,
-      with_alpha_bias = N^as.vector(X %*% alpha_est) * log(N) * (X %*% bias_alpha) + (N^as.vector(X %*% alpha_est) * log(N)^2 * (var_alpha_est + (X %*% bias_alpha)^2))/2,
-      no_alpha_bias = (N^as.vector(X %*% alpha_est) * log(N)^2 * var_alpha_est)/2)  # when bias_alpha_est = 0
+    bias_xi_with_alpha <-  N^as.vector(X %*% alpha_est) * log(N) * (X %*% alpha_bias) + (N^as.vector(X %*% alpha_est) * log(N)^2 * (alpha_var + (X %*% alpha_bias)^2))/2
+    bias_xi_no_alpha <-  (N^as.vector(X %*% alpha_est) * log(N)^2 * alpha_var)/2
 
-    # cat('Summary as.vector(X %*% alpha_est):\n')
-    # print(summary(as.vector(X %*% alpha_est)))
-    # cat('Summary bias_approx (as vector):\n')
-    # print(summary(bias_approx))
-    # cat('Sum of bias_approx:\n')
-
-    # xi_est_bc <- if (!is.null(bias_corr)) xi_est - sum(bias_approx) else NULL
-
+    print('bias_xi_no_alpha')
+    print(summary(bias_xi_no_alpha))
+    print('alpha_bias')
+    print(alpha_bias)
+    print('bias_xi_with_alpha')
+    print(summary(bias_xi_with_alpha))
+    print('first term: N lnN Bias')
+    print(summary(N^as.vector(X %*% alpha_est) * log(N) * (X %*% alpha_bias)))
+    print('second term: 1/2 N lnN^2 (Var + Bias^2)')
+    print(summary((N^as.vector(X %*% alpha_est) * log(N)^2 * (alpha_var + (X %*% alpha_bias)^2))/2))
     # # dla poprawionego:
     # # if vcov = hessian / robust:
     # #     nie ma znaczenia dla plug-in estymatora
@@ -832,7 +835,11 @@ mle_estim <- function(m,
     # # próbka poprzednia bootstrapowa <-  próbka poprzednia bootstrapowa - bias_approx
   }
 
-  xi_est_bc <- if (!is.null(bias_corr)) xi_est - sum(bias_approx) else NULL
+  # bias corrected xi estimator
+  xi_bias_corr <- if (bias_corr){
+    c('excl_alpha_bias' = xi_est - sum(bias_xi_no_alpha),
+      'incl_alpha_bias' = xi_est - sum(bias_xi_with_alpha))
+  } else NULL
 
   # standard error and confidence intervals for xi
   if (vcov %in% c('hessian', 'robust')){
@@ -879,7 +886,7 @@ mle_estim <- function(m,
   results <- list(method = paste0('mle - ', family),
                   coefficients = coef,
                   xi_est = xi_est,
-                  xi_est_bc = xi_est_bc,
+                  xi_bias_corr = xi_bias_corr,
                   se_coef = se_coef,
                   se_xi = se_xi,
                   vcov_method = vcov,

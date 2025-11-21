@@ -137,7 +137,7 @@ estimate_hidden_pop <- function(
     method = 'ols',     # various method for fit / ols (linear regression), nls, glm (poisson regression), mle
     vcov = 'hessian',     # or robust - (method to estimate standard errors)
     family = 'poisson',     # poisson, nb etc
-    bias_corr = NULL,
+    bias_corr = FALSE,
     countries = NULL   # string column name with country of origin names, optional, but useful in plots
 ){
 
@@ -153,9 +153,9 @@ estimate_hidden_pop <- function(
     message("Currently the bias corrected estimator is not available in the selected estimation method. Estimate without correction will be returned.")
   }
 
-  if (method == 'mle' && !(is.null(bias_corr) || bias_corr %in% c('with_alpha_bias', 'no_alpha_bias'))) {
-    stop("For method = 'mle', bias_corr must be either 'with_alpha_bias' or 'no_alpha_bias'.")
-  }
+  # if (method == 'mle' && !(is.null(bias_corr) || bias_corr %in% c('with_alpha_bias', 'no_alpha_bias'))) {
+  #   stop("For method = 'mle', bias_corr must be either 'with_alpha_bias' or 'no_alpha_bias'.")
+  # }
 
   if (vcov %in% c('nonparametric', 'wild', 'fwb') & method %in% c('ols', 'nls', 'glm')) {
     stop("Currently bootstrap methods are not available in the selected estimation method. Choose 'hessian' or 'robust' vcov method or change estimation method to 'mle'.")
@@ -194,15 +194,19 @@ estimate_hidden_pop <- function(
   N <- data[[N_var]]
   countries <- if(!is.null(countries)) data[[countries_var]] else NULL
 
-  # covariates
-  X <- if (is.null(cov_alpha)==FALSE){model.matrix(cov_alpha, data)} else NULL
-  Z <- if (is.null(cov_beta)==FALSE){model.matrix(cov_beta, data)} else NULL
-  # columns to use in estimates by covariates
-  cov_vars_alpha <-  if(!is.null(cov_alpha)) all.vars(cov_alpha) else character(0)
-  cov_vars_beta <-  if(!is.null(cov_beta)) all.vars(cov_beta) else character(0)
-  covariate_vars <- unique(c(cov_vars_alpha , cov_vars_beta))
-  df_cov <- if(length(covariate_vars) > 0) df_cov <- data[, covariate_vars, drop = FALSE] else NULL
-
+  # covariates - to use in estimates by covariates
+  cov_vars_alpha <- if(!is.null(cov_alpha)) all.vars(cov_alpha) else character(0)
+  cov_vars_beta  <- if(!is.null(cov_beta))  all.vars(cov_beta)  else character(0)
+  covariate_vars <- unique(c(cov_vars_alpha, cov_vars_beta))
+  # factor conversion for covariates
+  if (length(covariate_vars) > 0) {
+    data[, covariate_vars] <- lapply(data[, covariate_vars, drop = FALSE], as.factor)
+  }
+  # model matrices
+  X <- if (!is.null(cov_alpha)) model.matrix(cov_alpha, data) else NULL
+  Z <- if (!is.null(cov_beta))  model.matrix(cov_beta,  data) else NULL
+  # covariate subset
+  df_cov <- if (length(covariate_vars) > 0) data[, covariate_vars, drop = FALSE] else NULL
 
 
   if (any(is.na(m)) || any(is.na(n)) || any(is.na(N)) || any(is.na(X)) || any(is.na(Z))) {
