@@ -25,7 +25,7 @@
 #'
 #' }
 #'
-#'@export
+#' @export
 print.hidden <- function(x){
 
   cat('Number of observations:', length(x$m), '\n')
@@ -41,10 +41,10 @@ print.hidden <- function(x){
   if(!is.null(x$xi_est_bc)){
     cat('Bias-corrected target parameter estimate:', x$xi_est_bc, '\n')
   }
+  cat('Target parameter standard error:', x$se_xi, '\n')
   cat('Target parameter confidence interval: \n')
   print(x$conf_int_xi, row.names = FALSE)
-  cat('Target parameter standard error:', x$se_xi)
-  cat('\n\n')
+  cat('\n')
 
   cat('Coefficients:\n')
   print(x$coefficients)
@@ -79,7 +79,7 @@ print.hidden <- function(x){
 #' \item \code{residuals}, \code{fitted}, \code{m}, \code{n}, \code{N} - fitted values, residuals and observed data
 #' }
 #'
-#'@details This function is typically used to prepare a structured summary that can then be printed using \code{print.summary.hidden()}.
+#' @details This function is typically used to prepare a structured summary that can then be printed using \code{print.summary.hidden()}.
 #'Depending on the chosen estimation method in \code{estimate_hidden_pop()} function the following model statistics are calculated:
 #'\itemize{
 #' \item \strong{'ols'}: residual standard error, degrees of freedom, R-squared, adjusted R-squared, F-statistic and its p-value;
@@ -111,7 +111,7 @@ print.hidden <- function(x){
 #'
 #' }
 #'
-#'@export
+#' @export
 summary.hidden <- function(object) {
 
   # # creating coefficients table
@@ -215,7 +215,7 @@ summary.hidden <- function(object) {
 #'
 #' }
 #'
-#'@export
+#' @export
 print.summary.hidden <- function(x){
 
   cat('Estimation method:', x$method, '\n\n')
@@ -233,10 +233,10 @@ print.summary.hidden <- function(x){
   if(!is.null(x$xi_est_bc)){
     cat('Bias-corrected target parameter estimate:', x$xi_est_bc, '\n')
   }
-  cat('Target parameter confidence interval:', '\n')
+  cat('Target parameter standard error:', x$se_xi, '\n')
+  cat('Target parameter confidence interval: \n')
   print(x$conf_int_xi, row.names = FALSE)
-  cat('Target parameter standard error:', x$se_xi)
-  cat('\n\n')
+  cat('\n')
 
   if (!is.null(x$by_covariates)){
     cat('Results by covariates: \n')
@@ -307,17 +307,29 @@ print.summary.hidden <- function(x){
 
 
 
+# coef(summary)
+#' @export
+coef.summary.hidden <- function(x){
+  return(rbind(x$coef_alpha, x$coef_beta))
+  # if method nb - mle rbind(x$coef_alpha, x$coef_beta), x$coef_phi
+}
+
+# vcov()
+# #' @export
+# vcov.hidden <- function(x){
+#   return(x$vcov)
+# }
 
 
 # AIC
-#'@export
+#' @export
 AIC.hidden <- function(x){
   return(x$summary_stat$aic)
 }
 
 
 # BIC
-#'@export
+#' @export
 BIC.hidden <- function(x){
   return(x$summary_stat$bic)
 }
