@@ -14,7 +14,7 @@ estimate_hidden_pop(
   method = "ols",
   vcov = "hessian",
   family = "poisson",
-  bias_corr = NULL,
+  bias_corr = FALSE,
   countries = NULL
 )
 }
@@ -46,36 +46,65 @@ Only used with `method = "mle"`. Default is `NULL`.}
 
 \item{method}{Character string specifying the estimation method. Options are:
 \itemize{
-  \item `"ols"` -- Ordinary least squares on linearized model
+  \item `"ols"` -- Ordinary least squares on linearized Zhang model
   \item `"nls"` -- Non-linear least squares estimation
-  \item `"mle"` -- Generalized linear model with Poisson family (Zhang method)
+  \item `"glm"` -- Poisson regression for the Zhang model
+  \item `"mle"` -- Maximum likelihood estimation assuming a Poisson or
+    negative binomial distribution (specified via `family`), optionally
+    allowing for covariates through `cov_alpha` and `cov_beta`.
 }
 Default is `"ols"`. The `"mle"` methods are recommended for
 actual estimation as they properly account for the Poisson distribution.}
 
 \item{vcov}{Character string specifying the variance-covariance estimation method.
-Options are `"hessian"` (default) or `"robust"` for robust standard errors.}
+Options are `"hessian"` (default) or `"robust"` for robust standard errors. Avaliabe options are:
+\itemize{
+  \item `"hessian"` — default; analytical Hessian-based variance estimates,
+  \item `"robust"` — robust standard errors,
+  \item `"fwb"` — fractional weighted bootstrap,
+  \item `"nonparametric"` — nonparametric bootstrap,
+  \item `"wild"` — wild bootstrap.
+}
+Bootstrap-based methods (`"fwb"`, `"nonparametric"`, `"wild"`) are
+currently available only for `method = "mle"`.}
 
-\item{family}{Character string specifying the error distribution family for GLM
-methods. For the Zhang model, should be `"poisson"` (default: `"gaussian"`).}
+\item{family}{Character string specifying the assumed distribution
+for the observed counts (`observed`) in the `method = "mle"`.
+Available options include `"poisson"` (default) and `"nb"`
+(negative binomial). Ignored for other estimation methods.}
+
+\item{bias_corr}{Logical; if `TRUE`, bias-corrected point estimates of the
+total population size are additionally computed and returned.
+Default is `FALSE`.}
+
+\item{countries}{Optional formula or character string specifying the variable in
+`data` that identifies countries. If provided, the function returns additional
+country-specific estimates and the country names can be used later as
+labels in diagnostic plots. Default is `NULL`.}
 }
 \value{
-A list containing estimation results with the following structure:
+An object of class `hidden`, which is a list with the following structure:
   \itemize{
-    \item For `method = "ols"` or `method = "nls"`:
-      \itemize{
-        \item `estimates` --
-        \item `vcov` - Variance-covariance matrix
-        \item `se` - Standard errors
+        \item `coefficients` -- Estimated model parameters (including possible covariate effects).
+        \item `se_coef` -- Standard errors of the coefficients estimates.
+        \item `vcov` -- Variance-covariance matrix of the estimated coefficients,
+        computed using the method specified in `vcov`.
+        \item `xi_est` -- Estimated total hidden population \eqn{\hat{\xi}}.
+        \item `xi_bias_corr` -- Bias-corrected estimate of the hidden population
+        size (only if `bias_corr = TRUE`).
+        \item `se_xi` -- Standard error of \eqn{\hat{\xi}}.
+        \item `conf_int_xi` -- Confidence interval for \eqn{\hat{\xi}}.
+        \item `conf_int_coef` -- Confidence intervals for model coefficients.
+        \item `residuals` -- Model residuals.
+        \item `fitted` -- Fitted values of the observed variable (`observed`).
+        \item `summary_stat` -- Additional list of some method-specific summary statistics.
+        \item `by_nationality` -- Country-level estimates of hidden population
+        size (returned only if `countries` is provided).
+        \item `by_covariates` -- Subgroup estimates based on covariates in
+        `cov_alpha` or `cov_beta` (for `method = "mle"` only).
+        \item `call` -- The original function call.
+        \item `data` -- The original dataset supplied to the function. Stored for estimation diagnostics.
       }
-    \item For `method = "glm"`:
-      \itemize{
-        \item `estimates` - List with `alpha` and `beta` parameter vectors
-        \item `target_estimate` - Estimated total hidden population \eqn{\hat{\xi}}
-        \item `vcov` - Variance-covariance matrix
-        \item `se` - Standard errors
-      }
-  }
 }
 \description{
 This function estimates hidden population sizes using the Zhang (2008) methodology
