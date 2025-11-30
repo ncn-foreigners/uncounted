@@ -96,9 +96,12 @@ ols_model <- function(m,
     # se_xi <- sd(fwb_results[,3])
   }
 
+  rownames(cov_matrix) <- c('alpha', 'beta')
+  colnames(cov_matrix) <- c('alpha', 'beta')
+
   # standard errors for coefficients
-  se_coef <- data.frame(name = c('alpha', 'beta'),
-                        Std.error = sqrt(diag(cov_matrix)))
+  se_coef <- data.frame(Std.error = sqrt(diag(cov_matrix)),
+                        row.names = c('alpha', 'beta'))
 
   # standard error for xi - delta method
   se_alpha <- se_coef$Std.error[se_coef$name == 'alpha']
@@ -107,9 +110,9 @@ ols_model <- function(m,
   # confidence intervals for coefficients
   ci_alpha <- confint(ols_fit)[1,]
   ci_beta <- confint(ols_fit)[2,]
-  conf_int_coef <- data.frame(name = c('alpha', 'beta'),
-                               Lower = c(ci_alpha[1], ci_beta[1]),
-                               Upper = c(ci_alpha[2], ci_beta[2]))
+  conf_int_coef <- data.frame(Lower = c(ci_alpha[1], ci_beta[1]),
+                              Upper = c(ci_alpha[2], ci_beta[2]),
+                              row.names = c('alpha', 'beta'))
 
   # confidence intervals for xi - M estimate
   conf_int_xi <- data.frame(Lower = sum(N^ci_alpha[1]),
@@ -128,12 +131,10 @@ ols_model <- function(m,
                        aic = aic,
                        bic = bic)
 
-  results <- list(method = 'ols',
-                  coefficients = coef,
+  results <- list(coefficients = coef,
                   xi_est = xi_est,
                   se_xi = se_xi,
                   se_coef = se_coef,
-                  vcov_method = vcov,
                   vcov = cov_matrix,
                   conf_int_xi = conf_int_xi,
                   conf_int_coef = conf_int_coef,
@@ -143,10 +144,6 @@ ols_model <- function(m,
                   resid_stand = rstandard(ols_fit),
                   cooks = cooks.distance(ols_fit),
                   leverage = hatvalues(ols_fit),
-                  m = m,
-                  n = n,
-                  N = N,
-                  countries = countries,
                   by_nationality = by_nationality)
 
   return(results)
@@ -212,8 +209,8 @@ nls_model <- function(m,
   # }
 
   # standard errors for coefficients
-  se_coef <- data.frame(name = c('alpha', 'beta'),
-                        Std.error = sqrt(diag(cov_matrix)))
+  se_coef <- data.frame(Std.error = sqrt(diag(cov_matrix)),
+                        row.names = c('alpha', 'beta'))
 
   # standard error for xi - delta method
   se_alpha <- se_coef$Std.error[se_coef$name == 'alpha']
@@ -222,9 +219,9 @@ nls_model <- function(m,
   # confidence intervals for coefficients
   ci_alpha <- confint(nls_fit)[1,]
   ci_beta <- confint(nls_fit)[2,]
-  conf_int_coef <- data.frame(name = c('alpha', 'beta'),
-                              Lower = c(ci_alpha[1], ci_beta[1]),
-                              Upper = c(ci_alpha[2], ci_beta[2]))
+  conf_int_coef <- data.frame(Lower = c(ci_alpha[1], ci_beta[1]),
+                              Upper = c(ci_alpha[2], ci_beta[2]),
+                              row.names = c('alpha', 'beta'))
 
   # confidence intervals for xi - M estimate
   conf_int_xi <- data.frame(Lower = sum(N^ci_alpha[1]),
@@ -243,22 +240,16 @@ nls_model <- function(m,
                        aic = aic,
                        bic = bic)
 
-  results <- list(method = 'nls',
-                  coefficients = coef,
+  results <- list(coefficients = coef,
                   xi_est = xi_est,
                   se_coef = se_coef,
                   se_xi = se_xi,
-                  vcov_method = vcov,
                   vcov = cov_matrix,
                   conf_int_xi = conf_int_xi,
                   conf_int_coef = conf_int_coef,
                   summary_stat = summary_stat,
                   residuals = resid(nls_fit),
                   fitted = fitted(nls_fit),
-                  m = m,
-                  n = n,
-                  N = N,
-                  countries = countries,
                   by_nationality = by_nationality)
 
   return(results)
@@ -303,10 +294,12 @@ glm_model <- function(m,
   } else {
     cov_matrix <- vcov(glm_fit)
   }
+  rownames(cov_matrix) <- c('alpha', 'beta')
+  colnames(cov_matrix) <- c('alpha', 'beta')
 
   # standard errors for coefficients
-  se_coef <- data.frame(name = c('alpha', 'beta'),
-                        Std.error = sqrt(diag(cov_matrix)))
+  se_coef <- data.frame(Std.error = sqrt(diag(cov_matrix)),
+                        row.names = c('alpha', 'beta'))
 
   # standard error for xi - delta method
   se_alpha <- se_coef$Std.error[se_coef$name == 'alpha']
@@ -315,9 +308,9 @@ glm_model <- function(m,
   # confidence intervals for coefficients
   ci_alpha <- confint(glm_fit)[1,]
   ci_beta <- confint(glm_fit)[2,]
-  conf_int_coef <- data.frame(name = c('alpha', 'beta'),
-                               Lower = c(ci_alpha[1], ci_beta[1]),
-                               Upper = c(ci_alpha[2], ci_beta[2]))
+  conf_int_coef <- data.frame(Lower = c(ci_alpha[1], ci_beta[1]),
+                              Upper = c(ci_alpha[2], ci_beta[2]),
+                              row.names = c('alpha', 'beta'))
 
   # confidence intervals for xi - M estimate
   conf_int_xi <- data.frame(Lower = sum(N^ci_alpha[1]),
@@ -336,12 +329,10 @@ glm_model <- function(m,
                        aic = aic,
                        bic = bic)
 
-  results <- list(method = 'glm - Poisson',
-                  coefficients = coef,
+  results <- list(coefficients = coef,
                   xi_est = xi_est,
                   se_coef = se_coef,
                   se_xi = se_xi,
-                  vcov_method = vcov,
                   vcov = cov_matrix,
                   conf_int_xi = conf_int_xi,
                   conf_int_coef = conf_int_coef,
@@ -351,10 +342,6 @@ glm_model <- function(m,
                   resid_stand = rstandard(glm_fit, type = 'deviance'),
                   cooks = cooks.distance(glm_fit),
                   leverage = hatvalues(glm_fit),
-                  m = m,
-                  n = n,
-                  N = N,
-                  countries = countries,
                   by_nationality = by_nationality)
 
   return(results)
@@ -511,13 +498,28 @@ mle_estim <- function(m,
     by_covariates <- NULL
   }
 
-  names(alpha_est) <- paste0("alpha", seq_along(alpha_est))
-  names(beta_est) <- paste0("beta", seq_along(beta_est))
 
-  coef <- switch(family, 'poisson' = c(setNames(alpha_est, paste0('alpha', seq_along(alpha_est))),
-                                       setNames(beta_est, paste0('beta', seq_along(beta_est)))),
-                 'nb' = c(setNames(alpha_est, paste0('alpha', seq_along(alpha_est))),
-                          setNames(beta_est, paste0('beta', seq_along(beta_est))),
+  # defining the names of coefficients
+  clean_name <- function(x) {
+    x <- gsub("[^a-zA-Z0-9_]", "_", x)
+    x <- gsub("_+", "_", x)
+    x <- gsub("^_|_$", "", x)
+    x
+  }
+
+  alpha_names <- if(p1==1) 'alpha' else paste0('alpha_', clean_name(colnames(X)))
+  beta_names  <- if(p2==1) 'beta' else paste0('beta_',  clean_name(colnames(Z)))
+
+  if (family == 'nb') {
+    param_names <- c(alpha_names, beta_names, 'phi')
+  } else {
+    param_names <- c(alpha_names, beta_names)
+  }
+
+  coef <- switch(family, 'poisson' = c(setNames(alpha_est, alpha_names),
+                                       setNames(beta_est, beta_names)),
+                 'nb' = c(setNames(alpha_est, alpha_names),
+                          setNames(beta_est, beta_names),
                           phi = phi_est))
 
   # covariance matrix calculation
@@ -703,6 +705,10 @@ mle_estim <- function(m,
 
   }
 
+  rownames(cov_matrix) <- param_names
+  colnames(cov_matrix) <- param_names
+
+
   # standard error and confidence intervals for alpha_est coordinates
   if (vcov %in% c('hessian', 'robust')){
     se_alpha <- rep(NA, length(alpha_est))
@@ -729,8 +735,7 @@ mle_estim <- function(m,
     upper_alpha <- apply(fwb_results$t[,1:p1, drop = FALSE], 2, quantile, probs = 0.975, na.rm = TRUE)
   }
 
-  ci_alpha <- data.frame(name = names(alpha_est),
-                         Lower = lower_alpha,
+  ci_alpha <- data.frame(Lower = lower_alpha,
                          Upper = upper_alpha)
 
   # for beta
@@ -760,8 +765,7 @@ mle_estim <- function(m,
     upper_beta <- apply(fwb_results$t[,(p1 + 1):(p1+p2), drop = FALSE], 2, quantile, probs = 0.975, na.rm = TRUE)
   }
 
-  ci_beta <- data.frame(name = names(beta_est),
-                        Lower = lower_beta,
+  ci_beta <- data.frame(Lower = lower_beta,
                         Upper = upper_beta)
 
   # for phi
@@ -770,24 +774,20 @@ mle_estim <- function(m,
     z <- qnorm(0.975)
     lower_phi <- phi_est - z*se_phi
     upper_phi <- phi_est + z*se_phi
-    ci_phi <- data.frame(name = 'phi',
-                         Lower = lower_phi,
+    ci_phi <- data.frame(Lower = lower_phi,
                          Upper = upper_phi)
   }
 
   # confidence intervals for coefficients
-  conf_int_coef <- switch(family, 'poisson' = data.frame(name = c(names(alpha_est), names(beta_est)),
-                                                         Lower = c(ci_alpha$Lower, ci_beta$Lower),
-                                                         Upper = c(ci_alpha$Upper, ci_beta$Upper)),
-                          'nb' = data.frame(name = c(names(alpha_est), names(beta_est),'phi'),
-                                            Lower = c(ci_alpha$Lower, ci_beta$Lower, ci_phi$Lower),
-                                            Upper = c(ci_alpha$Upper, ci_beta$Upper, ci_phi$Upper)))
+  ci_list <- list(ci_alpha, ci_beta)
+  if (family == 'nb') ci_list <- c(ci_list, list(ci_phi))
+  conf_int_coef <- do.call(rbind, ci_list)
+  rownames(conf_int_coef) <- param_names
 
   # standard errors for coefficients
-  se_coef <- switch(family, 'poisson' = data.frame(name = c(paste0('alpha', seq_along(alpha_est)), paste0('beta', seq_along(beta_est))),
-                                                   Std.error = c(se_alpha, se_beta)),
-                    'nb' = data.frame(name = c(paste0('alpha', seq_along(alpha_est)), paste0('beta', seq_along(beta_est)), 'phi'),
-                                      Std.error = c(se_alpha, se_beta, se_phi)))
+  se_vec <- c(se_alpha, se_beta)
+  if(family == 'nb') se_vec <- c(se_vec, se_phi)
+  se_coef <- data.frame(Std.error = se_vec, row.names = param_names)
 
   # bias corrected estimator
   if (bias_corr){
@@ -812,27 +812,17 @@ mle_estim <- function(m,
     bias_xi_with_alpha <-  N^as.vector(X %*% alpha_est) * log(N) * (X %*% alpha_bias) + (N^as.vector(X %*% alpha_est) * log(N)^2 * (alpha_var + (X %*% alpha_bias)^2))/2
     bias_xi_no_alpha <-  (N^as.vector(X %*% alpha_est) * log(N)^2 * alpha_var)/2
 
-    print('bias_xi_no_alpha')
-    print(summary(bias_xi_no_alpha))
-    print('alpha_bias')
-    print(alpha_bias)
-    print('bias_xi_with_alpha')
-    print(summary(bias_xi_with_alpha))
-    print('first term: N lnN Bias')
-    print(summary(N^as.vector(X %*% alpha_est) * log(N) * (X %*% alpha_bias)))
-    print('second term: 1/2 N lnN^2 (Var + Bias^2)')
-    print(summary((N^as.vector(X %*% alpha_est) * log(N)^2 * (alpha_var + (X %*% alpha_bias)^2))/2))
-    # # dla poprawionego:
-    # # if vcov = hessian / robust:
-    # #     nie ma znaczenia dla plug-in estymatora
-    # if (vcov == 'nonparametric'){
-    #   nonpar_results$t[,ncol(nonpar_results$t)] <- nonpar_results$t[,ncol(nonpar_results$t)] - bias_approx
-    # } else if (vcov == 'fwb'){
-    #   fwb_results$t[,ncol(fwb_results$t)] <- fwb_results$t[,ncol(fwb_results$t)] - bias_approx
-    # } else if (vcov == 'wild'){
-    #   xi_boot <- xi_boot - bias_approx
-    # }
-    # # próbka poprzednia bootstrapowa <-  próbka poprzednia bootstrapowa - bias_approx
+    # do sprawdzenia bardzo ujemnych wartości dla incl_alpha_bias
+    # print('bias_xi_no_alpha')
+    # print(summary(bias_xi_no_alpha))
+    # print('alpha_bias')
+    # print(alpha_bias)
+    # print('bias_xi_with_alpha')
+    # print(summary(bias_xi_with_alpha))
+    # print('first term: N lnN Bias')
+    # print(summary(N^as.vector(X %*% alpha_est) * log(N) * (X %*% alpha_bias)))
+    # print('second term: 1/2 N lnN^2 (Var + Bias^2)')
+    # print(summary((N^as.vector(X %*% alpha_est) * log(N)^2 * (alpha_var + (X %*% alpha_bias)^2))/2))
   }
 
   # bias corrected xi estimator
@@ -883,25 +873,17 @@ mle_estim <- function(m,
                        aic = aic,
                        bic = bic)
 
-  results <- list(method = paste0('mle - ', family),
-                  coefficients = coef,
+  results <- list(coefficients = coef,
                   xi_est = xi_est,
                   xi_bias_corr = xi_bias_corr,
                   se_coef = se_coef,
                   se_xi = se_xi,
-                  vcov_method = vcov,
                   vcov = cov_matrix,
                   conf_int_xi = conf_int_xi,
                   conf_int_coef = conf_int_coef,
                   summary_stat = summary_stat,
                   residuals = residuals,
                   fitted = fitted,
-                  m = m,
-                  n = n,
-                  N = N,
-                  X = X,
-                  Z = Z,
-                  countries = countries,
                   by_nationality = by_nationality,
                   by_covariates = by_covariates)
 
