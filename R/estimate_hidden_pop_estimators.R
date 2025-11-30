@@ -104,7 +104,7 @@ ols_model <- function(m,
                         row.names = c('alpha', 'beta'))
 
   # standard error for xi - delta method
-  se_alpha <- se_coef$Std.error[se_coef$name == 'alpha']
+  se_alpha <- se_coef$Std.error[1]
   se_xi <- abs(sum(N^alpha_est * log(N))) * se_alpha   #  TUTAJ POMYSLEC JAK Z BOOTSTRAPEM
 
   # confidence intervals for coefficients
@@ -213,7 +213,7 @@ nls_model <- function(m,
                         row.names = c('alpha', 'beta'))
 
   # standard error for xi - delta method
-  se_alpha <- se_coef$Std.error[se_coef$name == 'alpha']
+  se_alpha <- se_coef$Std.error[1]
   se_xi <- abs(sum(N^alpha_est * log(N))) * se_alpha
 
   # confidence intervals for coefficients
@@ -302,7 +302,7 @@ glm_model <- function(m,
                         row.names = c('alpha', 'beta'))
 
   # standard error for xi - delta method
-  se_alpha <- se_coef$Std.error[se_coef$name == 'alpha']
+  se_alpha <- se_coef$Std.error[1]
   se_xi <- abs(sum(N^alpha_est * log(N))) * se_alpha
 
   # confidence intervals for coefficients

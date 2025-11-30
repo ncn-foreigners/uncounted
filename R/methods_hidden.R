@@ -28,18 +28,32 @@
 #' @export
 print.hidden <- function(x){
 
-  cat('Number of observations:', length(x$m), '\n')
-  if (!is.null(x$countries)){
-   cat('Number of unique countries:', length(unique(x$countries)), '\n\n')
+  varname <- function(name) {
+    if (inherits(name, 'call')) {
+      return(all.vars(name)[1])
+    } else if (is.character(name)) {
+      return(name)
+    }
+  }
+  m <- x$data[,varname(x$call$observed)]
+  n <- x$data[,varname(x$call$auxiliary)]
+  N <- x$data[,varname(x$call$reference_pop)]
+  countries <- if(!is.null(x$call$countries)) x$data[,varname(x$call$countries)] else NULL
+
+  cat('Number of observations:', length(m), '\n')
+  if (!is.null(countries)){
+   cat('Number of unique countries:', length(unique(countries)), '\n\n')
   }
 
-  cat('Total observed m:', sum(x$m), '\n')
-  cat('Total observed n:', sum(x$n), '\n')
-  cat('Total observed N:', sum(x$N), '\n\n')
+  cat('Total observed m:', sum(m), '\n')
+  cat('Total observed n:', sum(n), '\n')
+  cat('Total observed N:', sum(N), '\n\n')
 
   cat('Target parameter estimate:', x$xi_est, '\n')
-  if(!is.null(x$xi_est_bc)){
-    cat('Bias-corrected target parameter estimate:', x$xi_est_bc, '\n')
+  if(!is.null(x$xi_bias_corr)){
+    cat('Bias-corrected target parameter estimate: \n')
+    print(x$xi_bias_corr)
+    cat('\n')
   }
   cat('Target parameter standard error:', x$se_xi, '\n')
   cat('Target parameter confidence interval: \n')
@@ -114,20 +128,16 @@ print.hidden <- function(x){
 #' @export
 summary.hidden <- function(object) {
 
-  # # creating coefficients table
-  # if (object$method == 'mle'){
-  #   coef <- c(object$coefficients$alpha, object$coefficients$beta)
-  # } else {
-  #   coef <- object$coefficients
-  # }
+  coef_table <- data.frame(name = names(object$coefficients),
+                           Estimate = as.numeric(object$coefficients))
 
-  coef_table <- data.frame(
-    name = names(object$coefficients),
-    Estimate = as.numeric(object$coefficients)
-  )
-  conf_all <- object$conf_int_coef
-  coef_table <- merge(coef_table, conf_all, by = 'name')
-  coef_table <- merge(coef_table, object$se_coef, by = 'name')
+  ci_coef <- object$conf_int_coef
+  ci_coef$name <- rownames(ci_coef)
+  se_coef <- object$se_coef
+  se_coef$name <- rownames(se_coef)
+
+  coef_table <- merge(coef_table, ci_coef, by = 'name')
+  coef_table <- merge(coef_table, se_coef, by = 'name')
 
   coef_table$Estimate <- round(coef_table$Estimate, 5)
   coef_table$Lower <- round(coef_table$Lower, 5)
@@ -142,37 +152,27 @@ summary.hidden <- function(object) {
   coefficients <- coef_table
 
   coef_alpha <- coefficients[startsWith(rownames(coefficients),'alpha'),]
-  # coef_alpha)int <- coefficients[startsWith(rownames(coefficients),'alpha'),]
-  # rownames(coef_alpha_int) <- colnames(object$X)
-  # intercept_alpha <- coef_alpha_int['(Intercept)', 'Estimate']
-  # coef_alpha <- coef_alpha_int
-  # coef_alpha$Estimate <- intercept_alpha + coef_alpha_int$Estimate * (rownames(coef_alpha_int) != "(Intercept)")
 
   coef_beta <- coefficients[startsWith(rownames(coefficients),'beta'),]
 
-  coef_phi <- if (object$method == 'mle - nb') coefficients[rownames(coefficients)=='phi',] else NULL
+  coef_phi <- if ('phi'== tail(rownames(coefficients), 1)) coefficients[rownames(coefficients)=='phi',] else NULL
 
   summary_list <- list(
-    method = object$method,
     coef_alpha = coef_alpha,
     coef_beta = coef_beta,
     coef_phi = coef_phi,
     xi_est = object$xi_est,
     xi_est_bc = object$xi_est_bc,
     conf_int_xi = object$conf_int_xi,
-    conf_int_coef = object$conf_int_coef,
-    vcov_method = object$vcov_method,
     vcov = object$vcov,
-    se_coef = object$se_coef,
     se_xi = object$se_xi,
     summary_stat = object$summary_stat,
     residuals = object$residuals,
     fitted = object$fitted,
-    m = object$m,
-    n = object$n,
-    N = object$N,
     by_nationality = object$by_nationality,
-    by_covariates = object$by_covariates
+    by_covariates = object$by_covariates,
+    call = object$call,
+    data = object$data
   )
 
   class(summary_list) <- 'summary.hidden'
@@ -218,16 +218,32 @@ summary.hidden <- function(object) {
 #' @export
 print.summary.hidden <- function(x){
 
-  cat('Estimation method:', x$method, '\n\n')
+  varname <- function(name) {
+    if (inherits(name, 'call')) {
+      return(all.vars(name)[1])
+    } else if (is.character(name)) {
+      return(name)
+    }
+  }
+  m <- x$data[,varname(x$call$observed)]
+  n <- x$data[,varname(x$call$auxiliary)]
+  N <- x$data[,varname(x$call$reference_pop)]
+  countries <- if(!is.null(x$call$countries)) x$data[,varname(x$call$countries)] else NULL
 
-  cat('Number of observations:', length(x$m), '\n')
-  if (!is.null(x$countries)){
-    cat('Number of unique countries:', length(unique(x$countries)), '\n\n')
+  method <- if(is.null(x$call$method)) 'ols' else x$call$method
+  family <- if(is.null(x$call$family)) 'poisson' else x$call$family
+  est_method <- if(method == 'mle') paste0(method, ' - ', family) else method
+
+  cat('Estimation method:', est_method, '\n\n')
+
+  cat('Number of observations:', length(m), '\n')
+  if (!is.null(countries)){
+    cat('Number of unique countries:', length(unique(countries)), '\n\n')
   }
 
-  cat('Total observed m:', sum(x$m), '\n')
-  cat('Total observed n:', sum(x$n), '\n')
-  cat('Total observed N:', sum(x$N), '\n\n')
+  cat('Total observed m:', sum(m), '\n')
+  cat('Total observed n:', sum(n), '\n')
+  cat('Total observed N:', sum(N), '\n\n')
 
   cat('Target parameter estimate:', x$xi_est, '\n')
   if(!is.null(x$xi_est_bc)){
@@ -241,7 +257,7 @@ print.summary.hidden <- function(x){
   if (!is.null(x$by_covariates)){
     cat('Results by covariates: \n')
     print(x$by_covariates)
-    cat('\n\n')
+    cat('\n')
   }
 
   cat('Coefficients (population / alpha):\n')
@@ -252,23 +268,13 @@ print.summary.hidden <- function(x){
   print(x$coef_beta)
   cat('\n')
 
-  if (x$method == 'mle - nb'){
+  if (!is.null(x$coef_phi)){
     cat('Coefficients (heterogeneity / phi):\n')
     print(x$coef_phi)
     cat('\n')
   }
 
-  # cat('Covariance matrix estimation method:', x$vcov_method,'\n')
-  # cat('Covariance matrix:\n')
-  # print(x$vcov)
-  # cat('\n')
-
-#  cat('Standard errors:\n')
-#  print(x$se)
-#  cat('\n')
-
-
-  if(x$method == 'ols'){
+  if(method == 'ols'){
 
     cat('Residual standard error:', round(x$summary_stat$resid_se, 3), 'on', x$summary_stat$df_resid, 'degrees od freedom \n')
     cat('Multiple R-squared: ', round(x$summary_stat$r_squared, 4),
@@ -277,13 +283,13 @@ print.summary.hidden <- function(x){
     cat('F-statistic: ', round(f_stat[1], 2), 'on', f_stat[2], 'and', f_stat[3], 'DF, ',
         'p-value: ', pf(f_stat[1], f_stat[2], f_stat[3], lower.tail = FALSE), '\n')
 
-  } else if(x$method == 'nls'){
+  } else if(method == 'nls'){
 
     cat('Residual standard error:', round(x$summary_stat$resid_se, 3), 'on', x$summary_stat$df, 'degrees of freedom\n')
     cat('Number of iterations to convergence:', x$summary_stat$iter, '\n')
     cat('Achieved convergence:', x$summary_stat$convergence, '\n')
 
-  }  else if(startsWith(x$method, 'glm')){
+  }  else if(method == 'glm'){
 
     # null deviance
     cat('Null deviance:', round(x$summary_stat$null_deviance,4), 'on', x$summary_stat$df_null, 'degrees of freedom\n')
@@ -292,7 +298,7 @@ print.summary.hidden <- function(x){
     # number of Fisher scoring iterations
     cat('Number of Fisher scoring iterations:', x$summary_stat$iter, '\n')
 
-  } else if(startsWith(x$method, 'mle')){
+  } else if(method == 'mle'){
 
     if (x$summary_stat$convergence == 0) {
       cat('Convergence achieved.\n')
@@ -307,18 +313,46 @@ print.summary.hidden <- function(x){
 
 
 
+#' @export
+extract <- function(object, what) {
+  UseMethod("extract")
+}
+
+#' @export
+extract.hidden <- function(object, what = c('all', 'se', 'confint', 'vcov')) {
+
+  what_selected <- match.arg(what)
+
+  ext <- switch(what_selected,
+                'all' = data.frame(value = c(object$xi_est, object$coefficients),
+                                   Std.error = c(object$se_xi, object$se_coef$Std.error),
+                                   Lower = c(object$conf_int_xi$Lower, object$conf_int_coef$Lower),
+                                   Upper = c(object$conf_int_xi$Upper, object$conf_int_coef$Upper),
+                                   row.names = c('xi', rownames(object$se_coef))),
+                'se' = data.frame(Std.error = c(object$se_xi, object$se_coef$Std.error),
+                                  row.names = c('xi', rownames(object$se_coef))),
+                'confint' = data.frame(Lower = c(object$conf_int_xi$Lower, object$conf_int_coef$Lower),
+                                       Upper = c(object$conf_int_xi$Upper, object$conf_int_coef$Upper),
+                                       row.names = c('xi', rownames(object$se_coef))),
+                'vcov' = object$vcov)
+
+  return(ext)
+}
+
+
 # coef(summary)
 #' @export
 coef.summary.hidden <- function(x){
-  return(rbind(x$coef_alpha, x$coef_beta))
-  # if method nb - mle rbind(x$coef_alpha, x$coef_beta), x$coef_phi
+  method <- if(is.null(x$call$method)) 'ols' else x$call$method
+  coef_table <- if (method == 'mle') rbind(x$coef_alpha, x$coef_beta, x$coef_phi) else rbind(x$coef_alpha, x$coef_beta)
+  return(coef_table)
 }
 
-# vcov()
-# #' @export
-# vcov.hidden <- function(x){
-#   return(x$vcov)
-# }
+
+#' @export
+vcov.hidden <- function(x){
+  return(x$vcov)
+}
 
 
 # AIC
