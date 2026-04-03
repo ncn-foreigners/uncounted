@@ -227,7 +227,7 @@ lrtest <- function(object1, object2) {
   df <- .count_params(object2) - .count_params(object1)
 
   if (df == 0) {
-    stop("Models have the same number of parameters — not nested.")
+    stop("Models have the same number of parameters -- not nested.")
   }
 
   # Boundary correction for Poisson vs NB (Self & Liang, 1987)

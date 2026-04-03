@@ -72,6 +72,7 @@ influential observations side by side for both models, ranked by
 \code{max(|pct_1|, |pct_2|)}.
 }
 \examples{
+\donttest{
 # Simulate synthetic data
 set.seed(42)
 n_obs <- 15
@@ -100,5 +101,6 @@ comp <- compare_loo(loo_po, loo_nb, labels = c("Poisson", "NB"))
 print(comp)
 plot(comp, type = "scatter")
 plot(comp, type = "bar")
+}
 
 }

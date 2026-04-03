@@ -488,6 +488,8 @@ print.uncounted <- function(x, ...) {
 #'
 #' @param object An \code{"uncounted"} object returned by
 #'   \code{\link{estimate_hidden_pop}}.
+#' @param total Logical; if \code{TRUE}, include a total row in the
+#'   population-size table. Default \code{FALSE}.
 #' @param ... Additional arguments (currently ignored).
 #'
 #' @return Invisibly returns the coefficient summary matrix (estimates,

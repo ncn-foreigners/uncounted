@@ -88,6 +88,7 @@ loo <- function(object, ...) {
   UseMethod("loo")
 }
 
+#' @rdname loo
 #' @export
 loo.uncounted <- function(object, by = c("obs", "country"),
                           verbose = FALSE, ...) {
@@ -422,6 +423,7 @@ plot.uncounted_loo <- function(x, type = c("xi", "coef"), ...) {
 #' }
 #'
 #' @examples
+#' \donttest{
 #' # Simulate synthetic data
 #' set.seed(42)
 #' n_obs <- 15
@@ -450,6 +452,7 @@ plot.uncounted_loo <- function(x, type = c("xi", "coef"), ...) {
 #' print(comp)
 #' plot(comp, type = "scatter")
 #' plot(comp, type = "bar")
+#' }
 #'
 #' @export
 compare_loo <- function(loo1, loo2,
@@ -530,7 +533,7 @@ compare_loo <- function(loo1, loo2,
 print.uncounted_loo_compare <- function(x, n = 15, ...) {
   cat("LOO comparison:", x$labels[1], "vs", x$labels[2], "\n")
   cat("Dropped by:", x$by, "\n")
-  cat("Full xi —", x$labels[1], ":", round(x$full_xi_1),
+  cat("Full xi --", x$labels[1], ":", round(x$full_xi_1),
       "|", x$labels[2], ":", round(x$full_xi_2), "\n\n")
 
   cat("Top", n, "most influential (by max |%change|):\n")
@@ -586,8 +589,8 @@ plot.uncounted_loo_compare <- function(x, type = c("scatter", "bar"),
     lim <- max(abs(c(pct1, pct2)), na.rm = TRUE) * 1.1
     plot(pct1, pct2,
          xlim = c(-lim, lim), ylim = c(-lim, lim),
-         xlab = paste0("\u0394\u03be ", x$labels[1], " (%)"),
-         ylab = paste0("\u0394\u03be ", x$labels[2], " (%)"),
+         xlab = paste0("d.xi ", x$labels[1], " (%)"),
+         ylab = paste0("d.xi ", x$labels[2], " (%)"),
          main = paste("LOO influence:", x$labels[1], "vs", x$labels[2]),
          pch = 1, col = adjustcolor("gray30", 0.5), ...)
     abline(0, 1, lty = 2, col = "gray60")

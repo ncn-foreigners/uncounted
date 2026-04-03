@@ -68,6 +68,9 @@
 #'   (e.g., \code{~ year}, \code{~ country}). When provided, bootstrap
 #'   population sizes are computed per \code{by}-group instead of per
 #'   \code{cov_alpha} group. See \code{\link{popsize}} for details.
+#' @param total Logical; if \code{TRUE} and multiple groups exist, include
+#'   a total row computed by summing per-replicate group estimates before
+#'   taking quantiles. Default \code{FALSE}.
 #'
 #' @return An object of class `"uncounted_boot"` with components:
 #' \describe{

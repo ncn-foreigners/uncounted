@@ -55,6 +55,9 @@
 #' @param bias_correction Logical; apply Taylor-expansion bias correction?
 #'   Default TRUE. Uses model-based variance (not HC-robust) to avoid
 #'   overcorrection from inflated leverage-driven standard errors.
+#' @param total Logical; if \code{TRUE} and multiple groups exist, compute a
+#'   delta-method total with SE and CI, stored in \code{attr(result, "total")}.
+#'   Default \code{FALSE}.
 #' @param ... Additional arguments (ignored).
 #'
 #' @return A data frame with columns:
@@ -271,6 +274,8 @@ popsize.uncounted <- function(object, by = NULL, level = 0.95,
   ps
 }
 
+#' @rdname popsize
+#' @usage NULL
 #' @export
 xi <- function(object, ...) {
   .Deprecated("popsize")

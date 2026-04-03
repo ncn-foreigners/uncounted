@@ -322,7 +322,7 @@ residuals.uncounted <- function(object, type = c("response", "pearson", "devianc
 #'
 #' @examples
 #' data(irregular_migration)
-#' d <- irregular_migration[irregular_migration$year == 2019 & irregular_migration$sex == "m", ]
+#' d <- irregular_migration[irregular_migration$year == "2019" & irregular_migration$sex == "Male", ]
 #' fit <- estimate_hidden_pop(d, ~ m, ~ n, ~ N, method = "poisson",
 #'                            gamma = 0.001, countries = ~ country_code)
 #' db <- dfbeta(fit)
@@ -351,7 +351,7 @@ dfbeta.uncounted <- function(model, by = c("obs", "country"), ...) {
 #'
 #' @examples
 #' data(irregular_migration)
-#' d <- irregular_migration[irregular_migration$year == 2019 & irregular_migration$sex == "m", ]
+#' d <- irregular_migration[irregular_migration$year == "2019" & irregular_migration$sex == "Male", ]
 #' fit <- estimate_hidden_pop(d, ~ m, ~ n, ~ N, method = "poisson",
 #'                            gamma = 0.001, countries = ~ country_code)
 #' dp <- dfpopsize(fit)

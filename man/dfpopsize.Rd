@@ -27,7 +27,7 @@ is dropped. This is a convenience wrapper around \code{\link{loo}}.
 }
 \examples{
 data(irregular_migration)
-d <- irregular_migration[irregular_migration$year == 2019 & irregular_migration$sex == "m", ]
+d <- irregular_migration[irregular_migration$year == "2019" & irregular_migration$sex == "Male", ]
 fit <- estimate_hidden_pop(d, ~ m, ~ n, ~ N, method = "poisson",
                            gamma = 0.001, countries = ~ country_code)
 dp <- dfpopsize(fit)

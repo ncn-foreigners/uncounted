@@ -9,7 +9,14 @@
 #   vcov.uncounted        -> estimate_hidden_pop.R
 
 #' @importFrom sandwich bread estfun
-#' @importFrom stats nobs residuals hatvalues model.matrix
+#' @importFrom stats nobs residuals hatvalues model.matrix weights dfbeta
+#'   cor deviance dnbinom dpois lm lm.fit lm.wfit logLik median optim
+#'   optimize pchisq pnbinom pnorm ppois printCoefmat pt qnorm qqline
+#'   qqnorm quantile sd
+#' @importFrom grDevices adjustcolor devAskNewPage
+#' @importFrom graphics abline arrows barplot legend lines mtext par
+#'   plot.new rect text
+#' @importFrom utils head
 NULL
 
 #' Extract model matrix
@@ -26,7 +33,8 @@ model.matrix.uncounted <- function(object, ...) {
 
 #' Hat values (leverage)
 #'
-#' Computes diagonal of the hat matrix H = W^{1/2} Z (Z'WZ)^{-1} Z' W^{1/2}
+#' Computes diagonal of the hat matrix
+#' \eqn{H = W^{1/2} Z (Z'WZ)^{-1} Z' W^{1/2}}
 #' where Z is the model matrix and W is the diagonal weight matrix.
 #'
 #' @param model An uncounted object
@@ -39,8 +47,8 @@ hatvalues.uncounted <- function(model, ...) {
 #' Bread matrix for sandwich estimator
 #'
 #' Returns the bread component B such that the model-based variance is B/n.
-#' Specifically: B = n * (Z' W Z)^{-1} where Z is the model matrix and
-#' W = diag(bread_weights).
+#' Specifically: \eqn{B = n (Z' W Z)^{-1}} where Z is the model matrix and
+#' \eqn{W = \mathrm{diag}(\mathrm{bread\_weights})}.
 #'
 #' @param x An uncounted object
 #' @param ... Ignored

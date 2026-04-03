@@ -10,6 +10,9 @@
 \item{object}{An \code{"uncounted"} object returned by
 \code{\link{estimate_hidden_pop}}.}
 
+\item{total}{Logical; if \code{TRUE}, include a total row in the
+population-size table. Default \code{FALSE}.}
+
 \item{...}{Additional arguments (currently ignored).}
 }
 \value{

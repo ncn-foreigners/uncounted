@@ -2,9 +2,12 @@
 % Please edit documentation in R/loo.R
 \name{loo}
 \alias{loo}
+\alias{loo.uncounted}
 \title{Leave-One-Out Sensitivity Analysis}
 \usage{
 loo(object, ...)
+
+\method{loo}{uncounted}(object, by = c("obs", "country"), verbose = FALSE, ...)
 }
 \arguments{
 \item{object}{An \code{"uncounted"} object (fitted model).}

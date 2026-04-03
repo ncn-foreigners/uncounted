@@ -3,6 +3,7 @@
 \name{popsize}
 \alias{popsize}
 \alias{popsize.uncounted}
+\alias{xi}
 \title{Estimated Population Size}
 \usage{
 popsize(object, ...)
@@ -34,6 +35,10 @@ This is analogous to \code{singleRcapture::stratifyPopsize()}.}
 \item{bias_correction}{Logical; apply Taylor-expansion bias correction?
 Default TRUE. Uses model-based variance (not HC-robust) to avoid
 overcorrection from inflated leverage-driven standard errors.}
+
+\item{total}{Logical; if \code{TRUE} and multiple groups exist, compute a
+delta-method total with SE and CI, stored in \code{attr(result, "total")}.
+Default \code{FALSE}.}
 }
 \value{
 A data frame with columns:
