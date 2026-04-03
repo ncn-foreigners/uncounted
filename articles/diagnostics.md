@@ -1,0 +1,494 @@
+# Model Diagnostics and Comparison
+
+This vignette demonstrates the diagnostic and model-comparison tools
+available in the **uncounted** package. We cover goodness-of-fit
+statistics, residual analysis, rootograms, exploratory log-log plots,
+leave-one-out sensitivity analysis, and gamma profiling. Together these
+tools help you decide which model specification is most appropriate and
+whether the population-size estimates are robust.
+
+## 1. Setup: fitting Poisson and Negative Binomial models
+
+We use the `irregular_migration` dataset shipped with the package. Two
+models are fitted—Poisson and Negative Binomial—with year and sex
+covariates on alpha and year covariates on beta.
+
+``` r
+library(uncounted)
+data(irregular_migration)
+
+fit_po <- estimate_hidden_pop(
+  data = irregular_migration,
+  observed = ~ m, auxiliary = ~ n, reference_pop = ~ N,
+  method = "poisson",
+  cov_alpha = ~ factor(year) + sex, cov_beta = ~ factor(year),
+  countries = ~ country_code
+)
+
+fit_nb <- estimate_hidden_pop(
+  data = irregular_migration,
+  observed = ~ m, auxiliary = ~ n, reference_pop = ~ N,
+  method = "nb",
+  cov_alpha = ~ factor(year) + sex, cov_beta = ~ factor(year),
+  countries = ~ country_code
+)
+```
+
+Quick summaries:
+
+``` r
+summary(fit_po)
+#> Unauthorized population estimation
+#> Method: POISSON | vcov: HC3 
+#> N obs: 1382 
+#> Gamma: 0.00726 (estimated) 
+#> Log-likelihood: -8217.25 
+#> AIC: 16462.49  BIC: 16535.73 
+#> Deviance: 13831.69 
+#> 
+#> Coefficients:
+#>                          Estimate Std. Error z value  Pr(>|z|)    
+#> alpha:(Intercept)       0.7888971  0.0905354  8.7137 < 2.2e-16 ***
+#> alpha:factor(year)2020  0.0011183  0.0960691  0.0116 0.9907121    
+#> alpha:factor(year)2021 -0.0175125  0.0874476 -0.2003 0.8412748    
+#> alpha:factor(year)2022 -0.0936906  0.1094198 -0.8562 0.3918604    
+#> alpha:factor(year)2023 -0.1135591  0.1774715 -0.6399 0.5222557    
+#> alpha:factor(year)2024 -0.1691469  0.1613513 -1.0483 0.2944937    
+#> alpha:sexMale           0.0420166  0.0458791  0.9158 0.3597657    
+#> beta:(Intercept)        0.6754914  0.1953200  3.4584 0.0005434 ***
+#> beta:factor(year)2020   0.1885106  0.2275888  0.8283 0.4075035    
+#> beta:factor(year)2021   0.2330038  0.2128225  1.0948 0.2735925    
+#> beta:factor(year)2022   0.0887057  0.2490143  0.3562 0.7216702    
+#> beta:factor(year)2023  -0.0519702  0.3787582 -0.1372 0.8908632    
+#> beta:factor(year)2024  -0.3225896  0.3187799 -1.0120 0.3115616    
+#> ---
+#> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+#> 
+#> -----------------------
+#> Population size estimation results:
+#>   (BC = bias-corrected using model-based variance)
+#>                       Observed Estimate Estimate (BC) CI lower CI upper
+#> year=2019, sex=Female    1,535   21,115        21,084    3,390  131,112
+#> year=2019, sex=Male      5,069   60,042        59,958   10,174  353,337
+#> year=2020, sex=Female      698   23,598        23,533    6,029   91,857
+#> year=2020, sex=Male      2,700   66,629        66,438   22,985  192,041
+#> year=2021, sex=Female      483   22,736        22,671    7,262   70,775
+#> year=2021, sex=Male      2,622   65,001        64,807   32,342  129,862
+#> year=2022, sex=Female      317   14,110        14,074    2,476   79,996
+#> year=2022, sex=Male      2,632   32,902        32,825    7,365  146,303
+#> year=2023, sex=Female      523   12,077        12,056      533  272,610
+#> year=2023, sex=Male      3,839   28,872        28,828    1,219  681,885
+#> year=2024, sex=Female      956    7,109         7,103      576   87,558
+#> year=2024, sex=Male      5,731   17,473        17,459    1,176  259,155
+summary(fit_nb)
+#> Unauthorized population estimation
+#> Method: NB | vcov: HC3 
+#> N obs: 1382 
+#> Gamma: 0.020901 (estimated) 
+#> Theta (NB dispersion): 1.3552 
+#> Log-likelihood: -2621.12 
+#> AIC: 5272.23  BIC: 5350.7 
+#> Deviance: 1275.94 
+#> 
+#> Coefficients:
+#>                         Estimate Std. Error z value  Pr(>|z|)    
+#> alpha:(Intercept)       0.815763   0.036317 22.4626 < 2.2e-16 ***
+#> alpha:factor(year)2020 -0.041935   0.062793 -0.6678  0.504251    
+#> alpha:factor(year)2021  0.075384   0.058645  1.2854  0.198644    
+#> alpha:factor(year)2022 -0.030016   0.068502 -0.4382  0.661256    
+#> alpha:factor(year)2023  0.015622   0.054492  0.2867  0.774347    
+#> alpha:factor(year)2024  0.069686   0.046240  1.5071  0.131794    
+#> alpha:sexMale           0.044307   0.012390  3.5759  0.000349 ***
+#> beta:(Intercept)        0.873278   0.080372 10.8654 < 2.2e-16 ***
+#> beta:factor(year)2020   0.140450   0.123353  1.1386  0.254870    
+#> beta:factor(year)2021   0.468045   0.119175  3.9274 8.588e-05 ***
+#> beta:factor(year)2022   0.185007   0.142919  1.2945  0.195496    
+#> beta:factor(year)2023   0.183906   0.106222  1.7313  0.083390 .  
+#> beta:factor(year)2024   0.132760   0.089854  1.4775  0.139541    
+#> ---
+#> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+#> 
+#> -----------------------
+#> Population size estimation results:
+#>   (BC = bias-corrected using model-based variance)
+#>                       Observed Estimate Estimate (BC) CI lower CI upper
+#> year=2019, sex=Female    1,535   27,910        25,477   12,094   53,670
+#> year=2019, sex=Male      5,069   82,523        74,904   35,310  158,895
+#> year=2020, sex=Female      698   19,951        17,944    5,973   53,906
+#> year=2020, sex=Male      2,700   57,293        51,163   16,788  155,927
+#> year=2021, sex=Female      483   82,783        71,915   25,464  203,097
+#> year=2021, sex=Male      2,622  256,883       221,256   76,097  643,309
+#> year=2022, sex=Female      317   38,056        34,260    8,960  131,002
+#> year=2022, sex=Male      2,632   89,735        81,522   22,713  292,595
+#> year=2023, sex=Female      523   66,645        60,407   21,979  166,018
+#> year=2023, sex=Male      3,839  159,095       145,748   57,513  369,350
+#> year=2024, sex=Female      956  120,782       110,601   51,566  237,222
+#> year=2024, sex=Male      5,731  302,685       279,446  137,049  569,794
+```
+
+## 2. Model comparison
+
+### Comparison table
+
+[`compare_models()`](https://ncn-foreigners.github.io/uncounted/reference/compare_models.md)
+produces a side-by-side table of log-likelihood, AIC, BIC, deviance,
+Pearson chi-squared, RMSE, and three pseudo $R^{2}$ measures:
+
+- **`R2_cor`**: ${cor}\left( m,\widehat{\mu} \right)^{2}$ — squared
+  correlation between observed and fitted values.
+- **`R2_D`**: Explained deviance
+  $1 - D\left( \text{model} \right)/D\left( \text{null} \right)$, where
+  the null model is the same specification without covariates (single
+  $\alpha$, single $\beta$). Measures how much covariates improve the
+  fit beyond the baseline power-law structure.
+- **`R2_CW`**: Cameron–Windmeijer (1996) pseudo $R^{2}$, which uses the
+  model-implied variance function $V(\mu)$ — specifically designed for
+  count data regression.
+
+Models are sorted by AIC (the default). Note that `R2_D` compares the
+fitted model against a null model (same method, no covariates). If the
+model has no `cov_alpha` / `cov_beta`, then `R2_D = 0` by construction —
+it only becomes informative when covariates are present.
+
+``` r
+comp <- compare_models(Poisson = fit_po, NB = fit_nb, sort_by = "AIC")
+comp
+#> Model comparison
+#> ------------------------------------------------------------ 
+#>    Model  Method Constrained n_par   logLik      AIC      BIC Deviance
+#>       NB      NB       FALSE    15 -2621.12  5272.23  5350.70  1275.94
+#>  Poisson POISSON       FALSE    14 -8217.25 16462.49 16535.73 13831.69
+#>  Pearson_X2   RMSE R2_cor    R2_D  R2_CW
+#>     3089.52 206.06 0.4054 -0.0029 0.9526
+#>    17496.68  52.53 0.8280  0.3139 0.9827
+```
+
+Lower AIC and BIC values indicate a better trade-off between fit and
+complexity. The Pearson chi-squared statistic divided by its degrees of
+freedom (approximately `n_obs - n_par`) gives a quick dispersion check:
+values much greater than 1 suggest overdispersion, which favours the NB
+model over Poisson.
+
+### Likelihood ratio test
+
+Because the Poisson model is nested within the Negative Binomial (the
+Poisson is the NB with theta -\> infinity), we can use a likelihood
+ratio test.
+[`lrtest()`](https://ncn-foreigners.github.io/uncounted/reference/lrtest.md)
+applies the boundary correction of Self & Liang (1987) automatically
+when comparing Poisson against NB, because the dispersion parameter lies
+on the boundary of the parameter space under H0.
+
+``` r
+lrtest(fit_po, fit_nb)
+#> Likelihood ratio test
+#> ---------------------------------------- 
+#> Model 1: POISSON   (logLik = -8217.25 )
+#> Model 2: NB   (logLik = -2621.12 )
+#> LR statistic: 11192.26 on 1 df
+#> (Boundary-corrected: 0.5 * P(chi2 > LR), Self & Liang 1987)
+#> p-value: < 2.2e-16
+```
+
+A small p-value indicates significant overdispersion, favouring the NB
+model.
+
+## 3. Residual diagnostics
+
+### Residual types
+
+The [`residuals()`](https://rdrr.io/r/stats/residuals.html) method
+supports four types:
+
+- **response**: raw residuals, $m_{i} - {\widehat{\mu}}_{i}$.
+- **pearson**: standardised by the variance function,
+  $\left( m_{i} - {\widehat{\mu}}_{i} \right)/\sqrt{V\left( {\widehat{\mu}}_{i} \right)}$.
+- **deviance**: signed square root of individual deviance contributions.
+- **anscombe**: variance-stabilising residuals (approximately standard
+  normal for a well-specified model).
+
+``` r
+r_resp <- residuals(fit_nb, type = "response")
+r_pear <- residuals(fit_nb, type = "pearson")
+r_dev  <- residuals(fit_nb, type = "deviance")
+r_ansc <- residuals(fit_nb, type = "anscombe")
+
+summary(r_pear)
+#>     Min.  1st Qu.   Median     Mean  3rd Qu.     Max. 
+#> -1.15133 -0.59480 -0.28881  0.03623  0.11110 22.90671
+summary(r_ansc)
+#>     Min.  1st Qu.   Median     Mean  3rd Qu.     Max. 
+#> -24.1696  -1.0757  -0.4677  -0.3348   0.1766   9.4208
+```
+
+### Four-panel diagnostic plot
+
+[`plot()`](https://rdrr.io/r/graphics/plot.default.html) on a fitted
+model produces the Zhang (2008) four-panel display:
+
+1.  **Fitted vs Observed (sqrt scale)** – points should cluster around
+    the 45-degree line.
+2.  **Anscombe residuals vs fitted** – the running mean should be flat
+    near zero (no systematic misfit).
+3.  **Scale-Location** – absolute Anscombe residuals vs fitted; an
+    increasing trend signals under-modelled variance.
+4.  **Normal Q-Q** – Anscombe residuals should follow the reference line
+    if the distributional assumption holds.
+
+``` r
+op <- par(mfrow = c(2, 2))
+plot(fit_nb, ask = FALSE)
+```
+
+![](diagnostics_files/figure-html/plot-diagnostics-1.png)
+
+``` r
+par(op)
+```
+
+**What to look for:**
+
+- Curvature in Panel 1 suggests the mean function is misspecified.
+- A non-flat smoother in Panel 2 indicates systematic bias at certain
+  fitted-value ranges.
+- A fan shape in Panel 3 points to overdispersion or heteroscedasticity.
+- Heavy tails or S-shapes in Panel 4 indicate departure from the assumed
+  distribution.
+
+Compare with the Poisson fit to see whether switching to NB resolves any
+patterns:
+
+``` r
+op <- par(mfrow = c(2, 2))
+plot(fit_po, ask = FALSE)
+```
+
+![](diagnostics_files/figure-html/plot-diagnostics-po-1.png)
+
+``` r
+par(op)
+```
+
+## 4. Rootograms
+
+Rootograms (Kleiber & Zeileis, 2016) compare the observed and fitted
+count-frequency distributions directly. Three display styles are
+available:
+
+- **hanging** (default): observed bars are hung from the fitted curve.
+  If the model fits well, the bottom of each bar touches zero.
+- **standing**: observed bars stand on the x-axis with the fitted curve
+  overlaid. Harder to judge discrepancies visually.
+- **suspended**: plots the difference
+  $\sqrt{f_{\text{obs}}} - \sqrt{f_{\text{exp}}}$ directly. Bars
+  crossing zero indicate over- or under-prediction at that count.
+
+``` r
+rootogram(fit_nb, style = "hanging")
+```
+
+![](diagnostics_files/figure-html/rootogram-nb-1.png)
+
+``` r
+rootogram(fit_po, style = "hanging")
+```
+
+![](diagnostics_files/figure-html/rootogram-po-1.png)
+
+Compare the two: if the Poisson rootogram shows bars consistently
+hanging below the zero line at small counts and above at moderate
+counts, this is a classic overdispersion signature that the NB model
+should correct.
+
+``` r
+rootogram(fit_nb, style = "standing")
+```
+
+![](diagnostics_files/figure-html/rootogram-styles-1.png)
+
+``` r
+rootogram(fit_nb, style = "suspended")
+```
+
+![](diagnostics_files/figure-html/rootogram-styles-2.png)
+
+## 5. Exploratory log-log plots
+
+Before or after fitting,
+[`plot_explore()`](https://ncn-foreigners.github.io/uncounted/reference/plot_explore.md)
+produces two log-log scatter plots that reveal the marginal
+relationships underlying the power-law model:
+
+1.  **log(m/N) vs log(N)**: the slope approximates $\alpha - 1$. A slope
+    near zero means the apprehension rate is roughly independent of
+    population size ($\alpha \approx 1$). A negative slope indicates
+    decreasing returns to scale ($\alpha < 1$).
+2.  **log(m/N) vs log(n/N)**: the slope approximates $\beta$. A positive
+    slope confirms that the auxiliary rate is predictive of the
+    apprehension rate.
+
+Observations with $m = 0$ or $n = 0$ are excluded (undefined on the log
+scale).
+
+``` r
+plot_explore(fit_nb)
+```
+
+![](diagnostics_files/figure-html/plot-explore-1.png)
+
+These plots are exploratory visual checks. The OLS lines overlaid are
+rough guides—the formal model accounts for covariates and the gamma
+offset.
+
+## 6. Leave-one-out sensitivity analysis
+
+LOO refits the model repeatedly, dropping one observation (or one
+country) at a time, to assess how much each unit influences the total
+population-size estimate.
+
+### LOO by country
+
+Dropping all rows for a country measures its structural contribution.
+This is computationally intensive (one refit per country).
+
+``` r
+loo_po_ctry <- loo(fit_po, by = "country", verbose = TRUE)
+loo_nb_ctry <- loo(fit_nb, by = "country", verbose = TRUE)
+```
+
+``` r
+print(loo_nb_ctry)
+summary(loo_nb_ctry)
+```
+
+The [`print()`](https://rdrr.io/r/base/print.html) method shows the top
+10 most influential countries ranked by $|\Delta\xi|$, and
+[`summary()`](https://rdrr.io/r/base/summary.html) reports coefficient
+and xi stability across all LOO refits.
+
+``` r
+plot(loo_nb_ctry, type = "xi")
+plot(loo_nb_ctry, type = "coef")
+```
+
+The xi bar plot shows which countries pull the total estimate up (red
+bars, dropping the country decreases the estimate) or down (blue bars).
+
+### LOO by observation
+
+Dropping individual rows identifies specific data points that drive the
+estimate. Useful for outlier detection.
+
+``` r
+loo_nb_obs <- loo(fit_nb, by = "obs", verbose = TRUE)
+print(loo_nb_obs)
+plot(loo_nb_obs)
+```
+
+### Comparing LOO across models
+
+[`compare_loo()`](https://ncn-foreigners.github.io/uncounted/reference/compare_loo.md)
+brings together LOO results from two models and produces a scatter plot
+where each axis shows the percentage change in xi when dropping a given
+unit:
+
+``` r
+comp_loo <- compare_loo(
+  loo_po_ctry, loo_nb_ctry,
+  labels = c("Poisson", "NB")
+)
+print(comp_loo)
+```
+
+**Scatter plot interpretation (4 quadrants):**
+
+``` r
+plot(comp_loo, type = "scatter")
+```
+
+- **Top-right (+, +):** dropping this unit increases the estimate under
+  both models. The unit was pulling the estimate down in both.
+- **Bottom-left (-, -):** dropping this unit decreases the estimate
+  under both models. The unit was pulling the estimate up in both.
+- **Off-diagonal (top-left or bottom-right):** divergent influence. The
+  unit affects the two models in opposite directions—a sign that model
+  choice matters for that unit.
+- **Near the origin:** non-influential under both models.
+
+Points near the diagonal indicate consistent influence; points far from
+the diagonal warrant investigation.
+
+``` r
+plot(comp_loo, type = "bar")
+```
+
+The side-by-side bar plot ranks countries by maximum absolute percentage
+change across both models, making it easy to spot the most consequential
+units.
+
+## 7. Gamma profile
+
+[`profile_gamma()`](https://ncn-foreigners.github.io/uncounted/reference/profile_gamma.md)
+refits the model across a grid of fixed gamma values and plots two
+curves:
+
+1.  **$\widehat{\xi}(\gamma)$**: how the total population-size estimate
+    changes with gamma.
+2.  **$\ell(\gamma)$**: the profile log-likelihood as a function of
+    gamma.
+
+``` r
+prof <- profile_gamma(fit_nb, gamma_grid = seq(1e-4, 0.5, length.out = 10))
+```
+
+![](diagnostics_files/figure-html/profile-gamma-1.png)
+
+**Interpretation:**
+
+- A **sharp peak** in the log-likelihood curve means gamma is
+  well-identified by the data. The MLE is precise and the
+  population-size estimate is robust to small perturbations in gamma.
+- A **flat** log-likelihood curve means gamma is weakly identified. The
+  data cannot distinguish between a range of gamma values, and the
+  population-size estimate may be sensitive to the gamma assumption. In
+  this case, reporting results for several gamma values (or fixing gamma
+  based on external information) is advisable.
+
+If the original model estimated gamma, its point estimate is marked with
+a dashed red vertical line. The xi profile shows whether the
+population-size estimate is stable (flat) or sensitive (steep) across
+the gamma range.
+
+The profiling results are returned invisibly as a data frame:
+
+``` r
+prof <- profile_gamma(fit_nb, plot = FALSE)
+head(prof)
+#>        gamma        xi    loglik
+#> 1 0.00010000  105426.3 -2719.707
+#> 2 0.02641053 1421561.4 -2621.493
+#> 3 0.05272105 1742750.9 -2626.657
+#> 4 0.07903158 1893924.1 -2631.701
+#> 5 0.10534211 1982411.8 -2635.659
+#> 6 0.13165263 2037040.2 -2638.698
+```
+
+## References
+
+- Beresewicz, M., Gudaszewski, G., and Walsh, P. (2025). Counting the
+  uncounted: Estimating the unauthorized foreign population using
+  administrative data. Working paper.
+- Kleiber, C. and Zeileis, A. (2016). Visualizing Count Data Regressions
+  Using Rootograms. *The American Statistician*, 70(3), 296–303.
+- McCullagh, P. and Nelder, J. A. (1989). *Generalized Linear Models*,
+  2nd ed. Chapman & Hall.
+- Self, S. G. and Liang, K.-Y. (1987). Asymptotic properties of maximum
+  likelihood estimators and likelihood ratio tests under nonstandard
+  conditions. *JASA*, 82(398), 605–610.
+- Zhang, L.-C. (2008). *Developing methods for determining the number of
+  unauthorized foreigners in Norway* (Documents 2008/11). Statistics
+  Norway.
+  <https://www.ssb.no/a/english/publikasjoner/pdf/doc_200811_en/doc_200811_en.pdf>
+- Beręsewicz, M., & Pawlukiewicz, K. (2020). Estimation of the number of
+  irregular foreigners in Poland using non-linear count regression
+  models. arXiv preprint arXiv:2008.09407.
