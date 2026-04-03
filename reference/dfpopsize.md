@@ -43,12 +43,11 @@ that unit is dropped (\\\hat\xi\_{(-i)} - \hat\xi\\).
 
 ``` r
 data(irregular_migration)
-d <- irregular_migration[irregular_migration$year == 2019 & irregular_migration$sex == "m", ]
+d <- irregular_migration[irregular_migration$year == "2019" & irregular_migration$sex == "Male", ]
 fit <- estimate_hidden_pop(d, ~ m, ~ n, ~ N, method = "poisson",
                            gamma = 0.001, countries = ~ country_code)
-#> Error in lm.fit(Z_start, y_start): 0 (non-NA) cases
 dp <- dfpopsize(fit)
-#> Error: object 'fit' not found
 head(dp)
-#> Error: object 'dp' not found
+#>          1          2          3          4          5          6 
+#> 4006.95264 -157.03916 3460.55759  187.08577  542.66030  -30.66062 
 ```

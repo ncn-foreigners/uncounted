@@ -8,6 +8,9 @@ time. Returns the impact on coefficient estimates, fitted values, and
 
 ``` r
 loo(object, ...)
+
+# S3 method for class 'uncounted'
+loo(object, by = c("obs", "country"), verbose = FALSE, ...)
 ```
 
 ## Arguments

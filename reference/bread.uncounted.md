@@ -1,8 +1,8 @@
 # Bread matrix for sandwich estimator
 
 Returns the bread component B such that the model-based variance is B/n.
-Specifically: B = n \* (Z' W Z)^-1 where Z is the model matrix and W =
-diag(bread_weights).
+Specifically: \\B = n (Z' W Z)^{-1}\\ where Z is the model matrix and
+\\W = \mathrm{diag}(\mathrm{bread\\weights})\\.
 
 ## Usage
 

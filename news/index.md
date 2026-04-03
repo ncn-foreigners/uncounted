@@ -193,8 +193,11 @@
 ### New features
 
 - [`popsize()`](https://ncn-foreigners.github.io/uncounted/reference/popsize.md)
-  replaces `xi()` as the primary interface for population size
-  estimation. `xi()` is retained as a deprecated alias.
+  replaces
+  [`xi()`](https://ncn-foreigners.github.io/uncounted/reference/popsize.md)
+  as the primary interface for population size estimation.
+  [`xi()`](https://ncn-foreigners.github.io/uncounted/reference/popsize.md)
+  is retained as a deprecated alias.
 
 - Bias-corrected population size estimates using second-order Taylor
   expansion (Jensen’s inequality correction).

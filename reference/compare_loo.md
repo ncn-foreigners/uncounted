@@ -105,6 +105,7 @@ influential observations side by side for both models, ranked by
 ## Examples
 
 ``` r
+# \donttest{
 # Simulate synthetic data
 set.seed(42)
 n_obs <- 15
@@ -127,7 +128,7 @@ fit_nb <- estimate_hidden_pop(
   reference_pop = ~N, method = "nb",
   countries = ~country
 )
-#> Warning: Some alpha values < 0 (min = -0.213). Consider using constrained = TRUE.
+#> Warning: Some alpha values < 0 (min = -1.876). Consider using constrained = TRUE.
 
 loo_po <- loo(fit_po, by = "country")
 #> Warning: Some alpha values < 0 (min = -3.217). Consider using constrained = TRUE.
@@ -143,17 +144,18 @@ comp <- compare_loo(loo_po, loo_nb, labels = c("Poisson", "NB"))
 print(comp)
 #> LOO comparison: Poisson vs NB 
 #> Dropped by: country 
-#> Full xi — Poisson : 0 | NB : 1 
+#> Full xi -- Poisson : 0 | NB : 0 
 #> 
 #> Top 15 most influential (by max |%change|):
-#>  label dxi_Poisson   pct_Poisson   dxi_NB        pct_NB        max_abs_pct 
-#>  C4     3.012532e+25  9.234739e+28  3.012437e+25  3.275959e+27 9.234739e+28
-#>  C5     2.996660e+17  9.186084e+20  2.996660e+17  3.258801e+19 9.186084e+20
-#>  C2     3.874090e+03  1.187578e+07  3.873200e+03  4.212019e+05 1.187578e+07
-#>  C3    -3.000000e-02 -1.000000e+02 -9.200000e-01 -1.000000e+02 1.000000e+02
-#>  C1    -3.000000e-02 -1.000000e+02 -9.200000e-01 -1.000000e+02 1.000000e+02
+#>  label dxi_Poisson   pct_Poisson   dxi_NB       pct_NB        max_abs_pct 
+#>  C4     3.012532e+25  9.234739e+28 3.012437e+25  9.823604e+36 9.823604e+36
+#>  C5     2.996660e+17  9.186084e+20 2.996660e+17  9.772155e+28 9.772155e+28
+#>  C2     3.874090e+03  1.187578e+07 3.874120e+03  1.263356e+15 1.263356e+15
+#>  C3    -3.000000e-02 -1.000000e+02 0.000000e+00 -1.000000e+02 1.000000e+02
+#>  C1    -3.000000e-02 -1.000000e+02 0.000000e+00 -1.000000e+02 1.000000e+02
 plot(comp, type = "scatter")
 
 plot(comp, type = "bar")
 
+# }
 ```

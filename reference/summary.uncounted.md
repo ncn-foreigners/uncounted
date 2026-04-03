@@ -23,6 +23,11 @@ summary(object, total = FALSE, ...)
   An `"uncounted"` object returned by
   [`estimate_hidden_pop`](https://ncn-foreigners.github.io/uncounted/reference/estimate_hidden_pop.md).
 
+- total:
+
+  Logical; if `TRUE`, include a total row in the population-size table.
+  Default `FALSE`.
+
 - ...:
 
   Additional arguments (currently ignored).

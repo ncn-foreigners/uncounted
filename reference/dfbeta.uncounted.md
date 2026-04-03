@@ -43,12 +43,16 @@ full model (\\\hat\beta\_{(-i)} - \hat\beta\\).
 
 ``` r
 data(irregular_migration)
-d <- irregular_migration[irregular_migration$year == 2019 & irregular_migration$sex == "m", ]
+d <- irregular_migration[irregular_migration$year == "2019" & irregular_migration$sex == "Male", ]
 fit <- estimate_hidden_pop(d, ~ m, ~ n, ~ N, method = "poisson",
                            gamma = 0.001, countries = ~ country_code)
-#> Error in lm.fit(Z_start, y_start): 0 (non-NA) cases
 db <- dfbeta(fit)
-#> Error: object 'fit' not found
 head(db)
-#> Error: object 'db' not found
+#>           alpha          beta
+#> 1  4.618242e-03  1.448704e-02
+#> 2 -1.379703e-04 -4.409443e-04
+#> 3  3.970809e-03  1.264425e-02
+#> 4  3.043501e-04  9.516993e-04
+#> 5  1.259357e-03  9.422888e-04
+#> 6 -2.749349e-05 -8.519565e-05
 ```

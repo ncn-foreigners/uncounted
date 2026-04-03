@@ -84,14 +84,18 @@ model (\(\hat\beta_{(-i)} - \hat\beta\)).</p>
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">irregular_migration</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">d</span> <span class="op">&lt;-</span> <span class="va">irregular_migration</span><span class="op">[</span><span class="va">irregular_migration</span><span class="op">$</span><span class="va">year</span> <span class="op">==</span> <span class="fl">2019</span> <span class="op">&amp;</span> <span class="va">irregular_migration</span><span class="op">$</span><span class="va">sex</span> <span class="op">==</span> <span class="st">"m"</span>, <span class="op">]</span></span></span>
+<span class="r-in"><span><span class="va">d</span> <span class="op">&lt;-</span> <span class="va">irregular_migration</span><span class="op">[</span><span class="va">irregular_migration</span><span class="op">$</span><span class="va">year</span> <span class="op">==</span> <span class="st">"2019"</span> <span class="op">&amp;</span> <span class="va">irregular_migration</span><span class="op">$</span><span class="va">sex</span> <span class="op">==</span> <span class="st">"Male"</span>, <span class="op">]</span></span></span>
 <span class="r-in"><span><span class="va">fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="estimate_hidden_pop.html">estimate_hidden_pop</a></span><span class="op">(</span><span class="va">d</span>, <span class="op">~</span> <span class="va">m</span>, <span class="op">~</span> <span class="va">n</span>, <span class="op">~</span> <span class="va">N</span>, method <span class="op">=</span> <span class="st">"poisson"</span>,</span></span>
 <span class="r-in"><span>                           gamma <span class="op">=</span> <span class="fl">0.001</span>, countries <span class="op">=</span> <span class="op">~</span> <span class="va">country_code</span><span class="op">)</span></span></span>
-<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error in lm.fit(Z_start, y_start):</span> 0 (non-NA) cases</span>
 <span class="r-in"><span><span class="va">db</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/influence.measures.html" class="external-link">dfbeta</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span></span></span>
-<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error:</span> object 'fit' not found</span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">db</span><span class="op">)</span></span></span>
-<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error:</span> object 'db' not found</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>           alpha          beta</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1  4.618242e-03  1.448704e-02</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2 -1.379703e-04 -4.409443e-04</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3  3.970809e-03  1.264425e-02</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 4  3.043501e-04  9.516993e-04</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 5  1.259357e-03  9.422888e-04</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 6 -2.749349e-05 -8.519565e-05</span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>

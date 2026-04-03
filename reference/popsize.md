@@ -52,6 +52,12 @@ popsize(
   model-based variance (not HC-robust) to avoid overcorrection from
   inflated leverage-driven standard errors.
 
+- total:
+
+  Logical; if `TRUE` and multiple groups exist, compute a delta-method
+  total with SE and CI, stored in `attr(result, "total")`. Default
+  `FALSE`.
+
 ## Value
 
 A data frame with columns:
@@ -151,15 +157,15 @@ fit <- estimate_hidden_pop(
 # Population size with bias correction and 95% CI
 popsize(fit)
 #>   group observed   estimate estimate_bc          lower          upper share_pct
-#> 1 (all)      752 0.03262174    -1977.66 -2.096793e-214 -1.865297e+220       100
+#> 1 (all)      752 0.03262174   -1977.661 -2.096316e-214 -1.865722e+220       100
 
 # Without bias correction
 popsize(fit, bias_correction = FALSE)
 #>   group observed   estimate estimate_bc         lower         upper share_pct
-#> 1 (all)      752 0.03262174  0.03262174 3.458684e-219 3.076829e+215       100
+#> 1 (all)      752 0.03262174  0.03262174 3.457897e-219 3.077529e+215       100
 
 # 90% confidence interval
 popsize(fit, level = 0.90)
-#>   group observed   estimate estimate_bc          lower          upper share_pct
-#> 1 (all)      752 0.03262174    -1977.66 -1.604466e-179 -2.437659e+185       100
+#>   group observed   estimate estimate_bc         lower          upper share_pct
+#> 1 (all)      752 0.03262174   -1977.661 -1.60416e-179 -2.438125e+185       100
 ```
