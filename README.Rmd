@@ -11,7 +11,7 @@ knitr::opts_chunk$set(
 )
 ```
 
-# uncounted <img src="man/figures/logo.png" align="right" width="150" />
+# The {uncounted} package <img src="man/figures/logo.png" align="right" width="150" />
 
 <!-- badges: start -->
 <!-- badges: end -->
@@ -46,7 +46,7 @@ remotes::install_github("ncn-foreigners/uncounted")
 ```{r example}
 library(uncounted)
 data(irregular_migration)
-
+irregular_migration$year <- as.factor(irregular_migration$year)
 ## Fit Poisson PML with year x UKR interaction in alpha
 fit <- estimate_hidden_pop(
   data = irregular_migration,
@@ -54,7 +54,7 @@ fit <- estimate_hidden_pop(
   auxiliary = ~ n,
   reference_pop = ~ N,
   method = "poisson",
-  cov_alpha = ~ year * I(country_code == "UKR") + sex,
+  cov_alpha = ~ year + sex,
   cov_beta = ~ year,
   countries = ~ country_code
 )
@@ -74,14 +74,14 @@ popsize(fit, by = ~ year)
 ```{r bootstrap, eval = FALSE}
 ## Cluster FWB bootstrap (by country)
 boot <- bootstrap_popsize(fit, R = 499,
-                           cluster = ~ country_code,
-                           by = ~ year)
+                          cluster = ~ country_code,
+                          by = ~ year)
 boot
 ```
 
 ### Diagnostics
 
-```{r diagnostics}
+```{r diagnostics, eval = FALSE}
 ## Leave-one-out influence
 db <- dfbeta(fit)
 dp <- dfpopsize(fit)
@@ -112,7 +112,7 @@ no. 2021/43/B/HS4/00469.
 
 ## References
 
-- Zhang, L.-C. (2008). On the dual system estimator and capture-recapture
-  models. *Journal of Official Statistics*, 24, 191--214.
+- Zhang, L.-C. (2008). *Developing methods for determining the number of unauthorized foreigners in Norway* (Documents 2008/11). Statistics Norway. https://www.ssb.no/a/english/publikasjoner/pdf/doc_200811_en/doc_200811_en.pdf
+- Beręsewicz, M., & Pawlukiewicz, K. (2020). Estimation of the number of irregular foreigners in Poland using non-linear count regression models. arXiv preprint arXiv:2008.09407. 
 - Santos Silva, J.M.C. and Tenreyro, S. (2006). The log of gravity.
   *The Review of Economics and Statistics*, 88(4), 641--658.
