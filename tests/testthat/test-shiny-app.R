@@ -1,5 +1,6 @@
 test_that("run_app is exported and callable", {
-  expect_true(is.function(run_app))
+  expect_true("run_app" %in% getNamespaceExports("uncounted"))
+  expect_true(is.function(uncounted::run_app))
 })
 
 test_that("run_app checks for required packages", {

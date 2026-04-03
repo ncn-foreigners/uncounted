@@ -136,8 +136,9 @@ summary(r_ansc)
 4. **Normal Q-Q** -- Anscombe residuals should follow the reference line if the distributional assumption holds.
 
 ```{r plot-diagnostics, fig.height = 8}
-par(mfrow = c(2, 2))
+op <- par(mfrow = c(2, 2))
 plot(fit_nb, ask = FALSE)
+par(op)
 ```
 
 **What to look for:**
@@ -151,8 +152,9 @@ Compare with the Poisson fit to see whether switching to NB resolves any
 patterns:
 
 ```{r plot-diagnostics-po, fig.height = 8}
-par(mfrow = c(2, 2))
+op <- par(mfrow = c(2, 2))
 plot(fit_po, ask = FALSE)
+par(op)
 ```
 
 ## 4. Rootograms
@@ -306,7 +308,7 @@ and plots two curves:
 2. **$\ell(\gamma)$**: the profile log-likelihood as a function of gamma.
 
 ```{r profile-gamma, fig.width = 9, fig.height = 4.5}
-prof <- profile_gamma(fit_nb, gamma_grid = seq(1e-4, 0.5, length.out = 25))
+prof <- profile_gamma(fit_nb, gamma_grid = seq(1e-4, 0.5, length.out = 10))
 ```
 
 **Interpretation:**

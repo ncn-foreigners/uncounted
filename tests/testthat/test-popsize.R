@@ -89,7 +89,8 @@ test_that("popsize with by aggregates correctly", {
 
   # Total should match
   total_by <- attr(ps_by, "total")$estimate
-  total_all <- attr(ps_all, "total")$estimate %||% sum(ps_all$estimate)
+  total_attr <- attr(ps_all, "total")
+  total_all <- if (!is.null(total_attr)) total_attr$estimate else sum(ps_all$estimate)
   expect_equal(total_by, total_all, tolerance = 1e-6)
 
   # Two groups
