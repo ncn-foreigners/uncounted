@@ -2,176 +2,221 @@
 % Please edit documentation in R/estimate_hidden_pop.R
 \name{estimate_hidden_pop}
 \alias{estimate_hidden_pop}
-\title{Estimate hidden population size using non-linear count regression model}
+\title{Estimate the Size of an Unauthorized Migrant Population}
 \usage{
 estimate_hidden_pop(
   data,
   observed,
   auxiliary,
   reference_pop,
+  method = c("poisson", "nb", "ols", "nls"),
   cov_alpha = NULL,
   cov_beta = NULL,
-  method = "ols",
-  vcov = "hessian",
-  family = "poisson",
-  bias_corr = FALSE,
-  countries = NULL
+  gamma = "estimate",
+  gamma_bounds = c(1e-10, 0.5),
+  theta_start = 1,
+  vcov = "HC3",
+  weights = NULL,
+  constrained = FALSE,
+  countries = NULL,
+  cluster = NULL
 )
 }
 \arguments{
-\item{data}{A `data.frame` containing the variables specified in the other parameters}
+\item{data}{A data frame containing all variables.}
 
-\item{observed}{A formula (e.g., `~ m_var`) or character string specifying the
-variable name for observed irregular residents apprehended by border guards.
-This represents \eqn{m_{it}} in the Zhang model -- the number of irregular foreigners
-detected through border control operations.}
+\item{observed}{One-sided formula for the observed count (e.g., \code{~ m}).}
 
-\item{auxiliary}{A formula (e.g., `~ n_var`) or character string specifying the
-variable name for auxiliary information from police records. This represents
-\eqn{n_{it}} in the Zhang model -- the number of foreigners appearing in police
-administrative records (legally staying).}
+\item{auxiliary}{One-sided formula for the auxiliary count (e.g., \code{~ n}).}
 
-\item{reference_pop}{A formula (e.g., `~ N_var`) or character string specifying
-the variable name for reference population size from population register.
-This represents \eqn{N_{it}} in the Zhang model - the number of foreigners registered
-in the central population register (PESEL in Poland).}
+\item{reference_pop}{One-sided formula for the reference population (e.g., \code{~ N}).}
 
-\item{cov_alpha}{A formula (e.g., `~ x1 + x2`) specifying covariates for the
-\eqn{\alpha} parameter. Allows \eqn{\alpha} to vary by groups (e.g., country, sex, time).
-Only used with `method = "mle"`. Default is `NULL`.}
+\item{method}{Estimation method: \code{"poisson"} (default), \code{"nb"},
+\code{"ols"}, or \code{"nls"}. See Details.}
 
-\item{cov_beta}{A formula (e.g., `~ x1 + x2`) specifying covariates for the
-\eqn{\beta} parameter. Allows \eqn{\beta} to vary by groups (e.g., country, sex, time).
-Only used with `method = "mle"`. Default is `NULL`.}
+\item{cov_alpha}{Formula for covariates in alpha (e.g., \code{~ sex + year}).
+Default \code{NULL} means a single alpha (intercept only).}
 
-\item{method}{Character string specifying the estimation method. Options are:
+\item{cov_beta}{Formula for covariates in beta (e.g., \code{~ sex}).
+Default \code{NULL} means a single beta (intercept only).}
+
+\item{gamma}{Controls the gamma offset in the rate term:
 \itemize{
-  \item `"ols"` -- Ordinary least squares on linearized Zhang model
-  \item `"nls"` -- Non-linear least squares estimation
-  \item `"glm"` -- Poisson regression for the Zhang model
-  \item `"mle"` -- Maximum likelihood estimation assuming a Poisson or
-    negative binomial distribution (specified via `family`), optionally
-    allowing for covariates through `cov_alpha` and `cov_beta`.
-}
-Default is `"ols"`. The `"mle"` methods are recommended for
-actual estimation as they properly account for the Poisson distribution.}
+\item \code{"estimate"} (default): gamma is estimated from data.
+\item A numeric value: fixed gamma, uses \eqn{\log(\gamma + n_i / N_i)}.
+\item \code{NULL}: no gamma, uses \eqn{\log(n_i / N_i)} (requires \eqn{n_i > 0}).
+}}
 
-\item{vcov}{Character string specifying the variance-covariance estimation method.
-Options are `"hessian"` (default) or `"robust"` for robust standard errors. Avaliabe options are:
+\item{gamma_bounds}{Numeric vector of length 2: lower and upper bounds for
+the estimated gamma parameter. Default \code{c(1e-10, 0.5)}.}
+
+\item{theta_start}{Starting value for the NB dispersion parameter (used
+only when \code{method = "nb"}). Default 1.}
+
+\item{vcov}{Controls the variance-covariance estimator. Can be:
 \itemize{
-  \item `"hessian"` — default; analytical Hessian-based variance estimates,
-  \item `"robust"` — robust standard errors,
-  \item `"fwb"` — fractional weighted bootstrap,
-  \item `"nonparametric"` — nonparametric bootstrap,
-  \item `"wild"` — wild bootstrap.
-}
-Bootstrap-based methods (`"fwb"`, `"nonparametric"`, `"wild"`) are
-currently available only for `method = "mle"`.}
+\item A character string specifying the HC type: \code{"HC0"} through
+\code{"HC5"}, or \code{"HC4m"}. Default \code{"HC3"}. When \code{cluster}
+is also provided, this type is passed to \code{sandwich::vcovCL()}.
+\item A function that takes the fitted \code{uncounted} object and returns
+a variance-covariance matrix. For example,
+\code{sandwich::vcovHC} or
+\code{function(x) sandwich::vcovCL(x, cluster = data$country_code)}.
+}}
 
-\item{family}{Character string specifying the assumed distribution
-for the observed counts (`observed`) in the `method = "mle"`.
-Available options include `"poisson"` (default) and `"nb"`
-(negative binomial). Ignored for other estimation methods.}
+\item{weights}{Optional numeric vector of observation weights.}
 
-\item{bias_corr}{Logical; if `TRUE`, bias-corrected point estimates of the
-total population size are additionally computed and returned.
-Default is `FALSE`.}
+\item{constrained}{Logical. If \code{TRUE}, applies link functions to
+ensure \eqn{\alpha \in (0, 1)} (logit) and \eqn{\beta > 0} (exp).
+Only available for \code{method = "poisson"} and \code{method = "nb"}.
+Default \code{FALSE}. See Details.}
 
-\item{countries}{Optional formula or character string specifying the variable in
-`data` that identifies countries. If provided, the function returns additional
-country-specific estimates and the country names can be used later as
-labels in diagnostic plots. Default is `NULL`.}
+\item{countries}{One-sided formula identifying a country or group variable
+used when reporting population size estimates (e.g., \code{~ country}).
+This does \strong{not} enable cluster-robust variance; use \code{cluster}
+for that.}
+
+\item{cluster}{Optional one-sided formula identifying a cluster variable
+for cluster-robust variance estimation (e.g., \code{~ country_code}).
+When provided and \code{vcov} is a character string, the variance is
+computed using \code{sandwich::vcovCL()} with the specified HC type.
+Ignored when \code{vcov} is a function.}
 }
 \value{
-An object of class `hidden`, which is a list with the following structure:
-  \itemize{
-        \item `coefficients` -- Estimated model parameters (including possible covariate effects).
-        \item `se_coef` -- Standard errors of the coefficients estimates.
-        \item `vcov` -- Variance-covariance matrix of the estimated coefficients,
-        computed using the method specified in `vcov`.
-        \item `xi_est` -- Estimated total hidden population \eqn{\hat{\xi}}.
-        \item `xi_bias_corr` -- Bias-corrected estimate of the hidden population
-        size (only if `bias_corr = TRUE`).
-        \item `se_xi` -- Standard error of \eqn{\hat{\xi}}.
-        \item `conf_int_xi` -- Confidence interval for \eqn{\hat{\xi}}.
-        \item `conf_int_coef` -- Confidence intervals for model coefficients.
-        \item `residuals` -- Model residuals.
-        \item `fitted` -- Fitted values of the observed variable (`observed`).
-        \item `summary_stat` -- Additional list of some method-specific summary statistics.
-        \item `by_nationality` -- Country-level estimates of hidden population
-        size (returned only if `countries` is provided).
-        \item `by_covariates` -- Subgroup estimates based on covariates in
-        `cov_alpha` or `cov_beta` (for `method = "mle"` only).
-        \item `call` -- The original function call.
-        \item `data` -- The original dataset supplied to the function. Stored for estimation diagnostics.
-      }
+An object of class \code{"uncounted"}, a list containing:
+\describe{
+\item{\code{coefficients}}{Named vector of all estimated coefficients.}
+\item{\code{alpha_coefs}, \code{beta_coefs}}{Coefficient sub-vectors
+for the alpha and beta equations.}
+\item{\code{alpha_values}, \code{beta_values}}{Per-observation alpha
+and beta on the response scale (after applying link inverse when
+constrained).}
+\item{\code{vcov}}{HC-robust variance-covariance matrix.}
+\item{\code{vcov_model}}{Model-based (homoscedastic) variance-covariance
+matrix, used for bias correction.}
+\item{\code{fitted.values}}{Fitted values \eqn{\hat{m}_i}{m_hat_i}.}
+\item{\code{residuals}}{Raw residuals \eqn{m_i - \hat{m}_i}{m_i - m_hat_i}.}
+\item{\code{gamma}}{Estimated or fixed gamma value (or \code{NULL}).}
+\item{\code{theta}}{NB dispersion parameter (only for \code{method = "nb"}).}
+\item{\code{loglik}}{Log-likelihood (for Poisson and NB methods).}
+\item{\code{method}}{The estimation method used.}
+}
 }
 \description{
-This function estimates hidden population sizes using the Zhang (2008) methodology
-for irregular migration populations. It implements a non-linear count regression
-model specifically designed for estimating irregular residents based on administrative
-data from border control, police records, and population registers
+Fits a power-law model relating observed counts of unauthorized migrants
+to reference population sizes and auxiliary registration counts. The model
+is estimated using OLS, NLS, Poisson MLE, or Negative Binomial MLE, and
+supports covariate-varying parameters through interaction formulas.
 }
 \details{
-The function implements the methodology developed by Zhang (2008) and adapted by
-Beręsewicz & Pawlukiewicz (2020) for estimating irregular foreigner populations.
-The core model assumes that observed apprehensions follow a Poisson distribution:
+\strong{Model specification.}
+For observation \eqn{i}, the expected observed count \eqn{m_i} is modelled as:
 
-\deqn{m_{it} \sim \text{Poisson}(\lambda_{it})}
+\deqn{E(m_i) = N_i^{\alpha_i} \cdot (\gamma + n_i / N_i)^{\beta_i}}{E(m_i) = N_i^alpha_i * (gamma + n_i / N_i)^beta_i}
 
-where \eqn{\lambda_{it} = \mu_{it} u_{it}} and:
+where \eqn{N_i} is the reference (total registered) population,
+\eqn{n_i} is an auxiliary count (e.g., new registrations),
+and \eqn{\gamma \ge 0}{gamma >= 0} is an intercept-like offset.
+On the log scale, the model is linear:
 
-\deqn{\mu_{it} = N_{it}^{\alpha} \left(\frac{n_{it}}{N_{it}}\right)^{\beta}}
+\deqn{\log E(m_i) = \alpha_i \log N_i + \beta_i \log(\gamma + n_i / N_i)}{log E(m_i) = alpha_i * log(N_i) + beta_i * log(gamma + n_i / N_i)}
 
-The target parameter (theoretical size of irregular residents) is:
-\deqn{\xi_t = \sum_{i=1}^{C} E(M_{it}|N_{it}) = \sum_{i=1}^{C} N_{it}^{\alpha}}
+\strong{Parameter interpretation.}
+\describe{
+\item{\eqn{\alpha}}{Elasticity of the observed count with respect to
+the reference population. When \eqn{\alpha < 1}, the total
+(unobserved) population \eqn{\xi = \sum_i N_i^\alpha}{xi = sum(N_i^alpha)} is smaller
+than \eqn{\sum_i N_i}{sum(N_i)}, reflecting incomplete coverage. Values
+of \eqn{\alpha} near 0 imply weak dependence on population size;
+values near 1 imply near-proportional scaling.}
+\item{\eqn{\beta}}{Elasticity with respect to the registration rate
+\eqn{\gamma + n_i / N_i}. A positive \eqn{\beta} means higher
+auxiliary rates are associated with more observed unauthorized
+migrants.}
+\item{\eqn{\gamma}}{Baseline registration-rate offset, ensuring that
+the rate term is positive even when \eqn{n_i = 0}. Typically small
+(close to zero). When \code{gamma = "estimate"}, it is profiled out
+(OLS) or jointly optimized (MLE methods).}
+}
 
-where \eqn{\alpha} and \eqn{\beta} are parameters that should theoretically lie in \eqn{(0,1)}.
+\strong{Estimation methods.}
+\describe{
+\item{OLS}{Ordinary least squares on the log-linearized model.
+Fast and transparent but ignores the count nature of \eqn{m_i}
+and may be inefficient under heteroscedasticity.
+Uses \eqn{\log(m_i)} as the response (or \eqn{\log(m_i + 1)} when
+zeros are present).}
+\item{NLS}{Nonlinear least squares on the original scale
+\eqn{m_i = N_i^{\alpha} (\gamma + n_i/N_i)^{\beta} + \varepsilon_i}{m_i = N_i^alpha * (gamma + n_i/N_i)^beta + epsilon_i}.
+Avoids the log-transformation bias of OLS but still treats \eqn{m_i}
+as continuous.}
+\item{Poisson}{Poisson pseudo-maximum likelihood (PPML). Consistent
+under heteroscedasticity as long as the conditional mean is correctly
+specified (Santos Silva and Tenreyro, 2006). Recommended as the
+default.}
+\item{NB}{Negative Binomial MLE. Adds a dispersion parameter
+\eqn{\theta} to accommodate overdispersion beyond what the Poisson
+allows.}
+}
+
+\strong{Constrained vs. unconstrained estimation.}
+When \code{constrained = FALSE} (default), \eqn{\alpha} and \eqn{\beta}
+are estimated on the real line without restrictions. When
+\code{constrained = TRUE}, link functions enforce parameter bounds:
+\eqn{\alpha = \mathrm{logit}(\eta)}{alpha = logit(eta)} so that
+\eqn{\alpha \in (0, 1)}{alpha in (0, 1)}, and
+\eqn{\beta = \exp(\zeta)}{beta = exp(zeta)} so that \eqn{\beta > 0}.
+Coefficients are then reported on the link (transformed) scale; use
+\code{summary()} or the \code{alpha_values} / \code{beta_values} elements
+of the returned object for response-scale values.
+Constrained estimation is available for the Poisson and NB methods only.
+
+\strong{Population size estimation.}
+The total unauthorized population is estimated as
+\eqn{\hat{\xi} = \sum_i N_i^{\hat{\alpha}_i}}{xi_hat = sum(N_i^alpha_hat_i)}.
+See \code{\link{popsize}} for bias correction and confidence intervals.
 }
 \examples{
-\dontrun{
-# Load Polish irregular migration data
-data(foreigners_pl)
-
-model_data <- subset(foreigners_pl, year == 2018 & half == 1)
-
-# Basic Zhang model estimation using GLM (recommended)
-result_zhang <- estimate_hidden_pop(
-  data = model_data,
-  observed = ~ border,
-  auxiliary = ~ police,
-  reference_pop = ~ pesel,
-  method = "mle",
-  family = "poisson"
+# Simulate data: 50 groups with known population structure
+set.seed(42)
+sim_data <- data.frame(
+  N = sample(1000:50000, 50, replace = TRUE)
 )
-# Linearized model for assumption verification
-result_linear <- estimate_hidden_pop(
-  data = model_data,
-  observed = ~ border,
-  auxiliary = ~ police,
-  reference_pop = ~ pesel,
-  method = "ols"
-)
+sim_data$n <- rpois(50, lambda = sim_data$N * 0.05)
+alpha_true <- 0.6
+beta_true <- 1.2
+gamma_true <- 0.01
+mu <- sim_data$N^alpha_true * (gamma_true + sim_data$n / sim_data$N)^beta_true
+sim_data$m <- rpois(50, lambda = mu)
 
-# Access results
-print(result_zhang$target_estimate)  # Total estimated irregular population
-print(result_zhang$estimates)        # Parameter estimates
-}
+# Poisson with estimated gamma (default)
+fit_pois <- estimate_hidden_pop(
+  data = sim_data, observed = ~ m,
+  auxiliary = ~ n, reference_pop = ~ N
+)
+summary(fit_pois)
+
+# OLS with fixed gamma
+fit_ols <- estimate_hidden_pop(
+  data = sim_data, observed = ~ m,
+  auxiliary = ~ n, reference_pop = ~ N,
+  method = "ols", gamma = 0.01
+)
+summary(fit_ols)
+
+# Constrained Poisson (alpha in (0,1), beta > 0)
+fit_constr <- estimate_hidden_pop(
+  data = sim_data, observed = ~ m,
+  auxiliary = ~ n, reference_pop = ~ N,
+  constrained = TRUE
+)
+summary(fit_constr)
 
 }
 \references{
-Beręsewicz, M., & Pawlukiewicz, K. (2020). Estimation of the number of irregular
-foreigners in Poland using non-linear count regression models. *arXiv preprint*
-arXiv:2008.09407.
+Zhang, L.-C. (2008). On the dual system estimator and capture-recapture
+models. \emph{Journal of Official Statistics}, 24, 191--214.
 
-Zhang, L.-C. (2008). Developing methods for determining the number of unauthorized
-foreigners in Norway. Statistics Norway (SSB), Division for Statistical Methods
-and Standards.
-
-Beręsewicz, M., Gudaszewski, G., and Szymkowiak, M. (2019). Estymacja liczby
-cudzoziemców w Polsce z wykorzystaniem metody capture-recapture. *Wiadomości
-Statystyczne. The Polish Statistician*, 64(10), 7-35.
-}
-\seealso{
-\code{\link{foreigners_pl}} for the example dataset.
+Santos Silva, J. M. C. and Tenreyro, S. (2006). The log of gravity.
+\emph{The Review of Economics and Statistics}, 88(4), 641--658.
 }

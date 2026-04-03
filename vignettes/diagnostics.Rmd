@@ -1,0 +1,350 @@
+---
+title: "Model Diagnostics and Comparison"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Model Diagnostics and Comparison}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.width = 7,
+  fig.height = 5
+)
+```
+
+This vignette demonstrates the diagnostic and model-comparison tools
+available in the **uncounted** package. We cover goodness-of-fit
+statistics, residual analysis, rootograms, exploratory log-log plots,
+leave-one-out sensitivity analysis, and gamma profiling. Together these
+tools help you decide which model specification is most appropriate and
+whether the population-size estimates are robust.
+
+## 1. Setup: fitting Poisson and Negative Binomial models
+
+We use the `irregular_migration` dataset shipped with the package. Two
+models are fitted---Poisson and Negative Binomial---with year and sex
+covariates on alpha and year covariates on beta.
+
+```{r fit-models}
+library(uncounted)
+data(irregular_migration)
+
+fit_po <- estimate_hidden_pop(
+  data = irregular_migration,
+  observed = ~ m, auxiliary = ~ n, reference_pop = ~ N,
+  method = "poisson",
+  cov_alpha = ~ factor(year) + sex, cov_beta = ~ factor(year),
+  countries = ~ country_code
+)
+
+fit_nb <- estimate_hidden_pop(
+  data = irregular_migration,
+  observed = ~ m, auxiliary = ~ n, reference_pop = ~ N,
+  method = "nb",
+  cov_alpha = ~ factor(year) + sex, cov_beta = ~ factor(year),
+  countries = ~ country_code
+)
+```
+
+Quick summaries:
+
+```{r summaries}
+summary(fit_po)
+summary(fit_nb)
+```
+
+## 2. Model comparison
+
+### Comparison table
+
+`compare_models()` produces a side-by-side table of log-likelihood, AIC,
+BIC, deviance, Pearson chi-squared, RMSE, and three pseudo $R^2$ measures:
+
+- **`R2_cor`**: $\mathrm{cor}(m, \hat\mu)^2$ --- squared correlation between
+  observed and fitted values.
+- **`R2_D`**: Explained deviance $1 - D(\text{model}) / D(\text{null})$, where
+  the null model is the same specification without covariates (single $\alpha$,
+  single $\beta$). Measures how much covariates improve the fit beyond the
+  baseline power-law structure.
+- **`R2_CW`**: Cameron--Windmeijer (1996) pseudo $R^2$, which uses the
+  model-implied variance function $V(\mu)$ --- specifically designed for count
+  data regression.
+
+Models are sorted by AIC (the default). Note that `R2_D` compares the fitted
+model against a null model (same method, no covariates). If the model has no
+`cov_alpha` / `cov_beta`, then `R2_D = 0` by construction --- it only becomes
+informative when covariates are present.
+
+```{r compare-models}
+comp <- compare_models(Poisson = fit_po, NB = fit_nb, sort_by = "AIC")
+comp
+```
+
+Lower AIC and BIC values indicate a better trade-off between fit and
+complexity. The Pearson chi-squared statistic divided by its degrees of
+freedom (approximately `n_obs - n_par`) gives a quick dispersion check:
+values much greater than 1 suggest overdispersion, which favours the NB
+model over Poisson.
+
+### Likelihood ratio test
+
+Because the Poisson model is nested within the Negative Binomial (the
+Poisson is the NB with theta -> infinity), we can use a likelihood ratio
+test. `lrtest()` applies the boundary correction of Self & Liang (1987)
+automatically when comparing Poisson against NB, because the dispersion
+parameter lies on the boundary of the parameter space under H0.
+
+```{r lrtest}
+lrtest(fit_po, fit_nb)
+```
+
+A small p-value indicates significant overdispersion, favouring the NB
+model.
+
+## 3. Residual diagnostics
+
+### Residual types
+
+The `residuals()` method supports four types:
+
+- **response**: raw residuals, $m_i - \hat\mu_i$.
+- **pearson**: standardised by the variance function, $(m_i - \hat\mu_i) / \sqrt{V(\hat\mu_i)}$.
+- **deviance**: signed square root of individual deviance contributions.
+- **anscombe**: variance-stabilising residuals (approximately standard normal for a well-specified model).
+
+```{r residuals}
+r_resp <- residuals(fit_nb, type = "response")
+r_pear <- residuals(fit_nb, type = "pearson")
+r_dev  <- residuals(fit_nb, type = "deviance")
+r_ansc <- residuals(fit_nb, type = "anscombe")
+
+summary(r_pear)
+summary(r_ansc)
+```
+
+### Four-panel diagnostic plot
+
+`plot()` on a fitted model produces the Zhang (2008) four-panel display:
+
+1. **Fitted vs Observed (sqrt scale)** -- points should cluster around the 45-degree line.
+2. **Anscombe residuals vs fitted** -- the running mean should be flat near zero (no systematic misfit).
+3. **Scale-Location** -- absolute Anscombe residuals vs fitted; an increasing trend signals under-modelled variance.
+4. **Normal Q-Q** -- Anscombe residuals should follow the reference line if the distributional assumption holds.
+
+```{r plot-diagnostics, fig.height = 8}
+par(mfrow = c(2, 2))
+plot(fit_nb, ask = FALSE)
+```
+
+**What to look for:**
+
+- Curvature in Panel 1 suggests the mean function is misspecified.
+- A non-flat smoother in Panel 2 indicates systematic bias at certain fitted-value ranges.
+- A fan shape in Panel 3 points to overdispersion or heteroscedasticity.
+- Heavy tails or S-shapes in Panel 4 indicate departure from the assumed distribution.
+
+Compare with the Poisson fit to see whether switching to NB resolves any
+patterns:
+
+```{r plot-diagnostics-po, fig.height = 8}
+par(mfrow = c(2, 2))
+plot(fit_po, ask = FALSE)
+```
+
+## 4. Rootograms
+
+Rootograms (Kleiber & Zeileis, 2016) compare the observed and fitted
+count-frequency distributions directly. Three display styles are
+available:
+
+- **hanging** (default): observed bars are hung from the fitted curve.
+  If the model fits well, the bottom of each bar touches zero.
+- **standing**: observed bars stand on the x-axis with the fitted curve
+  overlaid. Harder to judge discrepancies visually.
+- **suspended**: plots the difference $\sqrt{f_\text{obs}} - \sqrt{f_\text{exp}}$
+  directly. Bars crossing zero indicate over- or under-prediction at
+  that count.
+
+```{r rootogram-nb, fig.height = 4}
+rootogram(fit_nb, style = "hanging")
+```
+
+```{r rootogram-po, fig.height = 4}
+rootogram(fit_po, style = "hanging")
+```
+
+Compare the two: if the Poisson rootogram shows bars consistently
+hanging below the zero line at small counts and above at moderate
+counts, this is a classic overdispersion signature that the NB model
+should correct.
+
+```{r rootogram-styles, fig.height = 4}
+rootogram(fit_nb, style = "standing")
+rootogram(fit_nb, style = "suspended")
+```
+
+## 5. Exploratory log-log plots
+
+Before or after fitting, `plot_explore()` produces two log-log scatter
+plots that reveal the marginal relationships underlying the power-law
+model:
+
+1. **log(m/N) vs log(N)**: the slope approximates $\alpha - 1$. A slope
+   near zero means the apprehension rate is roughly independent of
+   population size ($\alpha \approx 1$). A negative slope indicates
+   decreasing returns to scale ($\alpha < 1$).
+2. **log(m/N) vs log(n/N)**: the slope approximates $\beta$. A positive
+   slope confirms that the auxiliary rate is predictive of the
+   apprehension rate.
+
+Observations with $m = 0$ or $n = 0$ are excluded (undefined on the log
+scale).
+
+```{r plot-explore, fig.width = 9, fig.height = 4.5}
+plot_explore(fit_nb)
+```
+
+These plots are exploratory visual checks. The OLS lines overlaid are
+rough guides---the formal model accounts for covariates and the gamma
+offset.
+
+## 6. Leave-one-out sensitivity analysis
+
+LOO refits the model repeatedly, dropping one observation (or one
+country) at a time, to assess how much each unit influences the total
+population-size estimate.
+
+### LOO by country
+
+Dropping all rows for a country measures its structural contribution.
+This is computationally intensive (one refit per country).
+
+```{r loo-country, eval = FALSE}
+loo_po_ctry <- loo(fit_po, by = "country", verbose = TRUE)
+loo_nb_ctry <- loo(fit_nb, by = "country", verbose = TRUE)
+```
+
+```{r loo-country-print, eval = FALSE}
+print(loo_nb_ctry)
+summary(loo_nb_ctry)
+```
+
+The `print()` method shows the top 10 most influential countries ranked
+by $|\Delta\xi|$, and `summary()` reports coefficient and xi stability
+across all LOO refits.
+
+```{r loo-country-plot, eval = FALSE}
+plot(loo_nb_ctry, type = "xi")
+plot(loo_nb_ctry, type = "coef")
+```
+
+The xi bar plot shows which countries pull the total estimate up (red
+bars, dropping the country decreases the estimate) or down (blue bars).
+
+### LOO by observation
+
+Dropping individual rows identifies specific data points that drive the
+estimate. Useful for outlier detection.
+
+```{r loo-obs, eval = FALSE}
+loo_nb_obs <- loo(fit_nb, by = "obs", verbose = TRUE)
+print(loo_nb_obs)
+plot(loo_nb_obs)
+```
+
+### Comparing LOO across models
+
+`compare_loo()` brings together LOO results from two models and produces
+a scatter plot where each axis shows the percentage change in xi when
+dropping a given unit:
+
+```{r compare-loo, eval = FALSE}
+comp_loo <- compare_loo(
+  loo_po_ctry, loo_nb_ctry,
+  labels = c("Poisson", "NB")
+)
+print(comp_loo)
+```
+
+**Scatter plot interpretation (4 quadrants):**
+
+```{r compare-loo-scatter, eval = FALSE}
+plot(comp_loo, type = "scatter")
+```
+
+- **Top-right (+, +):** dropping this unit increases the estimate under
+  both models. The unit was pulling the estimate down in both.
+- **Bottom-left (-, -):** dropping this unit decreases the estimate
+  under both models. The unit was pulling the estimate up in both.
+- **Off-diagonal (top-left or bottom-right):** divergent influence. The
+  unit affects the two models in opposite directions---a sign that model
+  choice matters for that unit.
+- **Near the origin:** non-influential under both models.
+
+Points near the diagonal indicate consistent influence; points far from
+the diagonal warrant investigation.
+
+```{r compare-loo-bar, eval = FALSE}
+plot(comp_loo, type = "bar")
+```
+
+The side-by-side bar plot ranks countries by maximum absolute percentage
+change across both models, making it easy to spot the most consequential
+units.
+
+## 7. Gamma profile
+
+`profile_gamma()` refits the model across a grid of fixed gamma values
+and plots two curves:
+
+1. **$\hat\xi(\gamma)$**: how the total population-size estimate changes
+   with gamma.
+2. **$\ell(\gamma)$**: the profile log-likelihood as a function of gamma.
+
+```{r profile-gamma, fig.width = 9, fig.height = 4.5}
+prof <- profile_gamma(fit_nb, gamma_grid = seq(1e-4, 0.5, length.out = 25))
+```
+
+**Interpretation:**
+
+- A **sharp peak** in the log-likelihood curve means gamma is
+  well-identified by the data. The MLE is precise and the
+  population-size estimate is robust to small perturbations in gamma.
+- A **flat** log-likelihood curve means gamma is weakly identified. The
+  data cannot distinguish between a range of gamma values, and the
+  population-size estimate may be sensitive to the gamma assumption.
+  In this case, reporting results for several gamma values (or fixing
+  gamma based on external information) is advisable.
+
+If the original model estimated gamma, its point estimate is marked with
+a dashed red vertical line. The xi profile shows whether the
+population-size estimate is stable (flat) or sensitive (steep) across
+the gamma range.
+
+The profiling results are returned invisibly as a data frame:
+
+```{r profile-gamma-table}
+prof <- profile_gamma(fit_nb, plot = FALSE)
+head(prof)
+```
+
+## References
+
+- Beresewicz, M., Gudaszewski, G., and Walsh, P. (2025). Counting the
+  uncounted: Estimating the unauthorized foreign population using
+  administrative data. Working paper.
+- Kleiber, C. and Zeileis, A. (2016). Visualizing Count Data
+  Regressions Using Rootograms. *The American Statistician*, 70(3),
+  296--303.
+- McCullagh, P. and Nelder, J. A. (1989). *Generalized Linear Models*,
+  2nd ed. Chapman & Hall.
+- Self, S. G. and Liang, K.-Y. (1987). Asymptotic properties of maximum
+  likelihood estimators and likelihood ratio tests under nonstandard
+  conditions. *JASA*, 82(398), 605--610.
+- Zhang, L.-C. (2008). Developing methods for determining the number of
+  unauthorized foreigners in Norway. *Documents* 2008/11, Statistics
+  Norway.

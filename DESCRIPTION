@@ -1,25 +1,32 @@
 Package: uncounted
-Type: Package
-Title: Various methods to estimate the population size
-Version: 0.1.0
+Title: Estimation of Unauthorized Migrant Populations
+Version: 0.5.1
 Authors@R: c(
-    person(
-      "Maciej", "Beręsewicz",
-      email = "maciej.beresewicz@ue.poznan.pl",
-      role = c("aut", "cre")
-    ),
-    person(
-      "Aniela", "Czerniawska",
-      email = "anicze4@st.amu.edu.pl",
-      role = c("aut", "ctr")
-    )
+    person("Maciej", "Beresewicz", , "maciej.beresewicz@ue.poznan.pl", role = c("aut", "cre"),
+           comment = c(ORCID = "0000-0002-8281-4301")),
+    person("Aniela", "Czerniawska", , "anicze4@st.amu.edu.pl", role = "aut")
   )
-Description: Package implements methods various methods from the literature on estimation population size: graphs, nonlinear approach, dual and multiple system esitmation. For details see.
+Description: Estimates the size of unauthorized migrant populations using
+    a power-law model that relates observed counts to reference populations
+    and auxiliary detection data. Supports OLS, NLS, Poisson, and Negative
+    Binomial estimation with optional gamma offset parameter.
 License: MIT + file LICENSE
 Encoding: UTF-8
-LazyData: true
-RoxygenNote: 7.3.2
-Depends: 
-    R (>= 3.5)
-Imports: 
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.3
+Imports:
+    stats,
+    MASS,
+    minpack.lm,
     sandwich
+LazyData: true
+Suggests:
+    testthat (>= 3.0.0),
+    fwb,
+    knitr,
+    rmarkdown,
+    shiny,
+    DT,
+    bslib
+VignetteBuilder: knitr
+Config/testthat/edition: 3
