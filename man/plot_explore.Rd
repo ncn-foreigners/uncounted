@@ -47,5 +47,5 @@ plot_explore(fit)
 \references{
 Zhang, L.-C. (2008). Developing methods for determining the number of
 unauthorized foreigners in Norway. \emph{Documents} 2008/11, Statistics
-Norway.
+Norway. \url{https://www.ssb.no/a/english/publikasjoner/pdf/doc_200811_en/doc_200811_en.pdf}
 }

@@ -347,6 +347,5 @@ head(prof)
 - Self, S. G. and Liang, K.-Y. (1987). Asymptotic properties of maximum
   likelihood estimators and likelihood ratio tests under nonstandard
   conditions. *JASA*, 82(398), 605--610.
-- Zhang, L.-C. (2008). Developing methods for determining the number of
-  unauthorized foreigners in Norway. *Documents* 2008/11, Statistics
-  Norway.
+- Zhang, L.-C. (2008). *Developing methods for determining the number of unauthorized foreigners in Norway* (Documents 2008/11). Statistics Norway. https://www.ssb.no/a/english/publikasjoner/pdf/doc_200811_en/doc_200811_en.pdf
+- Beręsewicz, M., & Pawlukiewicz, K. (2020). Estimation of the number of irregular foreigners in Poland using non-linear count regression models. arXiv preprint arXiv:2008.09407.

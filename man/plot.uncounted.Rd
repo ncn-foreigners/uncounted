@@ -62,7 +62,7 @@ plot(fit, which = 4)
 \references{
 Zhang, L.-C. (2008). Developing methods for determining the number of
 unauthorized foreigners in Norway. \emph{Documents} 2008/11, Statistics
-Norway.
+Norway. \url{https://www.ssb.no/a/english/publikasjoner/pdf/doc_200811_en/doc_200811_en.pdf}
 
 McCullagh, P. and Nelder, J. A. (1989). \emph{Generalized Linear Models},
 2nd ed. Chapman & Hall.

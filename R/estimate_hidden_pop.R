@@ -138,8 +138,13 @@
 #'   }
 #'
 #' @references
-#' Zhang, L.-C. (2008). On the dual system estimator and capture-recapture
-#' models. \emph{Journal of Official Statistics}, 24, 191--214.
+#' Zhang, L.-C. (2008). Developing methods for determining the number of
+#' unauthorized foreigners in Norway. \emph{Documents} 2008/11, Statistics
+#' Norway. \url{https://www.ssb.no/a/english/publikasjoner/pdf/doc_200811_en/doc_200811_en.pdf}
+#'
+#' Beręsewicz, M. and Pawlukiewicz, K. (2020). Estimation of the number of
+#' irregular foreigners in Poland using non-linear count regression models.
+#' \emph{arXiv preprint} arXiv:2008.09407.
 #'
 #' Santos Silva, J. M. C. and Tenreyro, S. (2006). The log of gravity.
 #' \emph{The Review of Economics and Statistics}, 88(4), 641--658.

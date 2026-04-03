@@ -10,7 +10,7 @@
 #'
 #' @format A data frame with 1,382 rows and 8 variables:
 #' \describe{
-#'   \item{year}{Year of observation (integer, 2019--2024).}
+#'   \item{year}{Year of observation (factor, 2019--2024).}
 #'   \item{sex}{Sex (factor: \code{"Female"}, \code{"Male"}).}
 #'   \item{country_code}{ISO 3166-1 alpha-3 country code (e.g. \code{"UKR"}).}
 #'   \item{country}{Country name in English.}

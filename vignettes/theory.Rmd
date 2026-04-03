@@ -459,5 +459,5 @@ boot_result$popsize_full
   Applications of the fractional-random-weight bootstrap. *The American
   Statistician*, 74(4), 345--358.
 
-- Zhang, L.-C. (2008). On the dual system estimator and capture-recapture
-  models. *Journal of Official Statistics*, 24, 191--214.
+- Zhang, L.-C. (2008). *Developing methods for determining the number of unauthorized foreigners in Norway* (Documents 2008/11). Statistics Norway. https://www.ssb.no/a/english/publikasjoner/pdf/doc_200811_en/doc_200811_en.pdf
+- Beręsewicz, M., & Pawlukiewicz, K. (2020). Estimation of the number of irregular foreigners in Poland using non-linear count regression models. arXiv preprint arXiv:2008.09407.
