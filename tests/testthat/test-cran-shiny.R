@@ -1,11 +1,11 @@
+# ---- Shiny app tests (CRAN) ----
+
 test_that("run_app is exported and callable", {
   expect_true("run_app" %in% getNamespaceExports("uncounted"))
   expect_true(is.function(uncounted::run_app))
 })
 
 test_that("run_app checks for required packages", {
-  # We can't easily test missing packages, but we verify the function
-  # signature accepts ... arguments
   expect_true("..." %in% names(formals(run_app)))
 })
 
