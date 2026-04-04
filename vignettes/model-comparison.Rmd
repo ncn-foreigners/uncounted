@@ -32,7 +32,7 @@ d <- irregular_migration
 The package supports five estimation methods. We fit Poisson, NB, and iOLS
 to the same data for comparison:
 
-```{r fit-models, eval = TRUE}
+```{r fit-models, eval = TRUE, warning = FALSE, message = FALSE}
 fit_po <- estimate_hidden_pop(d, ~ m, ~ n, ~ N,
   method = "poisson", cov_alpha = ~ year + sex,
   gamma = "estimate", countries = ~ country_code)

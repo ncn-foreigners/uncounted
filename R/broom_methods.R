@@ -57,6 +57,42 @@ tidy.uncounted <- function(x, conf.int = FALSE, conf.level = 0.95, ...) {
     result$conf.low <- as.numeric(coefs - crit * se)
     result$conf.high <- as.numeric(coefs + crit * se)
   }
+
+  # Add gamma row if estimated
+  if (isTRUE(x$gamma_estimated) && !is.null(x$gamma)) {
+    gamma_row <- data.frame(
+      term = "gamma",
+      estimate = x$gamma,
+      std.error = NA_real_,
+      statistic = NA_real_,
+      p.value = NA_real_,
+      stringsAsFactors = FALSE
+    )
+    if (conf.int) {
+      gamma_row$conf.low <- NA_real_
+      gamma_row$conf.high <- NA_real_
+    }
+    result <- rbind(result, gamma_row)
+  }
+
+  # Add theta row for NB
+  if (!is.null(x$theta)) {
+    theta_row <- data.frame(
+      term = "theta",
+      estimate = x$theta,
+      std.error = if (!is.null(x$theta_se)) x$theta_se else NA_real_,
+      statistic = NA_real_,
+      p.value = NA_real_,
+      stringsAsFactors = FALSE
+    )
+    if (conf.int) {
+      theta_row$conf.low <- NA_real_
+      theta_row$conf.high <- NA_real_
+    }
+    result <- rbind(result, theta_row)
+  }
+
+  rownames(result) <- NULL
   result
 }
 
@@ -90,8 +126,6 @@ glance.uncounted <- function(x, ...) {
     BIC = BIC(x),
     deviance = deviance(x),
     df.residual = x$df.residual,
-    gamma = if (!is.null(x$gamma)) x$gamma else NA_real_,
-    theta = if (!is.null(x$theta)) x$theta else NA_real_,
     stringsAsFactors = FALSE
   )
 }

@@ -52,9 +52,12 @@ test_that("tidy works for all methods", {
       fit <- quick_fit(d, method = method, gamma = 0.005)
     })
     td <- generics::tidy(fit)
-    expect_equal(nrow(td), length(coef(fit)), info = method)
-    expect_true(all(is.finite(td$estimate)), info = method)
-    expect_true(all(is.finite(td$std.error)), info = method)
+    # tidy includes gamma/theta rows for NB, so nrow >= length(coef)
+    expect_true(nrow(td) >= length(coef(fit)), info = method)
+    # Coefficient rows should have finite values
+    coef_rows <- td[!td$term %in% c("gamma", "theta"), ]
+    expect_true(all(is.finite(coef_rows$estimate)), info = method)
+    expect_true(all(is.finite(coef_rows$std.error)), info = method)
   }
 })
 

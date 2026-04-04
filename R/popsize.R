@@ -315,46 +315,39 @@ popsize.uncounted <- function(object, by = NULL, level = 0.95,
 plot.uncounted_popsize <- function(x, type = c("estimate", "compare"), ...) {
   type <- match.arg(type)
   ng <- nrow(x)
-  labels <- x$group
+  labs <- x$group
+  x_pos <- seq_len(ng)
 
   if (type == "compare") {
-    # Side-by-side: plug-in vs bias-corrected
-    xlim <- range(c(x$lower, x$upper, x$estimate, x$estimate_bc), na.rm = TRUE)
-    xlim[1] <- max(xlim[1], 0)
-    y_pos <- seq_len(ng)
+    ylim <- range(c(x$lower, x$upper, x$estimate, x$estimate_bc), na.rm = TRUE)
+    ylim[1] <- max(ylim[1], 0)
     offset <- 0.15
 
-    plot(NULL, xlim = xlim, ylim = c(0.5, ng + 0.5),
-         yaxt = "n", ylab = "", xlab = "Population size",
+    plot(NULL, xlim = c(0.5, ng + 0.5), ylim = ylim,
+         xaxt = "n", xlab = "", ylab = "Population size",
          main = "Plug-in vs bias-corrected estimates", ...)
-    axis(2, at = y_pos, labels = labels, las = 1, cex.axis = 0.8)
-    abline(h = y_pos, col = "gray90")
+    axis(1, at = x_pos, labels = labs, las = 2, cex.axis = 0.8)
+    abline(v = x_pos, col = "gray90")
 
-    # Plug-in (blue)
-    points(x$estimate, y_pos + offset, pch = 16, col = "steelblue")
-    # BC (red)
-    points(x$estimate_bc, y_pos - offset, pch = 17, col = "firebrick")
-    # CIs for BC
-    segments(x$lower, y_pos - offset, x$upper, y_pos - offset,
+    points(x_pos - offset, x$estimate, pch = 16, col = "steelblue")
+    points(x_pos + offset, x$estimate_bc, pch = 17, col = "firebrick")
+    segments(x_pos + offset, x$lower, x_pos + offset, x$upper,
              col = "firebrick", lwd = 1.5)
 
-    legend("bottomright", legend = c("Plug-in", "Bias-corrected"),
+    legend("topright", legend = c("Plug-in", "Bias-corrected"),
            pch = c(16, 17), col = c("steelblue", "firebrick"),
            bty = "n", cex = 0.9)
   } else {
-    # Default: BC estimates with CIs
-    xlim <- range(c(x$lower, x$upper), na.rm = TRUE)
-    xlim[1] <- max(xlim[1], 0)
-    y_pos <- seq_len(ng)
+    ylim <- range(c(x$lower, x$upper), na.rm = TRUE)
+    ylim[1] <- max(ylim[1], 0)
 
-    plot(x$estimate_bc, y_pos, xlim = xlim, ylim = c(0.5, ng + 0.5),
-         pch = 16, yaxt = "n", ylab = "", xlab = "Population size",
+    plot(x_pos, x$estimate_bc, ylim = ylim, xlim = c(0.5, ng + 0.5),
+         pch = 16, xaxt = "n", xlab = "", ylab = "Population size",
          main = "Population size estimates (bias-corrected)", ...)
-    axis(2, at = y_pos, labels = labels, las = 1, cex.axis = 0.8)
-    segments(x$lower, y_pos, x$upper, y_pos, lwd = 1.5)
-    abline(h = y_pos, col = "gray90", lty = 3)
-    # Redraw points on top
-    points(x$estimate_bc, y_pos, pch = 16)
+    axis(1, at = x_pos, labels = labs, las = 2, cex.axis = 0.8)
+    segments(x_pos, x$lower, x_pos, x$upper, lwd = 1.5)
+    abline(v = x_pos, col = "gray90", lty = 3)
+    points(x_pos, x$estimate_bc, pch = 16)
   }
   invisible(x)
 }
@@ -417,26 +410,26 @@ plot.uncounted_popsize_compare <- function(x, ...) {
   cols <- c("steelblue", "firebrick", "forestgreen", "darkorange",
             "purple", "brown")[seq_len(nm)]
 
-  xlim <- range(c(tab$lower, tab$upper), na.rm = TRUE)
-  xlim[1] <- max(xlim[1], 0)
-  y_pos <- seq_len(ng)
+  ylim <- range(c(tab$lower, tab$upper), na.rm = TRUE)
+  ylim[1] <- max(ylim[1], 0)
+  x_pos <- seq_len(ng)
   spacing <- 0.8 / nm
 
-  plot(NULL, xlim = xlim, ylim = c(0.5, ng + 0.5),
-       yaxt = "n", ylab = "", xlab = "Population size",
+  plot(NULL, xlim = c(0.5, ng + 0.5), ylim = ylim,
+       xaxt = "n", xlab = "", ylab = "Population size",
        main = "Population size comparison", ...)
-  axis(2, at = y_pos, labels = groups, las = 1, cex.axis = 0.8)
-  abline(h = y_pos, col = "gray90", lty = 3)
+  axis(1, at = x_pos, labels = groups, las = 2, cex.axis = 0.8)
+  abline(v = x_pos, col = "gray90", lty = 3)
 
   for (j in seq_len(nm)) {
     sub <- tab[tab$model == labels[j], ]
     offset <- (j - (nm + 1) / 2) * spacing
-    y_j <- match(sub$group, groups) + offset
-    points(sub$estimate_bc, y_j, pch = 15 + j, col = cols[j])
-    segments(sub$lower, y_j, sub$upper, y_j, col = cols[j], lwd = 1.5)
+    x_j <- match(sub$group, groups) + offset
+    points(x_j, sub$estimate_bc, pch = 15 + j, col = cols[j])
+    segments(x_j, sub$lower, x_j, sub$upper, col = cols[j], lwd = 1.5)
   }
 
-  legend("bottomright", legend = labels, pch = 15 + seq_len(nm),
+  legend("topright", legend = labels, pch = 15 + seq_len(nm),
          col = cols, bty = "n", cex = 0.9)
   invisible(x)
 }
