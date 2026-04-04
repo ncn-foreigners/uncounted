@@ -80,7 +80,10 @@ for that.}
 for cluster-robust variance estimation (e.g., \code{~ country_code}).
 When provided and \code{vcov} is a character string, the variance is
 computed using \code{sandwich::vcovCL()} with the specified HC type.
-Ignored when \code{vcov} is a function.}
+Note: clustered HC2 and HC3 are only applicable to standard linear and
+generalized linear models; \code{sandwich::vcovCL()} will emit a warning
+for non-GLM objects. Use \code{"HC0"} or \code{"HC1"} with clustering
+to avoid this. Ignored when \code{vcov} is a function.}
 }
 \value{
 An object of class \code{"uncounted"}, a list containing:
