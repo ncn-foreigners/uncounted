@@ -135,3 +135,24 @@ test_that("profile_gamma returns correct structure", {
   expect_true(all(result$xi > 0))
   expect_true(all(is.finite(result$loglik)))
 })
+
+# ---- Regression: printed total CI uses delta-method, not summed bounds ----
+
+test_that("total CI uses delta-method, not summed subgroup bounds", {
+  d <- small_data()
+  fit <- quick_fit(d, gamma = 0.005, cov_alpha = ~sex)
+  ps <- popsize(fit, total = TRUE)
+  tot <- attr(ps, "total")
+
+  # Delta-method bounds should differ from naive sums (correlated groups)
+  summed_lower <- sum(ps$lower)
+  summed_upper <- sum(ps$upper)
+  expect_false(isTRUE(all.equal(tot$lower, summed_lower)),
+               info = "Total lower should NOT equal sum of subgroup lowers")
+  expect_false(isTRUE(all.equal(tot$upper, summed_upper)),
+               info = "Total upper should NOT equal sum of subgroup uppers")
+
+  # Delta-method CI should be wider than summed CI (positive correlation)
+  expect_true(tot$upper - tot$lower > summed_upper - summed_lower,
+              info = "Delta-method total CI should be wider than summed CI")
+})

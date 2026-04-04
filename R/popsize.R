@@ -212,10 +212,16 @@ popsize.uncounted <- function(object, by = NULL, level = 0.95,
       # x_i' V x_i for each obs
       xVx <- rowSums((x_sub %*% V_alpha_model) * x_sub)
       if (is_constr) {
-        dsig2 <- (alpha_g * (1 - alpha_g))^2
-        xVx <- xVx * dsig2
+        # Full second derivative of N^{invlogit(eta)} w.r.t. eta:
+        # d2/deta2 N^alpha = N^alpha * [(log N)^2 * (alpha')^2 + log(N) * alpha'']
+        # where alpha' = alpha(1-alpha), alpha'' = alpha(1-alpha)(1-2*alpha)
+        dsig <- alpha_g * (1 - alpha_g)         # alpha'(eta)
+        dsig2 <- dsig^2                          # [alpha'(eta)]^2
+        dsig_dd <- dsig * (1 - 2 * alpha_g)     # alpha''(eta)
+        bias <- 0.5 * sum(N_g^alpha_g * (log_N2 * dsig2 + log(N_g) * dsig_dd) * xVx)
+      } else {
+        bias <- 0.5 * sum(N_g^alpha_g * log_N2 * xVx)
       }
-      bias <- 0.5 * sum(N_g^alpha_g * log_N2 * xVx)
       est_bc <- est - bias
       # Also correct CI bounds (approximate: same relative bias)
       if (!is.na(ci_lower) && est > 0) {

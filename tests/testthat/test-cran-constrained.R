@@ -72,3 +72,21 @@ test_that("LOO by country with constrained model", {
   loo_res <- loo(fit, by = "country")
   expect_equal(loo_res$n_drops, length(unique(d$country)))
 })
+
+# ---- Regression: constrained BC includes logit curvature ----
+
+test_that("constrained BC includes logit curvature (second derivative)", {
+  d <- small_data()
+  fit_c <- quick_fit(d, gamma = 0.005, constrained = TRUE)
+
+  ps_c <- popsize(fit_c, bias_correction = TRUE)
+
+  # BC ratio should be reasonable (not wildly off)
+  bc_ratio <- ps_c$estimate_bc / ps_c$estimate
+  expect_true(bc_ratio > 0.8 && bc_ratio < 1.0,
+              info = paste("Constrained BC ratio:", round(bc_ratio, 4)))
+
+  # Bias correction should be non-trivial
+  expect_true(ps_c$estimate > ps_c$estimate_bc,
+              info = "Bias correction should reduce the estimate")
+})

@@ -230,6 +230,14 @@ lrtest <- function(object1, object2) {
     stop("Models have the same number of parameters -- not nested.")
   }
 
+  # Warn if covariate structures differ (models may not be nested)
+  names1 <- names(coef(object1))
+  names2 <- names(coef(object2))
+  if (!all(names1 %in% names2)) {
+    warning("Models may not be nested: covariate specifications differ. ",
+            "LR test is only valid for nested models.", call. = FALSE)
+  }
+
   # Boundary correction for Poisson vs NB (Self & Liang, 1987)
   is_boundary <- (object1$method == "poisson" && object2$method == "nb") ||
                  (object1$method == "nb" && object2$method == "poisson")

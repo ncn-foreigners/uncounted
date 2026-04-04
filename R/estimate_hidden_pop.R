@@ -87,7 +87,10 @@
 #'     Fast and transparent but ignores the count nature of \eqn{m_i}
 #'     and may be inefficient under heteroscedasticity.
 #'     Uses \eqn{\log(m_i)} as the response (or \eqn{\log(m_i + 1)} when
-#'     zeros are present).}
+#'     zeros are present). Note: when the \eqn{\log(m_i + 1)} transformation
+#'     is used, fitted values are \eqn{\exp(\hat{\mu})} where \eqn{\hat{\mu}}
+#'     was estimated on the shifted scale, so response-scale residuals and
+#'     diagnostics are approximate.}
 #'   \item{NLS}{Nonlinear least squares on the original scale
 #'     \eqn{m_i = N_i^{\alpha} (\gamma + n_i/N_i)^{\beta} + \varepsilon_i}{m_i = N_i^alpha * (gamma + n_i/N_i)^beta + epsilon_i}.
 #'     Avoids the log-transformation bias of OLS but still treats \eqn{m_i}
@@ -98,7 +101,10 @@
 #'     default.}
 #'   \item{NB}{Negative Binomial MLE. Adds a dispersion parameter
 #'     \eqn{\theta} to accommodate overdispersion beyond what the Poisson
-#'     allows.}
+#'     allows. Standard errors for the regression coefficients are computed
+#'     conditional on \eqn{\hat{\theta}}, consistent with the approach used
+#'     in \code{MASS::glm.nb}. This means coefficient SEs do not account for
+#'     uncertainty in \eqn{\theta} estimation.}
 #' }
 #'
 #' \strong{Constrained vs. unconstrained estimation.}
@@ -728,21 +734,26 @@ update.uncounted <- function(object, ..., evaluate = TRUE) {
   rownames(tab) <- ps$group
 
   if (total && nrow(ps) > 1) {
+    tot_info <- attr(ps, "total")
+    tot_est <- if (!is.null(tot_info)) tot_info$estimate else sum(ps$estimate)
+    tot_est_bc <- if (!is.null(tot_info)) tot_info$estimate_bc else sum(ps$estimate_bc)
+    tot_lower <- if (!is.null(tot_info)) tot_info$lower else sum(ps$lower)
+    tot_upper <- if (!is.null(tot_info)) tot_info$upper else sum(ps$upper)
     tot_row <- if (has_bc) {
       data.frame(
         Observed = if (has_obs) fmt(sum(ps$observed)) else NULL,
-        Estimate = fmt(sum(ps$estimate)),
-        `Estimate (BC)` = fmt(sum(ps$estimate_bc)),
-        `CI lower` = fmt(sum(ps$lower)),
-        `CI upper` = fmt(sum(ps$upper)),
+        Estimate = fmt(tot_est),
+        `Estimate (BC)` = fmt(tot_est_bc),
+        `CI lower` = fmt(tot_lower),
+        `CI upper` = fmt(tot_upper),
         check.names = FALSE, stringsAsFactors = FALSE, row.names = "Total"
       )
     } else {
       data.frame(
         Observed = if (has_obs) fmt(sum(ps$observed)) else NULL,
-        Estimate = fmt(sum(ps$estimate)),
-        `CI lower` = fmt(sum(ps$lower)),
-        `CI upper` = fmt(sum(ps$upper)),
+        Estimate = fmt(tot_est),
+        `CI lower` = fmt(tot_lower),
+        `CI upper` = fmt(tot_upper),
         check.names = FALSE, stringsAsFactors = FALSE, row.names = "Total"
       )
     }

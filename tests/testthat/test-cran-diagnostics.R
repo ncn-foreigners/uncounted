@@ -122,3 +122,13 @@ test_that("cov_gamma parameter no longer accepted", {
     "unused argument"
   )
 })
+
+# ---- Regression: OLS zero handling scale consistency ----
+
+test_that("OLS with zeros: fitted values are exp(log_mu)", {
+  d <- small_data()
+  d$m[1] <- 0L
+  fit <- quick_fit(d, method = "ols", gamma = 0.005)
+  expect_equal(fit$fitted.values, exp(fit$log_mu), tolerance = 1e-10)
+  expect_equal(residuals(fit, type = "response"), d$m - fit$fitted.values)
+})

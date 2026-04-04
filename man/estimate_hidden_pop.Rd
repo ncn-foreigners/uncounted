@@ -145,7 +145,10 @@ the rate term is positive even when \eqn{n_i = 0}. Typically small
 Fast and transparent but ignores the count nature of \eqn{m_i}
 and may be inefficient under heteroscedasticity.
 Uses \eqn{\log(m_i)} as the response (or \eqn{\log(m_i + 1)} when
-zeros are present).}
+zeros are present). Note: when the \eqn{\log(m_i + 1)} transformation
+is used, fitted values are \eqn{\exp(\hat{\mu})} where \eqn{\hat{\mu}}
+was estimated on the shifted scale, so response-scale residuals and
+diagnostics are approximate.}
 \item{NLS}{Nonlinear least squares on the original scale
 \eqn{m_i = N_i^{\alpha} (\gamma + n_i/N_i)^{\beta} + \varepsilon_i}{m_i = N_i^alpha * (gamma + n_i/N_i)^beta + epsilon_i}.
 Avoids the log-transformation bias of OLS but still treats \eqn{m_i}
@@ -156,7 +159,10 @@ specified (Santos Silva and Tenreyro, 2006). Recommended as the
 default.}
 \item{NB}{Negative Binomial MLE. Adds a dispersion parameter
 \eqn{\theta} to accommodate overdispersion beyond what the Poisson
-allows.}
+allows. Standard errors for the regression coefficients are computed
+conditional on \eqn{\hat{\theta}}, consistent with the approach used
+in \code{MASS::glm.nb}. This means coefficient SEs do not account for
+uncertainty in \eqn{\theta} estimation.}
 }
 
 \strong{Constrained vs. unconstrained estimation.}
