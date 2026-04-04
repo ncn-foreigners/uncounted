@@ -4,7 +4,10 @@
 # enabling compatibility with modelsummary, parameters, and performance.
 
 #' @importFrom generics tidy glance
-NULL
+#' @export
+generics::tidy
+#' @export
+generics::glance
 
 #' Tidy an uncounted model
 #'

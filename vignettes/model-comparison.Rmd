@@ -51,7 +51,7 @@ fit_io <- estimate_hidden_pop(d, ~ m, ~ n, ~ N,
 The package provides `tidy()` and `glance()` methods compatible with
 the **modelsummary** package:
 
-```{r modelsummary, eval = requireNamespace("modelsummary", quietly = TRUE)}
+```{r modelsummary, eval = requireNamespace("modelsummary", quietly = TRUE) && requireNamespace("broom", quietly = TRUE)}
 library(modelsummary)
 modelsummary(
   list(Poisson = fit_po, NB = fit_nb, iOLS = fit_io),

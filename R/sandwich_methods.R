@@ -12,10 +12,11 @@
 #' @importFrom stats nobs residuals hatvalues model.matrix weights dfbeta
 #'   cor deviance dnbinom dpois lm lm.fit lm.wfit logLik median optim
 #'   optimize pchisq pnbinom pnorm ppois printCoefmat pt qnorm qqline
-#'   qqnorm quantile sd
+#'   qqnorm quantile sd AIC BIC vcov terms model.frame .getXlevels qt
+#'   weighted.mean
 #' @importFrom grDevices adjustcolor devAskNewPage
 #' @importFrom graphics abline arrows barplot legend lines mtext par
-#'   plot.new rect text
+#'   plot.new rect text axis points segments
 #' @importFrom utils head
 NULL
 

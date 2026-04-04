@@ -225,12 +225,12 @@ population-size estimate.
 Dropping all rows for a country measures its structural contribution.
 This is computationally intensive (one refit per country).
 
-```{r loo-country, eval = TRUE}
+```{r loo-country, eval = FALSE}
 loo_po_ctry <- loo(fit_po, by = "country", verbose = TRUE)
 loo_nb_ctry <- loo(fit_nb, by = "country", verbose = TRUE)
 ```
 
-```{r loo-country-print, eval = TRUE}
+```{r loo-country-print, eval = FALSE}
 print(loo_nb_ctry)
 summary(loo_nb_ctry)
 ```
@@ -239,7 +239,7 @@ The `print()` method shows the top 10 most influential countries ranked
 by $|\Delta\xi|$, and `summary()` reports coefficient and xi stability
 across all LOO refits.
 
-```{r loo-country-plot, eval = TRUE}
+```{r loo-country-plot, eval = FALSE}
 plot(loo_nb_ctry, type = "xi")
 plot(loo_nb_ctry, type = "coef")
 ```
@@ -252,7 +252,7 @@ bars, dropping the country decreases the estimate) or down (blue bars).
 Dropping individual rows identifies specific data points that drive the
 estimate. Useful for outlier detection.
 
-```{r loo-obs, eval = TRUE}
+```{r loo-obs, eval = FALSE}
 loo_nb_obs <- loo(fit_nb, by = "obs", verbose = TRUE)
 print(loo_nb_obs)
 plot(loo_nb_obs)
@@ -264,7 +264,7 @@ plot(loo_nb_obs)
 a scatter plot where each axis shows the percentage change in xi when
 dropping a given unit:
 
-```{r compare-loo, eval = TRUE}
+```{r compare-loo, eval = FALSE}
 comp_loo <- compare_loo(
   loo_po_ctry, loo_nb_ctry,
   labels = c("Poisson", "NB")
@@ -274,7 +274,7 @@ print(comp_loo)
 
 **Scatter plot interpretation (4 quadrants):**
 
-```{r compare-loo-scatter, eval = TRUE}
+```{r compare-loo-scatter, eval = FALSE}
 plot(comp_loo, type = "scatter")
 ```
 
@@ -290,7 +290,7 @@ plot(comp_loo, type = "scatter")
 Points near the diagonal indicate consistent influence; points far from
 the diagonal warrant investigation.
 
-```{r compare-loo-bar, eval = TRUE}
+```{r compare-loo-bar, eval = FALSE}
 plot(comp_loo, type = "bar")
 ```
 
