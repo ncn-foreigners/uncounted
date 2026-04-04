@@ -10,12 +10,10 @@ test_that("iOLS runs with fixed gamma", {
   expect_true(all(is.finite(coef(fit))))
 })
 
-test_that("iOLS runs with estimated gamma", {
+test_that("iOLS with gamma='estimate' gives informative error", {
   d <- small_data()
-  fit <- quick_fit(d, method = "iols", gamma = "estimate")
-  expect_s3_class(fit, "uncounted")
-  expect_true(!is.null(fit$gamma))
-  expect_true(fit$gamma > 0)
+  expect_error(quick_fit(d, method = "iols", gamma = "estimate"),
+               "not yet supported")
 })
 
 test_that("iOLS runs with gamma=NULL (no zeros needed)", {
@@ -127,4 +125,40 @@ test_that("iOLS sandwich::vcovHC produces valid vcov", {
   V <- sandwich::vcovHC(fit, type = "HC3")
   expect_equal(dim(V), rep(length(coef(fit)), 2))
   expect_true(all(diag(V) > 0))
+})
+
+# ---- GPML score convergence ----
+
+test_that("iOLS converges to GPML score condition on simple data", {
+  d <- small_data()
+  fit <- quick_fit(d, method = "iols", gamma = 0.005)
+  expect_equal(fit$convergence, 0L)
+  mu <- fit$fitted.values
+  u <- fit$m / pmax(mu, 1e-10)
+  score <- crossprod(fit$model_matrix_full, u - 1) / nrow(d)
+  expect_true(max(abs(score)) < 1e-4)
+})
+
+test_that("iOLS converges on year*ukr specification", {
+  skip_on_cran()
+  data(irregular_migration)
+  d <- irregular_migration
+  d$ukr <- as.integer(d$country_code == "UKR")
+  fit <- estimate_hidden_pop(d, ~m, ~n, ~N, method = "iols",
+    cov_alpha = ~ year * ukr, cov_beta = ~ year,
+    gamma = 0.005, countries = ~country_code)
+  expect_equal(fit$convergence, 0L)
+  mu <- fit$fitted.values
+  u <- fit$m / pmax(mu, 1e-10)
+  score <- crossprod(fit$model_matrix_full, u - 1) / nrow(d)
+  expect_true(max(abs(score)) < 1e-4)
+})
+
+# ---- AIC consistency ----
+
+test_that("AIC(fit_iols) is finite and consistent", {
+  d <- small_data()
+  fit <- quick_fit(d, method = "iols", gamma = 0.005)
+  expect_true(is.finite(AIC(fit)))
+  expect_true(is.finite(BIC(fit)))
 })

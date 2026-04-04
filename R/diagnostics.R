@@ -39,7 +39,7 @@
 logLik.uncounted <- function(object, ...) {
   n_par <- .count_params(object)
 
-  if (object$method %in% c("poisson", "nb")) {
+  if (object$method %in% c("poisson", "nb", "iols")) {
     ll <- object$loglik
   } else {
     # Gaussian pseudo-loglik on log scale (match transformation used in fitting)

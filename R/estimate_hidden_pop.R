@@ -325,14 +325,12 @@ estimate_hidden_pop <- function(data,
     },
     "iols" = {
       if (estimate_gamma) {
-        .fit_iols_gamma(m, N, ratio, log_N, X_alpha, X_beta,
-                        gamma_start, gamma_bounds,
-                        weights = weights, vcov_type = vcov_type)
-      } else {
-        .fit_iols(m, N, ratio, log_N, log_rate, X_alpha, X_beta,
-                  gamma_value = gamma_value,
-                  weights = weights, vcov_type = vcov_type)
+        stop("gamma = 'estimate' is not yet supported for method = 'iols'. ",
+             "Use a fixed gamma value instead.", call. = FALSE)
       }
+      .fit_iols(m, N, ratio, log_N, log_rate, X_alpha, X_beta,
+                gamma_value = gamma_value,
+                weights = weights, vcov_type = vcov_type)
     }
   )
 

@@ -694,7 +694,9 @@
     }
   }
 
-  # Phase 2: GPML limiting transformation
+  # Phase 2: exact GPML limiting transformation
+  # y_tilde = log(mu) + (m/mu - 1) / (1 + rho)
+  # At convergence: Z'(m/mu - 1) = 0 (GPML score equations)
   # Try increasing rho until contraction condition is met
   for (rho_try in c(rho, 2, 5, 10, 50, 100)) {
     beta_ph2 <- beta_hat
@@ -703,17 +705,13 @@
       log_mu <- pmin(pmax(as.numeric(Z %*% beta_ph2), -20), 20)
       mu <- exp(log_mu)
       u <- m / pmax(mu, 1e-300)
-      c_inf <- log(rho_try) + (1 / (1 + rho_try)) * (u - 1)
-      y_tilde <- log(m + rho_try * mu) - c_inf
-      bad <- !is.finite(y_tilde)
-      if (any(bad)) y_tilde[bad] <- log_mu[bad]
+      y_tilde <- log_mu + (u - 1) / (1 + rho_try)
       beta_new <- .ols_step(Z, y_tilde, weights)
       if (max(abs(beta_new - beta_ph2)) < tol) {
         beta_ph2 <- beta_new
         converged_ph2 <- TRUE
         break
       }
-      # Check for divergence
       if (max(abs(beta_new)) > 100) break
       beta_ph2 <- beta_new
     }
@@ -733,14 +731,15 @@
   mu <- exp(log_mu)
   resid_raw <- m - mu
 
-  # Check GPML score condition: Z'(m/mu - 1) should be near zero
+  # Check GPML score condition: Z'(m/mu - 1) / n should be near zero
   gpml_resid <- as.numeric(m / pmax(mu, 1e-300) - 1)
-  gpml_score <- as.numeric(crossprod(Z * weights, gpml_resid))
-  convergence <- if (max(abs(gpml_score)) < 0.1) 0L else 1L
+  score_mean <- as.numeric(crossprod(Z * weights, gpml_resid)) / sum(weights)
+  score_tol <- max(tol * 10, 1e-4)  # more generous than iteration tol
+  convergence <- if (max(abs(score_mean)) < score_tol) 0L else 1L
 
   if (convergence != 0L) {
-    warning("iOLS did not converge to GPML solution (max score = ",
-            round(max(abs(gpml_score)), 4), ").", call. = FALSE)
+    warning("iOLS did not converge to GPML solution (max |score/n| = ",
+            round(max(abs(score_mean)), 6), ").", call. = FALSE)
   }
 
   # GPML deviance as pseudo log-likelihood

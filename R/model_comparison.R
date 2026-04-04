@@ -240,21 +240,32 @@ lrtest <- function(object1, object2) {
     stop("Models have the same number of parameters -- not nested.")
   }
 
-  # Warn if covariate structures suggest non-nesting.
-  # Check via column-space inclusion: the simpler model's design matrices
-  # must lie in the column space of the complex model's design matrices.
+  # Boundary correction for Poisson vs NB (Self & Liang, 1987)
+  is_boundary <- (object1$method == "poisson" && object2$method == "nb") ||
+                 (object1$method == "nb" && object2$method == "poisson")
+
+  # Warn for different methods (only Poisson vs NB is a valid cross-method LR)
+  if (object1$method != object2$method && !is_boundary) {
+    warning("Models use different methods (", object1$method, " vs ",
+            object2$method, "). LR test may not be valid.", call. = FALSE)
+  }
+
+  # Warn for different constrained settings
+  if (!identical(isTRUE(object1$constrained), isTRUE(object2$constrained))) {
+    warning("Models have different constraint settings. ",
+            "LR test may not be valid.", call. = FALSE)
+  }
+
+  # Check nesting via column-space inclusion
   nested_alpha <- .is_col_subspace(object1$X_alpha, object2$X_alpha)
   nested_beta  <- .is_col_subspace(object1$X_beta, object2$X_beta)
   gamma_ok <- identical(object1$gamma, object2$gamma) ||
-              (is.numeric(object1$gamma) && isTRUE(object2$gamma_estimated))
+              (is.numeric(object1$gamma) && isTRUE(object2$gamma_estimated)) ||
+              (isTRUE(object1$gamma_estimated) && isTRUE(object2$gamma_estimated))
   if (!(nested_alpha && nested_beta && gamma_ok)) {
     warning("Models may not be nested: covariate or gamma specifications differ. ",
             "LR test is only valid for nested models.", call. = FALSE)
   }
-
-  # Boundary correction for Poisson vs NB (Self & Liang, 1987)
-  is_boundary <- (object1$method == "poisson" && object2$method == "nb") ||
-                 (object1$method == "nb" && object2$method == "poisson")
 
   if (is_boundary && df == 1) {
     p_value <- 0.5 * pchisq(lr_stat, df = 1, lower.tail = FALSE)

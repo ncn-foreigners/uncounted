@@ -101,3 +101,34 @@ test_that("lrtest does NOT warn for Poisson vs NB (same covariates)", {
   fit_nb <- quick_fit(d, method = "nb", gamma = 0.005)
   expect_no_warning(lrtest(fit_po, fit_nb))
 })
+
+test_that("lrtest warns for different methods (not Poisson vs NB)", {
+  d <- small_data()
+  # Different methods AND different param counts (so df != 0)
+  fit1 <- quick_fit(d, method = "poisson", gamma = 0.005)
+  fit2 <- quick_fit(d, method = "iols", gamma = 0.005, cov_alpha = ~sex)
+  expect_warning(lrtest(fit1, fit2), "different methods")
+})
+
+test_that("lrtest warns for ~sex vs ~year (non-nested covariates)", {
+  skip_on_cran()
+  d <- testdata
+  fit1 <- quick_fit(d, gamma = 0.005, cov_alpha = ~sex)
+  fit2 <- quick_fit(d, method = "nb", gamma = 0.005, cov_alpha = ~year)
+  expect_warning(lrtest(fit1, fit2), "not be nested")
+})
+
+test_that("lrtest no warn for ~year nested in ~year + sex", {
+  skip_on_cran()
+  d <- testdata
+  fit1 <- quick_fit(d, gamma = 0.005, cov_alpha = ~year)
+  fit2 <- quick_fit(d, gamma = 0.005, cov_alpha = ~year + sex)
+  expect_no_warning(lrtest(fit1, fit2))
+})
+
+test_that("lrtest warns for different fixed gamma values", {
+  d <- small_data()
+  fit1 <- quick_fit(d, gamma = 0.005)
+  fit2 <- quick_fit(d, gamma = 0.01, cov_alpha = ~sex)
+  expect_warning(lrtest(fit1, fit2), "not be nested")
+})
