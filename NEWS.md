@@ -1,3 +1,23 @@
+# uncounted 0.7.2
+
+## New features
+
+* **`plot(popsize(fit))`**: New S3 plot method for population size estimates.
+  `type = "estimate"` (default) shows bias-corrected estimates with CIs;
+  `type = "compare"` shows plug-in and bias-corrected side by side.
+
+* **`compare_popsize(fit1, fit2, ...)`**: Compare population size estimates
+  across models, with print and plot methods. Supports `by` parameter for
+  grouped comparison and custom labels.
+
+* **`predict(fit, newdata)`**: Prediction method supporting new data, with
+  `type = "response"` (counts) or `type = "link"` (log scale). Enables
+  compatibility with the `marginaleffects` package.
+
+* **`tidy(fit)`** and **`glance(fit)`**: broom-compatible methods enabling
+  `modelsummary::modelsummary()` for side-by-side model comparison tables.
+  Requires `generics` package (in Suggests).
+
 # uncounted 0.7.1
 
 ## Bug fixes
