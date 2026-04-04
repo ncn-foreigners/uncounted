@@ -33,6 +33,6 @@ d <- irregular_migration[irregular_migration$year == "2019", ]
 fit <- estimate_hidden_pop(d, ~ m, ~ n, ~ N, method = "poisson",
                            gamma = 0.005)
 glance(fit)
-#>    method nobs    logLik      AIC      BIC deviance df.residual gamma theta
-#> 1 POISSON  203 -1011.373 2026.747 2033.373 1560.452         201 0.005    NA
+#>    method nobs    logLik      AIC      BIC deviance df.residual
+#> 1 POISSON  203 -1011.373 2026.747 2033.373 1560.452         201
 ```

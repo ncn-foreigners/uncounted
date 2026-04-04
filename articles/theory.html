@@ -465,6 +465,21 @@ and
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>γ</mi><annotation encoding="application/x-tex">\gamma</annotation></semantics></math>.</p>
 </div>
 <div class="section level3">
+<h3 id="iols-gamma-pml">iOLS (Gamma PML)<a class="anchor" aria-label="anchor" href="#iols-gamma-pml"></a>
+</h3>
+<p>The iOLS estimator (Benatia, Bellego &amp; Pape, 2024) targets the
+Gamma Pseudo-Maximum Likelihood (GPML) score equations</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><munder><mo>∑</mo><mi>i</mi></munder><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>m</mi><mi>i</mi></msub><mi>/</mi><msub><mi>μ</mi><mi>i</mi></msub><mo>−</mo><mn>1</mn><mo stretchy="true" form="postfix">)</mo></mrow><mspace width="0.167em"></mspace><msub><mi>𝐳</mi><mi>i</mi></msub><mo>=</mo><mn>𝟎</mn></mrow><annotation encoding="application/x-tex">\sum_i (m_i / \mu_i - 1)\,\mathbf{z}_i = \mathbf{0}</annotation></semantics></math></p>
+<p>via a two-phase iterated OLS algorithm. Unlike PPML, which weights
+observations by
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>μ</mi><mi>i</mi></msub><annotation encoding="application/x-tex">\mu_i</annotation></semantics></math>,
+GPML gives equal weight to all observations. This makes it more robust
+to influential high-count observations. See
+<code><a href="../articles/iols.html">vignette("iols")</a></code> for the full algorithm and comparison.</p>
+<p>Currently <code>gamma = "estimate"</code> is not supported for iOLS;
+use a fixed gamma from a Poisson fit.</p>
+</div>
+<div class="section level3">
 <h3 id="gamma-estimation">Gamma estimation<a class="anchor" aria-label="anchor" href="#gamma-estimation"></a>
 </h3>
 <p>The offset parameter
@@ -510,6 +525,12 @@ for all observations.</li>
 <span>  method <span class="op">=</span> <span class="st">"nb"</span></span>
 <span><span class="op">)</span></span>
 <span></span>
+<span><span class="va">fit_iols</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/estimate_hidden_pop.html">estimate_hidden_pop</a></span><span class="op">(</span></span>
+<span>  data <span class="op">=</span> <span class="va">irregular_migration</span>,</span>
+<span>  observed <span class="op">=</span> <span class="op">~</span> <span class="va">m</span>, auxiliary <span class="op">=</span> <span class="op">~</span> <span class="va">n</span>, reference_pop <span class="op">=</span> <span class="op">~</span> <span class="va">N</span>,</span>
+<span>  method <span class="op">=</span> <span class="st">"iols"</span>, gamma <span class="op">=</span> <span class="va">fit_pois</span><span class="op">$</span><span class="va">gamma</span></span>
+<span><span class="op">)</span></span>
+<span></span>
 <span><span class="co">## Extract population size estimates</span></span>
 <span><span class="fu"><a href="../reference/popsize.html">popsize</a></span><span class="op">(</span><span class="va">fit_ols</span><span class="op">)</span></span>
 <span><span class="co">#&gt;   group observed estimate estimate_bc    lower    upper share_pct</span></span>
@@ -519,7 +540,10 @@ for all observations.</li>
 <span><span class="co">#&gt; 1 (all)    27105 290597.5    290498.3 127726.5 660703.2       100</span></span>
 <span><span class="fu"><a href="../reference/popsize.html">popsize</a></span><span class="op">(</span><span class="va">fit_nb</span><span class="op">)</span></span>
 <span><span class="co">#&gt;   group observed estimate estimate_bc    lower   upper share_pct</span></span>
-<span><span class="co">#&gt; 1 (all)    27105  1259565     1231405 731347.6 2073376       100</span></span></code></pre></div>
+<span><span class="co">#&gt; 1 (all)    27105  1259565     1231405 731347.6 2073376       100</span></span>
+<span><span class="fu"><a href="../reference/popsize.html">popsize</a></span><span class="op">(</span><span class="va">fit_iols</span><span class="op">)</span></span>
+<span><span class="co">#&gt;   group observed estimate estimate_bc    lower    upper share_pct</span></span>
+<span><span class="co">#&gt; 1 (all)    27105 163947.9    163244.3 76109.98 350134.3       100</span></span></code></pre></div>
 </div>
 </div>
 <div class="section level2">

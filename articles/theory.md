@@ -298,6 +298,22 @@ and can provide more efficient estimates when the data are truly
 overdispersed. The parameter $\theta$ is jointly estimated alongside
 $\alpha$, $\beta$, and $\gamma$.
 
+### iOLS (Gamma PML)
+
+The iOLS estimator (Benatia, Bellego & Pape, 2024) targets the Gamma
+Pseudo-Maximum Likelihood (GPML) score equations
+
+$$\sum\limits_{i}\left( m_{i}/\mu_{i} - 1 \right)\,\mathbf{z}_{i} = \mathbf{0}$$
+
+via a two-phase iterated OLS algorithm. Unlike PPML, which weights
+observations by $\mu_{i}$, GPML gives equal weight to all observations.
+This makes it more robust to influential high-count observations. See
+[`vignette("iols")`](https://ncn-foreigners.github.io/uncounted/articles/iols.md)
+for the full algorithm and comparison.
+
+Currently `gamma = "estimate"` is not supported for iOLS; use a fixed
+gamma from a Poisson fit.
+
 ### Gamma estimation
 
 The offset parameter $\gamma$ is handled differently depending on the
@@ -333,6 +349,12 @@ fit_nb <- estimate_hidden_pop(
   method = "nb"
 )
 
+fit_iols <- estimate_hidden_pop(
+  data = irregular_migration,
+  observed = ~ m, auxiliary = ~ n, reference_pop = ~ N,
+  method = "iols", gamma = fit_pois$gamma
+)
+
 ## Extract population size estimates
 popsize(fit_ols)
 #>   group observed estimate estimate_bc    lower    upper share_pct
@@ -343,6 +365,9 @@ popsize(fit_pois)
 popsize(fit_nb)
 #>   group observed estimate estimate_bc    lower   upper share_pct
 #> 1 (all)    27105  1259565     1231405 731347.6 2073376       100
+popsize(fit_iols)
+#>   group observed estimate estimate_bc    lower    upper share_pct
+#> 1 (all)    27105 163947.9    163244.3 76109.98 350134.3       100
 ```
 
 ## Inference
