@@ -1,3 +1,14 @@
+# uncounted 0.7.3
+
+## Bug fixes
+
+* **`predict()` factor encoding**: Now uses the training data's `terms` object
+  and `xlev` for consistent dummy encoding in `newdata`. Reordered factor
+  levels or single-level subsets produce correct predictions.
+
+* **`tidy()` confidence intervals**: OLS/NLS models now use `qt()` (matching
+  the t-based p-values) instead of `qnorm()` for confidence intervals.
+
 # uncounted 0.7.2
 
 ## New features

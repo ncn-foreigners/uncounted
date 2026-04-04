@@ -1,6 +1,6 @@
 Package: uncounted
 Title: Estimation of Unauthorized Migrant Populations
-Version: 0.7.2
+Version: 0.7.3
 Authors@R: c(
     person("Maciej", "Beresewicz", , "maciej.beresewicz@ue.poznan.pl", role = c("aut", "cre"),
            comment = c(ORCID = "0000-0002-8281-4301")),
