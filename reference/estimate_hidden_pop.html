@@ -160,7 +160,10 @@ for that.</p></dd>
 for cluster-robust variance estimation (e.g., <code>~ country_code</code>).
 When provided and <code>vcov</code> is a character string, the variance is
 computed using <code><a href="https://sandwich.R-Forge.R-project.org/reference/vcovCL.html" class="external-link">sandwich::vcovCL()</a></code> with the specified HC type.
-Ignored when <code>vcov</code> is a function.</p></dd>
+Note: clustered HC2 and HC3 are only applicable to standard linear and
+generalized linear models; <code><a href="https://sandwich.R-Forge.R-project.org/reference/vcovCL.html" class="external-link">sandwich::vcovCL()</a></code> will emit a warning
+for non-GLM objects. Use <code>"HC0"</code> or <code>"HC1"</code> with clustering
+to avoid this. Ignored when <code>vcov</code> is a function.</p></dd>
 
 </dl></div>
     <div class="section level2">

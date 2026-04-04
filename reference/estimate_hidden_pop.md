@@ -119,7 +119,11 @@ estimate_hidden_pop(
   provided and `vcov` is a character string, the variance is computed
   using
   [`sandwich::vcovCL()`](https://sandwich.R-Forge.R-project.org/reference/vcovCL.html)
-  with the specified HC type. Ignored when `vcov` is a function.
+  with the specified HC type. Note: clustered HC2 and HC3 are only
+  applicable to standard linear and generalized linear models;
+  [`sandwich::vcovCL()`](https://sandwich.R-Forge.R-project.org/reference/vcovCL.html)
+  will emit a warning for non-GLM objects. Use `"HC0"` or `"HC1"` with
+  clustering to avoid this. Ignored when `vcov` is a function.
 
 ## Value
 
