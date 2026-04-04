@@ -176,7 +176,7 @@ summary(fit_pois_c)
 #> Population size estimation results:
 #>   (BC = bias-corrected using model-based variance)
 #>       Observed Estimate Estimate (BC) CI lower CI upper
-#> (all)   27,105  290,597       290,498  127,726  660,703
+#> (all)   27,105  290,597       290,520  127,736  660,752
 ```
 
 The [`summary()`](https://rdrr.io/r/base/summary.html) output reports
@@ -317,7 +317,7 @@ ps_table <- do.call(rbind, lapply(names(models), function(nm) {
 ps_table
 #>            Model  Estimate        BC    Lower     Upper
 #> 1        Poisson  290597.5  290498.3 127726.4  660703.2
-#> 2 Poisson_constr  290597.4  290498.2 127726.4  660702.9
+#> 2 Poisson_constr  290597.4  290520.0 127736.0  660752.4
 #> 3             NB 1259565.1 1231048.3 769019.3 1970665.7
 #> 4    NB_twostage  318957.8  315391.5 221490.9  449101.1
 ```

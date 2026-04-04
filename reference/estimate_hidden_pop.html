@@ -239,7 +239,10 @@ the rate term is positive even when \(n_i = 0\). Typically small
 Fast and transparent but ignores the count nature of \(m_i\)
 and may be inefficient under heteroscedasticity.
 Uses \(\log(m_i)\) as the response (or \(\log(m_i + 1)\) when
-zeros are present).</p></dd>
+zeros are present). Note: when the \(\log(m_i + 1)\) transformation
+is used, fitted values are \(\exp(\hat{\mu})\) where \(\hat{\mu}\)
+was estimated on the shifted scale, so response-scale residuals and
+diagnostics are approximate.</p></dd>
 
 <dt>NLS</dt>
 <dd><p>Nonlinear least squares on the original scale
@@ -256,7 +259,10 @@ default.</p></dd>
 <dt>NB</dt>
 <dd><p>Negative Binomial MLE. Adds a dispersion parameter
 \(\theta\) to accommodate overdispersion beyond what the Poisson
-allows.</p></dd>
+allows. Standard errors for the regression coefficients are computed
+conditional on \(\hat{\theta}\), consistent with the approach used
+in <code><a href="https://rdrr.io/pkg/MASS/man/glm.nb.html" class="external-link">MASS::glm.nb</a></code>. This means coefficient SEs do not account for
+uncertainty in \(\theta\) estimation.</p></dd>
 
 
 </dl><p><strong>Constrained vs. unconstrained estimation.</strong>
@@ -386,7 +392,7 @@ irregular foreigners in Poland using non-linear count regression models.
 <span class="r-out co"><span class="r-pr">#&gt;</span> Population size estimation results:</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   (BC = bias-corrected using model-based variance)</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>       Observed Estimate Estimate (BC) CI lower CI upper</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> (all)      777   14,443        11,375    3,090   41,869</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> (all)      777   14,443        11,512    3,128   42,375</span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>

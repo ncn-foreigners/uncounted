@@ -215,7 +215,10 @@ N_i)\$\$
   Ordinary least squares on the log-linearized model. Fast and
   transparent but ignores the count nature of \\m_i\\ and may be
   inefficient under heteroscedasticity. Uses \\\log(m_i)\\ as the
-  response (or \\\log(m_i + 1)\\ when zeros are present).
+  response (or \\\log(m_i + 1)\\ when zeros are present). Note: when the
+  \\\log(m_i + 1)\\ transformation is used, fitted values are
+  \\\exp(\hat{\mu})\\ where \\\hat{\mu}\\ was estimated on the shifted
+  scale, so response-scale residuals and diagnostics are approximate.
 
 - NLS:
 
@@ -233,7 +236,12 @@ N_i)\$\$
 - NB:
 
   Negative Binomial MLE. Adds a dispersion parameter \\\theta\\ to
-  accommodate overdispersion beyond what the Poisson allows.
+  accommodate overdispersion beyond what the Poisson allows. Standard
+  errors for the regression coefficients are computed conditional on
+  \\\hat{\theta}\\, consistent with the approach used in
+  [`MASS::glm.nb`](https://rdrr.io/pkg/MASS/man/glm.nb.html). This means
+  coefficient SEs do not account for uncertainty in \\\theta\\
+  estimation.
 
 **Constrained vs. unconstrained estimation.** When `constrained = FALSE`
 (default), \\\alpha\\ and \\\beta\\ are estimated on the real line
@@ -365,5 +373,5 @@ summary(fit_constr)
 #> Population size estimation results:
 #>   (BC = bias-corrected using model-based variance)
 #>       Observed Estimate Estimate (BC) CI lower CI upper
-#> (all)      777   14,443        11,375    3,090   41,869
+#> (all)      777   14,443        11,512    3,128   42,375
 ```
