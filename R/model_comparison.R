@@ -76,10 +76,11 @@ compare_models <- function(..., sort_by = c("AIC", "BIC", "loglik")) {
 
   # Check for mixed likelihood types
   methods <- sapply(models, function(x) x$method)
-  has_ols <- any(methods %in% c("ols", "nls"))
+  has_pseudo <- any(methods %in% c("ols", "nls", "iols"))
   has_ml <- any(methods %in% c("poisson", "nb"))
-  if (has_ols && has_ml) {
-    warning("Comparing OLS/NLS pseudo-loglik with true likelihood is not meaningful for AIC/BIC.")
+  if (has_pseudo && has_ml) {
+    warning("Comparing pseudo-loglik (OLS/NLS/iOLS) with count likelihood ",
+            "(Poisson/NB) is not meaningful for AIC/BIC.", call. = FALSE)
   }
 
   # Build table
