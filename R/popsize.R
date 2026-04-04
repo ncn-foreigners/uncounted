@@ -297,8 +297,150 @@ popsize.uncounted <- function(object, by = NULL, level = 0.95,
     )
   }
 
+  class(ps) <- c("uncounted_popsize", "data.frame")
   ps
 }
+
+
+#' Plot Population Size Estimates
+#'
+#' Visualizes population size estimates by group with confidence intervals.
+#'
+#' @param x An \code{"uncounted_popsize"} object from \code{\link{popsize}}.
+#' @param type \code{"estimate"} (default) shows bias-corrected estimates with
+#'   CIs; \code{"compare"} shows plug-in and bias-corrected side by side.
+#' @param ... Additional graphical arguments passed to \code{\link{plot}}.
+#'
+#' @export
+plot.uncounted_popsize <- function(x, type = c("estimate", "compare"), ...) {
+  type <- match.arg(type)
+  ng <- nrow(x)
+  labels <- x$group
+
+  if (type == "compare") {
+    # Side-by-side: plug-in vs bias-corrected
+    xlim <- range(c(x$lower, x$upper, x$estimate, x$estimate_bc), na.rm = TRUE)
+    xlim[1] <- max(xlim[1], 0)
+    y_pos <- seq_len(ng)
+    offset <- 0.15
+
+    plot(NULL, xlim = xlim, ylim = c(0.5, ng + 0.5),
+         yaxt = "n", ylab = "", xlab = "Population size",
+         main = "Plug-in vs bias-corrected estimates", ...)
+    axis(2, at = y_pos, labels = labels, las = 1, cex.axis = 0.8)
+    abline(h = y_pos, col = "gray90")
+
+    # Plug-in (blue)
+    points(x$estimate, y_pos + offset, pch = 16, col = "steelblue")
+    # BC (red)
+    points(x$estimate_bc, y_pos - offset, pch = 17, col = "firebrick")
+    # CIs for BC
+    segments(x$lower, y_pos - offset, x$upper, y_pos - offset,
+             col = "firebrick", lwd = 1.5)
+
+    legend("bottomright", legend = c("Plug-in", "Bias-corrected"),
+           pch = c(16, 17), col = c("steelblue", "firebrick"),
+           bty = "n", cex = 0.9)
+  } else {
+    # Default: BC estimates with CIs
+    xlim <- range(c(x$lower, x$upper), na.rm = TRUE)
+    xlim[1] <- max(xlim[1], 0)
+    y_pos <- seq_len(ng)
+
+    plot(x$estimate_bc, y_pos, xlim = xlim, ylim = c(0.5, ng + 0.5),
+         pch = 16, yaxt = "n", ylab = "", xlab = "Population size",
+         main = "Population size estimates (bias-corrected)", ...)
+    axis(2, at = y_pos, labels = labels, las = 1, cex.axis = 0.8)
+    segments(x$lower, y_pos, x$upper, y_pos, lwd = 1.5)
+    abline(h = y_pos, col = "gray90", lty = 3)
+    # Redraw points on top
+    points(x$estimate_bc, y_pos, pch = 16)
+  }
+  invisible(x)
+}
+
+
+#' Compare Population Size Across Models
+#'
+#' Produces a side-by-side comparison of population size estimates from
+#' multiple fitted models.
+#'
+#' @param ... Fitted \code{uncounted} objects to compare.
+#' @param labels Character vector of model labels. Defaults to model method.
+#' @param by Optional formula for grouping (passed to \code{\link{popsize}}).
+#' @param bias_correction Logical; apply bias correction? Default TRUE.
+#' @return An object of class \code{"uncounted_popsize_compare"} with
+#'   components \code{table} (data frame) and \code{labels} (model labels).
+#'
+#' @export
+compare_popsize <- function(..., labels = NULL, by = NULL,
+                            bias_correction = TRUE) {
+  models <- list(...)
+  n_models <- length(models)
+  if (n_models < 2) stop("Need at least 2 models to compare.")
+
+  if (is.null(labels)) {
+    labels <- vapply(models, function(m) toupper(m$method), character(1))
+  }
+
+  tabs <- lapply(seq_len(n_models), function(i) {
+    ps <- popsize(models[[i]], by = by, bias_correction = bias_correction)
+    ps$model <- labels[i]
+    ps
+  })
+
+  combined <- do.call(rbind, tabs)
+  rownames(combined) <- NULL
+
+  result <- list(table = combined, labels = labels, n_models = n_models)
+  class(result) <- "uncounted_popsize_compare"
+  result
+}
+
+
+#' @export
+print.uncounted_popsize_compare <- function(x, ...) {
+  cat("Population size comparison:", paste(x$labels, collapse = " vs "), "\n\n")
+  print(x$table[, c("model", "group", "estimate", "estimate_bc", "lower", "upper")])
+  invisible(x)
+}
+
+
+#' @export
+plot.uncounted_popsize_compare <- function(x, ...) {
+  tab <- x$table
+  labels <- x$labels
+  groups <- unique(tab$group)
+  ng <- length(groups)
+  nm <- x$n_models
+
+  cols <- c("steelblue", "firebrick", "forestgreen", "darkorange",
+            "purple", "brown")[seq_len(nm)]
+
+  xlim <- range(c(tab$lower, tab$upper), na.rm = TRUE)
+  xlim[1] <- max(xlim[1], 0)
+  y_pos <- seq_len(ng)
+  spacing <- 0.8 / nm
+
+  plot(NULL, xlim = xlim, ylim = c(0.5, ng + 0.5),
+       yaxt = "n", ylab = "", xlab = "Population size",
+       main = "Population size comparison", ...)
+  axis(2, at = y_pos, labels = groups, las = 1, cex.axis = 0.8)
+  abline(h = y_pos, col = "gray90", lty = 3)
+
+  for (j in seq_len(nm)) {
+    sub <- tab[tab$model == labels[j], ]
+    offset <- (j - (nm + 1) / 2) * spacing
+    y_j <- match(sub$group, groups) + offset
+    points(sub$estimate_bc, y_j, pch = 15 + j, col = cols[j])
+    segments(sub$lower, y_j, sub$upper, y_j, col = cols[j], lwd = 1.5)
+  }
+
+  legend("bottomright", legend = labels, pch = 15 + seq_len(nm),
+         col = cols, bty = "n", cex = 0.9)
+  invisible(x)
+}
+
 
 #' @rdname popsize
 #' @usage NULL
