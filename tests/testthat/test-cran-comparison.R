@@ -70,15 +70,21 @@ test_that("lrtest errors with OLS models", {
 
 # ---- Regression: lrtest warns for non-nested models ----
 
-test_that("lrtest warns for non-nested models", {
-  d <- small_data()
-  # Non-nested: fit1 has more alpha params but fewer beta params than fit2
-  # fit1: p_alpha=2, p_beta=1 = 3 total
-  # fit2: p_alpha=1, p_beta=2, theta=1 = 4 total (NB adds theta)
-  # So df > 0 but p_alpha_1 > p_alpha_2 triggers the warning
-  fit1 <- quick_fit(d, gamma = 0.005, cov_alpha = ~sex)           # 3 params
-  fit2 <- quick_fit(d, method = "nb", gamma = 0.005, cov_beta = ~sex)  # 4 params
+test_that("lrtest warns for non-nested covariate models", {
+  skip_on_cran()
+  d <- testdata
+  # sex-only alpha vs year-only alpha (neither spans the other)
+  fit1 <- quick_fit(d, gamma = 0.005, cov_alpha = ~sex)
+  fit2 <- quick_fit(d, method = "nb", gamma = 0.005, cov_alpha = ~year)
   expect_warning(lrtest(fit1, fit2), "not be nested")
+})
+
+test_that("lrtest does NOT warn when fixed gamma nested in estimated gamma", {
+  d <- small_data()
+  # Fixed gamma is nested in estimated gamma (same covariates)
+  fit1 <- quick_fit(d, gamma = 0.005)
+  fit2 <- quick_fit(d, method = "nb", gamma = "estimate")
+  expect_no_warning(lrtest(fit1, fit2))
 })
 
 test_that("lrtest does NOT warn for genuinely nested models", {
@@ -87,4 +93,11 @@ test_that("lrtest does NOT warn for genuinely nested models", {
   fit1 <- quick_fit(d, gamma = 0.005)                     # p_alpha=1, p_beta=1
   fit2 <- quick_fit(d, gamma = 0.005, cov_alpha = ~sex)   # p_alpha=2, p_beta=1
   expect_no_warning(lrtest(fit1, fit2))
+})
+
+test_that("lrtest does NOT warn for Poisson vs NB (same covariates)", {
+  d <- small_data()
+  fit_po <- quick_fit(d, method = "poisson", gamma = 0.005)
+  fit_nb <- quick_fit(d, method = "nb", gamma = 0.005)
+  expect_no_warning(lrtest(fit_po, fit_nb))
 })

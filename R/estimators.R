@@ -540,7 +540,7 @@
 
   opt <- optim(start_par, nll, gr = grad_nll, method = "L-BFGS-B",
                lower = lower, upper = upper,
-               control = list(maxit = 1000))
+               control = list(maxit = 1000), hessian = TRUE)
 
   if (opt$convergence != 0) {
     warning("NB optimization did not converge (code ", opt$convergence,
@@ -573,6 +573,8 @@
     dbeta <- beta_lin
     Z <- cbind(log_N * dalpha * X_alpha, lr_final * dbeta * X_beta)
   } else {
+    dalpha <- rep(1, n_obs)
+    dbeta <- rep(1, n_obs)
     Z <- cbind(log_N * X_alpha, lr_final * X_beta)
   }
   if (estimate_gamma) {
@@ -603,6 +605,23 @@
 
   ## NB score residual: w_i * (m_i - mu_i) * theta/(theta + mu_i)
   nb_score_factor <- weights * resid_raw * theta / (theta + mu)
+
+  ## Per-observation score on optimizer (log) scale for full NB sandwich.
+  ## Sign: score of log-likelihood = -score of nll, so negate grad_nll terms.
+  w_nb_signed <- -weights * (mu - m) * theta / (theta + mu)
+  score_alpha <- w_nb_signed * log_N * dalpha * X_alpha
+  score_beta  <- w_nb_signed * lr_final * dbeta * X_beta
+  score_theta <- weights * (
+    digamma(m + theta) - digamma(theta) +
+    log(theta) + 1 - log(theta + mu) -
+    (m + theta) / (theta + mu)
+  ) * theta  # on log-theta scale
+  score_full <- cbind(score_alpha, score_beta, theta = score_theta)
+  if (estimate_gamma) {
+    score_gamma <- w_nb_signed * beta_lin / rate_final * gamma_hat
+    score_full <- cbind(score_full, gamma = score_gamma)
+  }
+
   list(alpha_coefs = a_raw, beta_coefs = b_raw,
        alpha_values = alpha_lin, beta_values = beta_lin,
        fitted = mu, residuals = resid_raw, log_mu = log_mu,
@@ -610,6 +629,8 @@
        vcov_full = if (estimate_gamma) V_full else V,
        model_matrix_full = Z, bread_weights = w_nb,
        score_residuals = nb_score_factor,
+       score_full = score_full,
+       hessian_nll = opt$hessian,
        n_obs = n_obs, df.residual = n_obs - length(opt$par),
        loglik = -opt$value, theta = theta,
        gamma_estimated = if (estimate_gamma) gamma_hat else NULL,

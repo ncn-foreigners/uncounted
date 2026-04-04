@@ -1,3 +1,13 @@
+#' Check if the column space of A is a subspace of B
+#' @noRd
+.is_col_subspace <- function(A, B) {
+  if (ncol(A) > ncol(B)) return(FALSE)
+  # Project each column of A onto column space of B
+  Q <- qr(B)
+  proj <- qr.fitted(Q, A)
+  max(abs(A - proj)) < 1e-8
+}
+
 #' Compare multiple uncounted models
 #'
 #' Produces a side-by-side comparison table for two or more fitted
@@ -231,12 +241,14 @@ lrtest <- function(object1, object2) {
   }
 
   # Warn if covariate structures suggest non-nesting.
-  # A nested pair should have p_alpha_simple <= p_alpha_complex AND
-  # p_beta_simple <= p_beta_complex. If the simpler model has MORE of one
-  # parameter type but FEWER of another, the models are likely not nested.
-  if (object1$p_alpha > object2$p_alpha || object1$p_beta > object2$p_beta) {
-    warning("Models may not be nested: the simpler model has more parameters ",
-            "in one component than the complex model. ",
+  # Check via column-space inclusion: the simpler model's design matrices
+  # must lie in the column space of the complex model's design matrices.
+  nested_alpha <- .is_col_subspace(object1$X_alpha, object2$X_alpha)
+  nested_beta  <- .is_col_subspace(object1$X_beta, object2$X_beta)
+  gamma_ok <- identical(object1$gamma, object2$gamma) ||
+              (is.numeric(object1$gamma) && isTRUE(object2$gamma_estimated))
+  if (!(nested_alpha && nested_beta && gamma_ok)) {
+    warning("Models may not be nested: covariate or gamma specifications differ. ",
             "LR test is only valid for nested models.", call. = FALSE)
   }
 

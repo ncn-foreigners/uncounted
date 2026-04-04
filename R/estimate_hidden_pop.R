@@ -416,17 +416,35 @@ estimate_hidden_pop <- function(data,
 
   class(out) <- "uncounted"
 
-  # ---- Compute vcov using sandwich ----
-  V_full <- .compute_vcov_sandwich(out, vcov, cluster_vec)
-
+  # ---- Compute vcov ----
   p_ab <- p_alpha + p_beta
-  has_gamma_col <- ncol(result$model_matrix_full) > p_ab
-  if (has_gamma_col) {
-    out$vcov_full <- V_full
-    out$vcov <- V_full[seq_len(p_ab), seq_len(p_ab), drop = FALSE]
+
+  if (method == "nb" && !is.null(result$hessian_nll)) {
+    # NB: dedicated sandwich path that includes theta uncertainty
+    vcov_type_str <- if (is.character(vcov)) vcov else "HC0"
+    V_nb_full <- .compute_nb_sandwich(
+      hessian_nll = result$hessian_nll,
+      score_full  = result$score_full,
+      n_obs       = nrow(data),
+      vcov_type   = vcov_type_str,
+      cluster     = cluster_vec
+    )
+    out$vcov <- V_nb_full[seq_len(p_ab), seq_len(p_ab), drop = FALSE]
+    out$vcov_full <- V_nb_full
+    out$theta_se <- sqrt(max(0, V_nb_full[p_ab + 1, p_ab + 1]))
+    out$score_full <- result$score_full
+    out$hessian_nll <- result$hessian_nll
   } else {
-    out$vcov_full <- V_full
-    out$vcov <- V_full
+    # Non-NB (or NB without Hessian): use sandwich package
+    V_full <- .compute_vcov_sandwich(out, vcov, cluster_vec)
+    has_gamma_col <- ncol(result$model_matrix_full) > p_ab
+    if (has_gamma_col) {
+      out$vcov_full <- V_full
+      out$vcov <- V_full[seq_len(p_ab), seq_len(p_ab), drop = FALSE]
+    } else {
+      out$vcov_full <- V_full
+      out$vcov <- V_full
+    }
   }
 
   out

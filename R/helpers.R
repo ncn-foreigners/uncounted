@@ -175,6 +175,50 @@
   V
 }
 
+#' NB-specific sandwich vcov using the full score and Hessian
+#'
+#' For the NB model, theta enters the likelihood in a way that cannot be
+#' factored through the mean-model Jacobian (unlike alpha/beta/gamma).
+#' This function computes the sandwich vcov using the full per-observation
+#' score vector and the optim Hessian, bypassing the generic sandwich
+#' package machinery (which assumes \code{estfun / model.matrix} factoring).
+#'
+#' @param hessian_nll Hessian of the negative log-likelihood from \code{optim()},
+#'   on the optimizer scale (log-theta, log-gamma). Dimension k x k where
+#'   k = p_alpha + p_beta + 1 for theta, optionally + 1 for gamma.
+#' @param score_full Per-observation score matrix (n x k), on the same scale.
+#' @param n_obs Number of observations.
+#' @param vcov_type HC type: \code{"HC0"} or \code{"HC1"}. HC2+ not supported
+#'   for NB with theta; falls back to HC1 with a message.
+#' @param cluster Optional factor vector for cluster-robust variance.
+#' @return k x k sandwich variance-covariance matrix.
+#' @noRd
+.compute_nb_sandwich <- function(hessian_nll, score_full, n_obs,
+                                  vcov_type = "HC0", cluster = NULL) {
+  H_inv <- .solve_safe(hessian_nll)
+  p <- ncol(score_full)
+
+  if (!is.null(cluster)) {
+    cl <- as.factor(cluster)
+    G <- nlevels(cl)
+    score_g <- rowsum(score_full, cl, reorder = FALSE)
+    meat <- crossprod(score_g)
+    correction <- (G / (G - 1)) * ((n_obs - 1) / (n_obs - p))
+    return(H_inv %*% (correction * meat) %*% H_inv)
+  }
+
+  meat <- crossprod(score_full)
+  if (vcov_type %in% c("HC2", "HC3", "HC4", "HC4m", "HC5")) {
+    message("NB with theta in sandwich: ", vcov_type,
+            " not available, using HC1 correction.")
+    vcov_type <- "HC1"
+  }
+  if (vcov_type == "HC1") {
+    meat <- meat * n_obs / (n_obs - p)
+  }
+  H_inv %*% meat %*% H_inv
+}
+
 #' Compute hat values for weighted least squares
 #' @noRd
 .hat_values_wls <- function(X, weights) {
