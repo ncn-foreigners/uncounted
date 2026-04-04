@@ -3,4 +3,9 @@
 .RData
 .Ruserdata
 .DS_Store
+.claude/
+inst/doc
+docs/
 tests/testthat/Rplots.pdf
+README.html
+*.Rproj
