@@ -71,11 +71,10 @@ df$m <- rpois(30, lambda = df$N^0.5 * (df$n / df$N)^0.8)
 
 fit_po <- estimate_hidden_pop(data = df, observed = ~m, auxiliary = ~n,
                               reference_pop = ~N, method = "poisson")
-#> Warning: Some alpha values < 0 (min = -1.274). Consider using constrained = TRUE.
+#> Warning: Some alpha values < 0 (min = -1.28). Consider using constrained = TRUE.
 fit_nb <- estimate_hidden_pop(data = df, observed = ~m, auxiliary = ~n,
                               reference_pop = ~N, method = "nb")
 #> Warning: Some alpha values < 0 (min = -1.244). Consider using constrained = TRUE.
-#> NB with theta in sandwich: HC3 not available, using HC1 correction.
 
 # Test for overdispersion (Poisson vs NB)
 lrtest(fit_po, fit_nb)

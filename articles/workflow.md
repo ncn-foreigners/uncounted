@@ -198,10 +198,9 @@ fit_nb <- estimate_hidden_pop(
   gamma = "estimate",
   countries = ~ country
 )
-#> NB with theta in sandwich: HC3 not available, using HC1 correction.
 summary(fit_nb)
 #> Unauthorized population estimation
-#> Method: NB | vcov: HC3 
+#> Method: NB | vcov: HC1 
 #> N obs: 1382 
 #> Gamma: 0.01901 (estimated) 
 #> Theta (NB dispersion): 1.0616 
@@ -242,10 +241,9 @@ fit_nb2 <- estimate_hidden_pop(
   gamma = gamma_from_pois,
   countries = ~ country
 )
-#> NB with theta in sandwich: HC3 not available, using HC1 correction.
 summary(fit_nb2)
 #> Unauthorized population estimation
-#> Method: NB | vcov: HC3 
+#> Method: NB | vcov: HC1 
 #> N obs: 1382 
 #> Gamma: 0.001831 (fixed) 
 #> Theta (NB dispersion): 0.9491 
@@ -416,8 +414,6 @@ comp <- compare_models(
   NB_twostage    = fit_nb2,
   sort_by = "AIC"
 )
-#> NB with theta in sandwich: HC3 not available, using HC1 correction.
-#> NB with theta in sandwich: HC3 not available, using HC1 correction.
 comp
 #> Model comparison
 #> ------------------------------------------------------------ 

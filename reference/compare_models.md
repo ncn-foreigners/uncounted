@@ -98,16 +98,14 @@ df$m <- rpois(30, lambda = df$N^0.5 * (df$n / df$N)^0.8)
 
 fit_po <- estimate_hidden_pop(data = df, observed = ~m, auxiliary = ~n,
                               reference_pop = ~N, method = "poisson")
-#> Warning: Some alpha values < 0 (min = -1.274). Consider using constrained = TRUE.
+#> Warning: Some alpha values < 0 (min = -1.28). Consider using constrained = TRUE.
 fit_nb <- estimate_hidden_pop(data = df, observed = ~m, auxiliary = ~n,
                               reference_pop = ~N, method = "nb")
 #> Warning: Some alpha values < 0 (min = -1.244). Consider using constrained = TRUE.
-#> NB with theta in sandwich: HC3 not available, using HC1 correction.
 
 comp <- compare_models(Poisson = fit_po, NB = fit_nb, sort_by = "AIC")
-#> Warning: Some alpha values < 0 (min = -1.274). Consider using constrained = TRUE.
+#> Warning: Some alpha values < 0 (min = -1.28). Consider using constrained = TRUE.
 #> Warning: Some alpha values < 0 (min = -1.244). Consider using constrained = TRUE.
-#> NB with theta in sandwich: HC3 not available, using HC1 correction.
 comp
 #> Model comparison
 #> ------------------------------------------------------------ 
@@ -115,6 +113,6 @@ comp
 #>  Poisson POISSON       FALSE     3 -52.51 111.02 115.22    33.82      26.32
 #>       NB      NB       FALSE     4 -52.52 113.05 118.65    33.85      26.35
 #>  RMSE R2_cor R2_D  R2_CW
-#>  1.43 0.1019    0 0.1209
+#>  1.43 0.1019    0 0.1208
 #>  1.43 0.1018    0 0.1198
 ```

@@ -97,34 +97,33 @@ and sex covariates on alpha and year covariates on beta.</p>
 <span>  method <span class="op">=</span> <span class="st">"nb"</span>,</span>
 <span>  cov_alpha <span class="op">=</span> <span class="op">~</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">factor</a></span><span class="op">(</span><span class="va">year</span><span class="op">)</span> <span class="op">+</span> <span class="va">sex</span>, cov_beta <span class="op">=</span> <span class="op">~</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">factor</a></span><span class="op">(</span><span class="va">year</span><span class="op">)</span>,</span>
 <span>  countries <span class="op">=</span> <span class="op">~</span> <span class="va">country_code</span></span>
-<span><span class="op">)</span></span>
-<span><span class="co">#&gt; NB with theta in sandwich: HC3 not available, using HC1 correction.</span></span></code></pre></div>
+<span><span class="op">)</span></span></code></pre></div>
 <p>Quick summaries:</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">fit_po</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Unauthorized population estimation</span></span>
 <span><span class="co">#&gt; Method: POISSON | vcov: HC3 </span></span>
 <span><span class="co">#&gt; N obs: 1382 </span></span>
-<span><span class="co">#&gt; Gamma: 0.00726 (estimated) </span></span>
+<span><span class="co">#&gt; Gamma: 0.007252 (estimated) </span></span>
 <span><span class="co">#&gt; Log-likelihood: -8217.25 </span></span>
 <span><span class="co">#&gt; AIC: 16462.49  BIC: 16535.73 </span></span>
 <span><span class="co">#&gt; Deviance: 13831.69 </span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Coefficients:</span></span>
 <span><span class="co">#&gt;                          Estimate Std. Error z value  Pr(&gt;|z|)    </span></span>
-<span><span class="co">#&gt; alpha:(Intercept)       0.7888971  0.0905354  8.7137 &lt; 2.2e-16 ***</span></span>
-<span><span class="co">#&gt; alpha:factor(year)2020  0.0011183  0.0960691  0.0116 0.9907121    </span></span>
-<span><span class="co">#&gt; alpha:factor(year)2021 -0.0175125  0.0874476 -0.2003 0.8412748    </span></span>
-<span><span class="co">#&gt; alpha:factor(year)2022 -0.0936906  0.1094198 -0.8562 0.3918604    </span></span>
-<span><span class="co">#&gt; alpha:factor(year)2023 -0.1135591  0.1774715 -0.6399 0.5222557    </span></span>
-<span><span class="co">#&gt; alpha:factor(year)2024 -0.1691469  0.1613513 -1.0483 0.2944937    </span></span>
-<span><span class="co">#&gt; alpha:sexMale           0.0420166  0.0458791  0.9158 0.3597657    </span></span>
-<span><span class="co">#&gt; beta:(Intercept)        0.6754914  0.1953200  3.4584 0.0005434 ***</span></span>
-<span><span class="co">#&gt; beta:factor(year)2020   0.1885106  0.2275888  0.8283 0.4075035    </span></span>
-<span><span class="co">#&gt; beta:factor(year)2021   0.2330038  0.2128225  1.0948 0.2735925    </span></span>
-<span><span class="co">#&gt; beta:factor(year)2022   0.0887057  0.2490143  0.3562 0.7216702    </span></span>
-<span><span class="co">#&gt; beta:factor(year)2023  -0.0519702  0.3787582 -0.1372 0.8908632    </span></span>
-<span><span class="co">#&gt; beta:factor(year)2024  -0.3225896  0.3187799 -1.0120 0.3115616    </span></span>
+<span><span class="co">#&gt; alpha:(Intercept)       0.7888791  0.0905306  8.7139 &lt; 2.2e-16 ***</span></span>
+<span><span class="co">#&gt; alpha:factor(year)2020  0.0012314  0.0961269  0.0128 0.9897790    </span></span>
+<span><span class="co">#&gt; alpha:factor(year)2021 -0.0174682  0.0874576 -0.1997 0.8416895    </span></span>
+<span><span class="co">#&gt; alpha:factor(year)2022 -0.0937655  0.1093999 -0.8571 0.3913953    </span></span>
+<span><span class="co">#&gt; alpha:factor(year)2023 -0.1136845  0.1773996 -0.6408 0.5216276    </span></span>
+<span><span class="co">#&gt; alpha:factor(year)2024 -0.1690606  0.1613972 -1.0475 0.2948776    </span></span>
+<span><span class="co">#&gt; alpha:sexMale           0.0420143  0.0458809  0.9157 0.3598104    </span></span>
+<span><span class="co">#&gt; beta:(Intercept)        0.6753695  0.1952751  3.4586 0.0005431 ***</span></span>
+<span><span class="co">#&gt; beta:factor(year)2020   0.1888301  0.2277130  0.8292 0.4069653    </span></span>
+<span><span class="co">#&gt; beta:factor(year)2021   0.2330868  0.2128383  1.0951 0.2734572    </span></span>
+<span><span class="co">#&gt; beta:factor(year)2022   0.0884458  0.2489483  0.3553 0.7223815    </span></span>
+<span><span class="co">#&gt; beta:factor(year)2023  -0.0523686  0.3785430 -0.1383 0.8899697    </span></span>
+<span><span class="co">#&gt; beta:factor(year)2024  -0.3223205  0.3188461 -1.0109 0.3120658    </span></span>
 <span><span class="co">#&gt; ---</span></span>
 <span><span class="co">#&gt; Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</span></span>
 <span><span class="co">#&gt; </span></span>
@@ -132,43 +131,43 @@ and sex covariates on alpha and year covariates on beta.</p>
 <span><span class="co">#&gt; Population size estimation results:</span></span>
 <span><span class="co">#&gt;   (BC = bias-corrected using model-based variance)</span></span>
 <span><span class="co">#&gt;                       Observed Estimate Estimate (BC) CI lower CI upper</span></span>
-<span><span class="co">#&gt; year=2019, sex=Female    1,535   21,115        21,084    3,390  131,112</span></span>
-<span><span class="co">#&gt; year=2019, sex=Male      5,069   60,042        59,958   10,174  353,337</span></span>
-<span><span class="co">#&gt; year=2020, sex=Female      698   23,598        23,533    6,029   91,857</span></span>
-<span><span class="co">#&gt; year=2020, sex=Male      2,700   66,629        66,438   22,985  192,041</span></span>
-<span><span class="co">#&gt; year=2021, sex=Female      483   22,736        22,671    7,262   70,775</span></span>
-<span><span class="co">#&gt; year=2021, sex=Male      2,622   65,001        64,807   32,342  129,862</span></span>
-<span><span class="co">#&gt; year=2022, sex=Female      317   14,110        14,074    2,476   79,996</span></span>
-<span><span class="co">#&gt; year=2022, sex=Male      2,632   32,902        32,825    7,365  146,303</span></span>
-<span><span class="co">#&gt; year=2023, sex=Female      523   12,077        12,056      533  272,610</span></span>
-<span><span class="co">#&gt; year=2023, sex=Male      3,839   28,872        28,828    1,219  681,885</span></span>
-<span><span class="co">#&gt; year=2024, sex=Female      956    7,109         7,103      576   87,558</span></span>
-<span><span class="co">#&gt; year=2024, sex=Male      5,731   17,473        17,459    1,176  259,155</span></span>
+<span><span class="co">#&gt; year=2019, sex=Female    1,535   21,112        21,080    3,390  131,073</span></span>
+<span><span class="co">#&gt; year=2019, sex=Male      5,069   60,028        59,945   10,174  353,185</span></span>
+<span><span class="co">#&gt; year=2020, sex=Female      698   23,622        23,557    6,024   92,123</span></span>
+<span><span class="co">#&gt; year=2020, sex=Male      2,700   66,697        66,506   22,946  192,756</span></span>
+<span><span class="co">#&gt; year=2021, sex=Female      483   22,742        22,678    7,259   70,846</span></span>
+<span><span class="co">#&gt; year=2021, sex=Male      2,622   65,018        64,824   32,315  130,037</span></span>
+<span><span class="co">#&gt; year=2022, sex=Female      317   14,096        14,060    2,474   79,888</span></span>
+<span><span class="co">#&gt; year=2022, sex=Male      2,632   32,870        32,792    7,361  146,085</span></span>
+<span><span class="co">#&gt; year=2023, sex=Female      523   12,059        12,039      533  271,728</span></span>
+<span><span class="co">#&gt; year=2023, sex=Male      3,839   28,829        28,785    1,219  679,658</span></span>
+<span><span class="co">#&gt; year=2024, sex=Female      956    7,114         7,107      576   87,708</span></span>
+<span><span class="co">#&gt; year=2024, sex=Male      5,731   17,484        17,470    1,175  259,664</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">fit_nb</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Unauthorized population estimation</span></span>
-<span><span class="co">#&gt; Method: NB | vcov: HC3 </span></span>
+<span><span class="co">#&gt; Method: NB | vcov: HC1 </span></span>
 <span><span class="co">#&gt; N obs: 1382 </span></span>
-<span><span class="co">#&gt; Gamma: 0.020901 (estimated) </span></span>
+<span><span class="co">#&gt; Gamma: 0.020904 (estimated) </span></span>
 <span><span class="co">#&gt; Theta (NB dispersion): 1.3552 </span></span>
 <span><span class="co">#&gt; Log-likelihood: -2621.12 </span></span>
 <span><span class="co">#&gt; AIC: 5272.23  BIC: 5350.7 </span></span>
-<span><span class="co">#&gt; Deviance: 1275.94 </span></span>
+<span><span class="co">#&gt; Deviance: 1275.92 </span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Coefficients:</span></span>
 <span><span class="co">#&gt;                         Estimate Std. Error z value  Pr(&gt;|z|)    </span></span>
-<span><span class="co">#&gt; alpha:(Intercept)       0.815763   0.034303 23.7813 &lt; 2.2e-16 ***</span></span>
-<span><span class="co">#&gt; alpha:factor(year)2020 -0.041935   0.057013 -0.7355 0.4620172    </span></span>
-<span><span class="co">#&gt; alpha:factor(year)2021  0.075384   0.059612  1.2646 0.2060253    </span></span>
-<span><span class="co">#&gt; alpha:factor(year)2022 -0.030016   0.073386 -0.4090 0.6825273    </span></span>
-<span><span class="co">#&gt; alpha:factor(year)2023  0.015622   0.055914  0.2794 0.7799363    </span></span>
-<span><span class="co">#&gt; alpha:factor(year)2024  0.069686   0.047747  1.4595 0.1444258    </span></span>
-<span><span class="co">#&gt; alpha:sexMale           0.044307   0.013135  3.3732 0.0007431 ***</span></span>
-<span><span class="co">#&gt; beta:(Intercept)        0.873278   0.092193  9.4723 &lt; 2.2e-16 ***</span></span>
-<span><span class="co">#&gt; beta:factor(year)2020   0.140450   0.116659  1.2039 0.2286151    </span></span>
-<span><span class="co">#&gt; beta:factor(year)2021   0.468045   0.121517  3.8517 0.0001173 ***</span></span>
-<span><span class="co">#&gt; beta:factor(year)2022   0.185007   0.151468  1.2214 0.2219238    </span></span>
-<span><span class="co">#&gt; beta:factor(year)2023   0.183906   0.110409  1.6657 0.0957766 .  </span></span>
-<span><span class="co">#&gt; beta:factor(year)2024   0.132760   0.092741  1.4315 0.1522851    </span></span>
+<span><span class="co">#&gt; alpha:(Intercept)       0.815914   0.034303 23.7857 &lt; 2.2e-16 ***</span></span>
+<span><span class="co">#&gt; alpha:factor(year)2020 -0.041927   0.057026 -0.7352 0.4621983    </span></span>
+<span><span class="co">#&gt; alpha:factor(year)2021  0.075277   0.059615  1.2627 0.2066941    </span></span>
+<span><span class="co">#&gt; alpha:factor(year)2022 -0.030024   0.073404 -0.4090 0.6825276    </span></span>
+<span><span class="co">#&gt; alpha:factor(year)2023  0.015639   0.055928  0.2796 0.7797703    </span></span>
+<span><span class="co">#&gt; alpha:factor(year)2024  0.069526   0.047747  1.4561 0.1453546    </span></span>
+<span><span class="co">#&gt; alpha:sexMale           0.044271   0.013139  3.3694 0.0007533 ***</span></span>
+<span><span class="co">#&gt; beta:(Intercept)        0.873448   0.092236  9.4697 &lt; 2.2e-16 ***</span></span>
+<span><span class="co">#&gt; beta:factor(year)2020   0.140570   0.116697  1.2046 0.2283686    </span></span>
+<span><span class="co">#&gt; beta:factor(year)2021   0.467967   0.121543  3.8502 0.0001180 ***</span></span>
+<span><span class="co">#&gt; beta:factor(year)2022   0.185126   0.151512  1.2219 0.2217595    </span></span>
+<span><span class="co">#&gt; beta:factor(year)2023   0.184070   0.110452  1.6665 0.0956099 .  </span></span>
+<span><span class="co">#&gt; beta:factor(year)2024   0.132584   0.092752  1.4295 0.1528740    </span></span>
 <span><span class="co">#&gt; ---</span></span>
 <span><span class="co">#&gt; Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</span></span>
 <span><span class="co">#&gt; </span></span>
@@ -176,18 +175,18 @@ and sex covariates on alpha and year covariates on beta.</p>
 <span><span class="co">#&gt; Population size estimation results:</span></span>
 <span><span class="co">#&gt;   (BC = bias-corrected using model-based variance)</span></span>
 <span><span class="co">#&gt;                       Observed Estimate Estimate (BC) CI lower CI upper</span></span>
-<span><span class="co">#&gt; year=2019, sex=Female    1,535   27,910        25,477   12,604   51,498</span></span>
-<span><span class="co">#&gt; year=2019, sex=Male      5,069   82,523        74,904   35,406  158,465</span></span>
-<span><span class="co">#&gt; year=2020, sex=Female      698   19,951        17,944    6,681   48,194</span></span>
-<span><span class="co">#&gt; year=2020, sex=Male      2,700   57,293        51,163   18,632  140,491</span></span>
-<span><span class="co">#&gt; year=2021, sex=Female      483   82,783        71,915   23,983  215,643</span></span>
-<span><span class="co">#&gt; year=2021, sex=Male      2,622  256,883       221,256   71,025  689,252</span></span>
-<span><span class="co">#&gt; year=2022, sex=Female      317   38,056        34,260    7,879  148,976</span></span>
-<span><span class="co">#&gt; year=2022, sex=Male      2,632   89,735        81,522   20,767  320,013</span></span>
-<span><span class="co">#&gt; year=2023, sex=Female      523   66,645        60,407   20,174  180,872</span></span>
-<span><span class="co">#&gt; year=2023, sex=Male      3,839  159,095       145,748   52,517  404,487</span></span>
-<span><span class="co">#&gt; year=2024, sex=Female      956  120,782       110,601   46,318  264,099</span></span>
-<span><span class="co">#&gt; year=2024, sex=Male      5,731  302,685       279,446  120,646  647,267</span></span></code></pre></div>
+<span><span class="co">#&gt; year=2019, sex=Female    1,535   27,955        25,517   12,623   51,582</span></span>
+<span><span class="co">#&gt; year=2019, sex=Male      5,069   82,627        74,997   35,447  158,675</span></span>
+<span><span class="co">#&gt; year=2020, sex=Female      698   19,983        17,972    6,689   48,289</span></span>
+<span><span class="co">#&gt; year=2020, sex=Male      2,700   57,369        51,229   18,647  140,737</span></span>
+<span><span class="co">#&gt; year=2021, sex=Female      483   82,824        71,949   23,992  215,769</span></span>
+<span><span class="co">#&gt; year=2021, sex=Male      2,622  256,906       221,274   71,020  689,415</span></span>
+<span><span class="co">#&gt; year=2022, sex=Female      317   38,118        34,314    7,886  149,304</span></span>
+<span><span class="co">#&gt; year=2022, sex=Male      2,632   89,842        81,616   20,778  320,585</span></span>
+<span><span class="co">#&gt; year=2023, sex=Female      523   66,773        60,521   20,202  181,306</span></span>
+<span><span class="co">#&gt; year=2023, sex=Male      3,839  159,329       145,958   52,561  405,312</span></span>
+<span><span class="co">#&gt; year=2024, sex=Female      956  120,770       110,590   46,314  264,067</span></span>
+<span><span class="co">#&gt; year=2024, sex=Male      5,731  302,530       279,303  120,576  646,982</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="model-comparison">2. Model comparison<a class="anchor" aria-label="anchor" href="#model-comparison"></a>
@@ -230,16 +229,15 @@ covariates). If the model has no <code>cov_alpha</code> /
 only becomes informative when covariates are present.</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">comp</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/compare_models.html">compare_models</a></span><span class="op">(</span>Poisson <span class="op">=</span> <span class="va">fit_po</span>, NB <span class="op">=</span> <span class="va">fit_nb</span>, sort_by <span class="op">=</span> <span class="st">"AIC"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; NB with theta in sandwich: HC3 not available, using HC1 correction.</span></span>
 <span><span class="va">comp</span></span>
 <span><span class="co">#&gt; Model comparison</span></span>
 <span><span class="co">#&gt; ------------------------------------------------------------ </span></span>
 <span><span class="co">#&gt;    Model  Method Constrained n_par   logLik      AIC      BIC Deviance</span></span>
-<span><span class="co">#&gt;       NB      NB       FALSE    15 -2621.12  5272.23  5350.70  1275.94</span></span>
+<span><span class="co">#&gt;       NB      NB       FALSE    15 -2621.12  5272.23  5350.70  1275.92</span></span>
 <span><span class="co">#&gt;  Poisson POISSON       FALSE    14 -8217.25 16462.49 16535.73 13831.69</span></span>
 <span><span class="co">#&gt;  Pearson_X2   RMSE R2_cor    R2_D  R2_CW</span></span>
-<span><span class="co">#&gt;     3089.52 206.06 0.4054 -0.0029 0.9526</span></span>
-<span><span class="co">#&gt;    17496.68  52.53 0.8280  0.3139 0.9827</span></span></code></pre></div>
+<span><span class="co">#&gt;     3091.24 206.00 0.4058 -0.0029 0.9526</span></span>
+<span><span class="co">#&gt;    17495.96  52.54 0.8279  0.3139 0.9827</span></span></code></pre></div>
 <p>Lower AIC and BIC values indicate a better trade-off between fit and
 complexity. The Pearson chi-squared statistic divided by its degrees of
 freedom (approximately <code>n_obs - n_par</code>) gives a quick
@@ -297,10 +295,10 @@ contributions.</li>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">r_pear</span><span class="op">)</span></span>
 <span><span class="co">#&gt;     Min.  1st Qu.   Median     Mean  3rd Qu.     Max. </span></span>
-<span><span class="co">#&gt; -1.15133 -0.59480 -0.28881  0.03623  0.11110 22.90671</span></span>
+<span><span class="co">#&gt; -1.15132 -0.59481 -0.28866  0.03631  0.11103 22.92023</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">r_ansc</span><span class="op">)</span></span>
 <span><span class="co">#&gt;     Min.  1st Qu.   Median     Mean  3rd Qu.     Max. </span></span>
-<span><span class="co">#&gt; -24.1696  -1.0757  -0.4677  -0.3348   0.1766   9.4208</span></span></code></pre></div>
+<span><span class="co">#&gt; -24.1632  -1.0756  -0.4676  -0.3348   0.1769   9.4215</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="four-panel-diagnostic-plot">Four-panel diagnostic plot<a class="anchor" aria-label="anchor" href="#four-panel-diagnostic-plot"></a>
@@ -512,17 +510,7 @@ how the total population-size estimate changes with gamma.</li>
 the profile log-likelihood as a function of gamma.</li>
 </ol>
 <div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">prof</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/profile_gamma.html">profile_gamma</a></span><span class="op">(</span><span class="va">fit_nb</span>, gamma_grid <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="fl">1e-4</span>, <span class="fl">0.5</span>, length.out <span class="op">=</span> <span class="fl">10</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt; NB with theta in sandwich: HC3 not available, using HC1 correction.</span></span>
-<span><span class="co">#&gt; NB with theta in sandwich: HC3 not available, using HC1 correction.</span></span>
-<span><span class="co">#&gt; NB with theta in sandwich: HC3 not available, using HC1 correction.</span></span>
-<span><span class="co">#&gt; NB with theta in sandwich: HC3 not available, using HC1 correction.</span></span>
-<span><span class="co">#&gt; NB with theta in sandwich: HC3 not available, using HC1 correction.</span></span>
-<span><span class="co">#&gt; NB with theta in sandwich: HC3 not available, using HC1 correction.</span></span>
-<span><span class="co">#&gt; NB with theta in sandwich: HC3 not available, using HC1 correction.</span></span>
-<span><span class="co">#&gt; NB with theta in sandwich: HC3 not available, using HC1 correction.</span></span>
-<span><span class="co">#&gt; NB with theta in sandwich: HC3 not available, using HC1 correction.</span></span>
-<span><span class="co">#&gt; NB with theta in sandwich: HC3 not available, using HC1 correction.</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="va">prof</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/profile_gamma.html">profile_gamma</a></span><span class="op">(</span><span class="va">fit_nb</span>, gamma_grid <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="fl">1e-4</span>, <span class="fl">0.5</span>, length.out <span class="op">=</span> <span class="fl">10</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <p><img src="diagnostics_files/figure-html/profile-gamma-1.png" class="r-plt" alt="" width="864"></p>
 <p><strong>Interpretation:</strong></p>
 <ul>
@@ -542,34 +530,14 @@ the gamma range.</p>
 <p>The profiling results are returned invisibly as a data frame:</p>
 <div class="sourceCode" id="cb23"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">prof</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/profile_gamma.html">profile_gamma</a></span><span class="op">(</span><span class="va">fit_nb</span>, plot <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
-<span><span class="co">#&gt; NB with theta in sandwich: HC3 not available, using HC1 correction.</span></span>
-<span><span class="co">#&gt; NB with theta in sandwich: HC3 not available, using HC1 correction.</span></span>
-<span><span class="co">#&gt; NB with theta in sandwich: HC3 not available, using HC1 correction.</span></span>
-<span><span class="co">#&gt; NB with theta in sandwich: HC3 not available, using HC1 correction.</span></span>
-<span><span class="co">#&gt; NB with theta in sandwich: HC3 not available, using HC1 correction.</span></span>
-<span><span class="co">#&gt; NB with theta in sandwich: HC3 not available, using HC1 correction.</span></span>
-<span><span class="co">#&gt; NB with theta in sandwich: HC3 not available, using HC1 correction.</span></span>
-<span><span class="co">#&gt; NB with theta in sandwich: HC3 not available, using HC1 correction.</span></span>
-<span><span class="co">#&gt; NB with theta in sandwich: HC3 not available, using HC1 correction.</span></span>
-<span><span class="co">#&gt; NB with theta in sandwich: HC3 not available, using HC1 correction.</span></span>
-<span><span class="co">#&gt; NB with theta in sandwich: HC3 not available, using HC1 correction.</span></span>
-<span><span class="co">#&gt; NB with theta in sandwich: HC3 not available, using HC1 correction.</span></span>
-<span><span class="co">#&gt; NB with theta in sandwich: HC3 not available, using HC1 correction.</span></span>
-<span><span class="co">#&gt; NB with theta in sandwich: HC3 not available, using HC1 correction.</span></span>
-<span><span class="co">#&gt; NB with theta in sandwich: HC3 not available, using HC1 correction.</span></span>
-<span><span class="co">#&gt; NB with theta in sandwich: HC3 not available, using HC1 correction.</span></span>
-<span><span class="co">#&gt; NB with theta in sandwich: HC3 not available, using HC1 correction.</span></span>
-<span><span class="co">#&gt; NB with theta in sandwich: HC3 not available, using HC1 correction.</span></span>
-<span><span class="co">#&gt; NB with theta in sandwich: HC3 not available, using HC1 correction.</span></span>
-<span><span class="co">#&gt; NB with theta in sandwich: HC3 not available, using HC1 correction.</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">prof</span><span class="op">)</span></span>
 <span><span class="co">#&gt;        gamma        xi    loglik</span></span>
-<span><span class="co">#&gt; 1 0.00010000  105426.3 -2719.707</span></span>
-<span><span class="co">#&gt; 2 0.02641053 1421561.4 -2621.493</span></span>
-<span><span class="co">#&gt; 3 0.05272105 1742750.9 -2626.657</span></span>
-<span><span class="co">#&gt; 4 0.07903158 1893924.1 -2631.701</span></span>
-<span><span class="co">#&gt; 5 0.10534211 1982411.8 -2635.659</span></span>
-<span><span class="co">#&gt; 6 0.13165263 2037040.2 -2638.698</span></span></code></pre></div>
+<span><span class="co">#&gt; 1 0.00010000  105428.8 -2719.707</span></span>
+<span><span class="co">#&gt; 2 0.02641053 1421102.7 -2621.493</span></span>
+<span><span class="co">#&gt; 3 0.05272105 1742599.3 -2626.657</span></span>
+<span><span class="co">#&gt; 4 0.07903158 1889717.8 -2631.701</span></span>
+<span><span class="co">#&gt; 5 0.10534211 1979924.0 -2635.659</span></span>
+<span><span class="co">#&gt; 6 0.13165263 2033116.1 -2638.698</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a>

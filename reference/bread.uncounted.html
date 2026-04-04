@@ -67,6 +67,14 @@ Specifically: \(B = n (Z' W Z)^{-1}\) where Z is the model matrix and
 <dd><p>Ignored</p></dd>
 
 </dl></div>
+    <div class="section level2">
+    <h2 id="note">Note<a class="anchor" aria-label="anchor" href="#note"></a></h2>
+    <p>For NB models, these methods operate on the mean-model parameters
+(alpha, beta, and optionally gamma) only, excluding theta. The stored
+<code><a href="https://rdrr.io/r/stats/vcov.html" class="external-link">vcov()</a></code> on NB objects uses a dedicated theta-aware path instead.
+Calling <code><a href="https://sandwich.R-Forge.R-project.org/reference/vcovHC.html" class="external-link">sandwich::vcovHC()</a></code> directly on an NB object gives
+theta-conditional standard errors, which differ from <code><a href="https://rdrr.io/r/stats/vcov.html" class="external-link">vcov()</a></code>.</p>
+    </div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside></div>

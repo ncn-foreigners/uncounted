@@ -20,3 +20,13 @@ bread(x, ...)
 - ...:
 
   Ignored
+
+## Note
+
+For NB models, these methods operate on the mean-model parameters
+(alpha, beta, and optionally gamma) only, excluding theta. The stored
+[`vcov()`](https://rdrr.io/r/stats/vcov.html) on NB objects uses a
+dedicated theta-aware path instead. Calling
+[`sandwich::vcovHC()`](https://sandwich.R-Forge.R-project.org/reference/vcovHC.html)
+directly on an NB object gives theta-conditional standard errors, which
+differ from [`vcov()`](https://rdrr.io/r/stats/vcov.html).
