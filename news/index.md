@@ -1,5 +1,43 @@
 # Changelog
 
+## uncounted 0.7.0
+
+### New features
+
+- **iOLS estimator** (`method = "iols"`): Iterated OLS targeting the
+  Gamma PML (GPML) score equations, following Benatia, Bellego & Pape
+  (2024). Two-phase algorithm: Phase 1 warms up with increasing delta
+  and empirical centering; Phase 2 uses the exact limiting transform
+  `y_tilde = log(mu) + (m/mu - 1)/(1+rho)` to solve `Z'(m/mu - 1) = 0`.
+  Converges on complex specifications including `year * UKR`
+  interactions with 50% zeros. Supports HC0-HC5 sandwich SEs via GPML
+  score residuals. Currently requires fixed gamma (`gamma = "estimate"`
+  not yet supported).
+
+- **LOO rank-deficiency detection**: `loo(by = "country")` now checks
+  for rank-deficient design matrices before refitting. When dropping a
+  country removes a covariate level (e.g., Ukraine with `year * UKR`),
+  the refit is skipped and marked `converged = FALSE` with a warning.
+
+### Enhancements
+
+- **[`lrtest()`](https://ncn-foreigners.github.io/uncounted/reference/lrtest.md)
+  nesting checks**: Uses column-space inclusion via QR projection to
+  detect non-nested model pairs. Also warns for cross-method comparisons
+  (except Poisson vs NB), different constrained settings, and
+  incompatible gamma specifications.
+
+- **[`compare_models()`](https://ncn-foreigners.github.io/uncounted/reference/compare_models.md)
+  warns for mixed likelihood types**: Now includes iOLS in the
+  pseudo-loglik warning alongside OLS/NLS, preventing silent comparison
+  of GPML deviance with Poisson/NB count likelihoods.
+
+- **Test coverage improvements**: Added tests for HC4/HC4m/HC5, LOO
+  [`summary()`](https://rdrr.io/r/base/summary.html) and
+  `plot(type = "coef")`, bootstrap `point_estimate`/`total`/`by`
+  parameters, constrained summary output, and
+  `profile_gamma(plot = TRUE)`. 440 tests total.
+
 ## uncounted 0.6.0
 
 ### Bug fixes

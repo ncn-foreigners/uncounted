@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">uncounted</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -38,6 +38,20 @@
       <small>Source: <a href="https://github.com/ncn-foreigners/uncounted/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.7.0" id="uncounted-070">uncounted 0.7.0<a class="anchor" aria-label="anchor" href="#uncounted-070"></a></h2>
+<div class="section level3">
+<h3 id="new-features-0-7-0">New features<a class="anchor" aria-label="anchor" href="#new-features-0-7-0"></a></h3>
+<ul><li><p><strong>iOLS estimator</strong> (<code>method = "iols"</code>): Iterated OLS targeting the Gamma PML (GPML) score equations, following Benatia, Bellego &amp; Pape (2024). Two-phase algorithm: Phase 1 warms up with increasing delta and empirical centering; Phase 2 uses the exact limiting transform <code>y_tilde = log(mu) + (m/mu - 1)/(1+rho)</code> to solve <code>Z'(m/mu - 1) = 0</code>. Converges on complex specifications including <code>year * UKR</code> interactions with 50% zeros. Supports HC0-HC5 sandwich SEs via GPML score residuals. Currently requires fixed gamma (<code>gamma = "estimate"</code> not yet supported).</p></li>
+<li><p><strong>LOO rank-deficiency detection</strong>: <code>loo(by = "country")</code> now checks for rank-deficient design matrices before refitting. When dropping a country removes a covariate level (e.g., Ukraine with <code>year * UKR</code>), the refit is skipped and marked <code>converged = FALSE</code> with a warning.</p></li>
+</ul></div>
+<div class="section level3">
+<h3 id="enhancements-0-7-0">Enhancements<a class="anchor" aria-label="anchor" href="#enhancements-0-7-0"></a></h3>
+<ul><li><p><strong><code><a href="../reference/lrtest.html">lrtest()</a></code> nesting checks</strong>: Uses column-space inclusion via QR projection to detect non-nested model pairs. Also warns for cross-method comparisons (except Poisson vs NB), different constrained settings, and incompatible gamma specifications.</p></li>
+<li><p><strong><code><a href="../reference/compare_models.html">compare_models()</a></code> warns for mixed likelihood types</strong>: Now includes iOLS in the pseudo-loglik warning alongside OLS/NLS, preventing silent comparison of GPML deviance with Poisson/NB count likelihoods.</p></li>
+<li><p><strong>Test coverage improvements</strong>: Added tests for HC4/HC4m/HC5, LOO <code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code> and <code>plot(type = "coef")</code>, bootstrap <code>point_estimate</code>/<code>total</code>/<code>by</code> parameters, constrained summary output, and <code>profile_gamma(plot = TRUE)</code>. 440 tests total.</p></li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.6.0" id="uncounted-060">uncounted 0.6.0<a class="anchor" aria-label="anchor" href="#uncounted-060"></a></h2>
 <div class="section level3">
