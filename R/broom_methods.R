@@ -60,17 +60,26 @@ tidy.uncounted <- function(x, conf.int = FALSE, conf.level = 0.95, ...) {
 
   # Add gamma row if estimated
   if (isTRUE(x$gamma_estimated) && !is.null(x$gamma)) {
+    gamma_se <- NA_real_
+    if (!is.null(x$vcov_full)) {
+      gamma_idx <- which(colnames(x$vcov_full) == "gamma")
+      if (length(gamma_idx) == 1) {
+        gamma_se <- sqrt(max(0, x$vcov_full[gamma_idx, gamma_idx]))
+      }
+    }
+    gamma_stat <- if (is.finite(gamma_se) && gamma_se > 0) x$gamma / gamma_se else NA_real_
+    gamma_p <- if (is.finite(gamma_stat)) 2 * pnorm(-abs(gamma_stat)) else NA_real_
     gamma_row <- data.frame(
       term = "gamma",
       estimate = x$gamma,
-      std.error = NA_real_,
-      statistic = NA_real_,
-      p.value = NA_real_,
+      std.error = gamma_se,
+      statistic = gamma_stat,
+      p.value = gamma_p,
       stringsAsFactors = FALSE
     )
     if (conf.int) {
-      gamma_row$conf.low <- NA_real_
-      gamma_row$conf.high <- NA_real_
+      gamma_row$conf.low <- if (is.finite(gamma_se)) x$gamma - crit * gamma_se else NA_real_
+      gamma_row$conf.high <- if (is.finite(gamma_se)) x$gamma + crit * gamma_se else NA_real_
     }
     result <- rbind(result, gamma_row)
   }

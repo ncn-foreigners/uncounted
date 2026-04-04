@@ -89,3 +89,32 @@ test_that("modelsummary works with tidy/glance", {
     )
   )
 })
+
+# ---- Regression: gamma SE in tidy when estimated ----
+
+test_that("tidy shows finite gamma SE when gamma is estimated", {
+  skip_if_not_installed("generics")
+  d <- small_data()
+  fit <- quick_fit(d, gamma = "estimate")
+  td <- generics::tidy(fit)
+  gamma_row <- td[td$term == "gamma", ]
+  expect_equal(nrow(gamma_row), 1)
+  expect_true(is.finite(gamma_row$std.error))
+  expect_true(gamma_row$std.error > 0)
+  expect_true(is.finite(gamma_row$statistic))
+})
+
+# ---- Regression: vcov function preserved in call for update() ----
+
+test_that("vcov function preserved in call after fitting", {
+  d <- small_data()
+  my_vcov <- function(x) sandwich::vcovHC(x, type = "HC0")
+  fit <- estimate_hidden_pop(d, ~m, ~n, ~N, method = "poisson",
+                              gamma = 0.005, vcov = my_vcov)
+  # The stored call and vcov_spec should have the function (not "HC3")
+  expect_true(is.function(fit$call$vcov))
+  expect_true(is.function(fit$vcov_spec))
+  # Print should show "user-supplied function"
+  out <- capture.output(print(fit))
+  expect_true(any(grepl("user-supplied", out)))
+})

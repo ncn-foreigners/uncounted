@@ -473,8 +473,9 @@ estimate_hidden_pop <- function(data,
     } else {
       out$vcov <- V_user
     }
-    # Restore the original vcov_spec for printing
+    # Restore the original vcov function for printing and update()
     out$vcov_spec <- vcov
+    out$call[["vcov"]] <- vcov
     # Store NB ingredients
     if (method == "nb" && !is.null(result$hessian_nll)) {
       out$score_full <- result$score_full
