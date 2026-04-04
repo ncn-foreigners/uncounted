@@ -201,3 +201,22 @@ test_that("loo by country works", {
   loo_res <- loo(fit, by = "country")
   expect_equal(loo_res$n_drops, length(unique(d$country)))
 })
+
+# ---- LOO rank-deficiency detection ----
+
+test_that("loo by country warns and skips when dropping removes covariate level", {
+  d <- small_data()
+  # Add a binary indicator for a single country
+  d$is_special <- as.integer(d$country == d$country[1])
+  fit <- quick_fit(d, gamma = 0.005, countries = ~country,
+                   cov_alpha = ~is_special)
+  expect_warning(
+    loo_res <- loo(fit, by = "country"),
+    "rank-deficient"
+  )
+  # The special country should be marked as not converged
+  special_idx <- which(loo_res$dropped == d$country[1])
+  expect_false(loo_res$converged[special_idx])
+  # Other countries should still converge
+  expect_true(sum(loo_res$converged) > 0)
+})

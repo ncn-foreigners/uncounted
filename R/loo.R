@@ -144,6 +144,7 @@ loo.uncounted <- function(object, by = c("obs", "country"),
   countries <- if (!is.null(cl$countries)) eval(cl$countries) else NULL
   constrained_arg <- isTRUE(object$constrained)
 
+  warned_rank <- FALSE
   for (i in seq_len(n_drops)) {
     if (verbose && i %% 10 == 0) {
       message(sprintf("LOO %d/%d", i, n_drops))
@@ -157,6 +158,28 @@ loo.uncounted <- function(object, by = c("obs", "country"),
     }
 
     data_i <- data[-drop_idx, , drop = FALSE]
+
+    # Check for rank deficiency before refitting
+    rank_ok <- TRUE
+    if (!is.null(cov_alpha)) {
+      X_i <- model.matrix(cov_alpha, data = data_i)
+      if (qr(X_i)$rank < ncol(X_i)) rank_ok <- FALSE
+    }
+    if (rank_ok && !is.null(cov_beta)) {
+      X_i <- model.matrix(cov_beta, data = data_i)
+      if (qr(X_i)$rank < ncol(X_i)) rank_ok <- FALSE
+    }
+    if (!rank_ok) {
+      if (!warned_rank) {
+        warning("LOO: dropping '", drop_labels[i],
+                "' creates a rank-deficient design matrix. ",
+                "Skipping refits for units that remove covariate levels.",
+                call. = FALSE)
+        warned_rank <- TRUE
+      }
+      converged[i] <- FALSE
+      next
+    }
 
     # Refit
     fit_i <- tryCatch(
