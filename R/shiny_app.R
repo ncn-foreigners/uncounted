@@ -1,3 +1,5 @@
+utils::globalVariables("irregular_migration")
+
 #' Launch the uncounted Shiny Application
 #'
 #' An interactive Shiny application for estimating unauthorised population

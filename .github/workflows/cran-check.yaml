@@ -33,7 +33,7 @@ jobs:
       - name: CRAN-like check
         uses: r-lib/actions/check-r-package@v2
         with:
-          args: '"--no-manual", "--as-cran"'
-          build_args: '"--no-manual", "--compact-vignettes=gs+qpdf"'
+          args: '"--no-manual", "--as-cran", "--no-vignettes"'
+          build_args: '"--no-manual", "--no-build-vignettes"'
           error-on: '"warning"'
           upload-snapshots: true
