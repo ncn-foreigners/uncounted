@@ -156,3 +156,17 @@ test_that("total CI uses delta-method, not summed subgroup bounds", {
   expect_true(tot$upper - tot$lower > summed_upper - summed_lower,
               info = "Delta-method total CI should be wider than summed CI")
 })
+
+# ---- Bias correction clamp: never negative ----
+
+test_that("bias-corrected estimate is always positive for all methods", {
+  d <- small_data()
+  for (method in c("ols", "poisson", "nb", "iols")) {
+    suppressWarnings({
+      fit <- quick_fit(d, method = method, gamma = 0.005, cov_alpha = ~sex)
+    })
+    ps <- popsize(fit, bias_correction = TRUE)
+    expect_true(all(ps$estimate_bc > 0),
+                info = paste("Method:", method, "has negative BC"))
+  }
+})

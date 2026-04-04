@@ -162,3 +162,56 @@ test_that("AIC(fit_iols) is finite and consistent", {
   expect_true(is.finite(AIC(fit)))
   expect_true(is.finite(BIC(fit)))
 })
+
+# ---- Bias correction: no negative estimates ----
+
+test_that("iOLS bias correction never produces negative estimates", {
+  d <- small_data()
+  fit <- quick_fit(d, method = "iols", gamma = 0.005, cov_alpha = ~sex)
+  ps <- popsize(fit, bias_correction = TRUE)
+  expect_true(all(ps$estimate_bc > 0),
+              info = paste("BC estimates:", paste(round(ps$estimate_bc), collapse = ", ")))
+  expect_true(all(ps$estimate_bc <= ps$estimate))
+})
+
+test_that("iOLS BC positive on data with covariates and zeros", {
+  d <- testdata
+  d$m[1:5] <- 0L
+  fit <- quick_fit(d, method = "iols", gamma = 0.005, cov_alpha = ~sex)
+  ps <- popsize(fit, bias_correction = TRUE)
+  expect_true(all(ps$estimate_bc > 0))
+})
+
+test_that("iOLS vcov_model uses GPML Fisher (no sigma2 scaling)", {
+  d <- small_data()
+  fit <- quick_fit(d, method = "iols", gamma = 0.005)
+  # GPML Fisher information: (Z'Z)^{-1}
+  Z <- fit$model_matrix_full
+  V_expected <- solve(crossprod(Z))
+  expect_equal(as.numeric(fit$vcov_model), as.numeric(V_expected),
+               tolerance = 1e-8)
+})
+
+test_that("iOLS vcov_model is NOT inflated by sigma2", {
+  d <- small_data()
+  fit_io <- quick_fit(d, method = "iols", gamma = 0.005)
+  fit_po <- quick_fit(d, method = "poisson", gamma = 0.005)
+  # iOLS model vcov should be comparable to Poisson (same order of magnitude)
+  ratio <- max(diag(fit_io$vcov_model)) / max(diag(fit_po$vcov_model))
+  expect_true(ratio < 100,
+              info = paste("vcov_model ratio iOLS/Poisson:", round(ratio, 2)))
+})
+
+test_that("iOLS BC on year*ukr specification produces all positive estimates", {
+  skip_on_cran()
+  data(irregular_migration)
+  d <- irregular_migration
+  d$ukr <- as.integer(d$country_code == "UKR")
+  fit <- estimate_hidden_pop(d, ~m, ~n, ~N, method = "iols",
+    cov_alpha = ~ year * ukr, cov_beta = ~ year,
+    gamma = 0.005, countries = ~country_code)
+  ps <- popsize(fit, bias_correction = TRUE)
+  expect_true(all(ps$estimate_bc > 0),
+              info = paste("Negative BC groups:",
+                           paste(ps$group[ps$estimate_bc <= 0], collapse = ", ")))
+})

@@ -750,8 +750,11 @@
   V <- .compute_sandwich_vcov(Z, gpml_resid, weights = weights,
                               hat_values = h, vcov_type = vcov_type)
 
+  # GPML Fisher information: (Z'Z)^{-1} without sigma2 scaling.
+  # Gamma variance function gives unit working weights, so the model-based
+  # variance is (Z'Z)^{-1}, not sigma2*(Z'Z)^{-1}. See notes/bias-correction-iols.md.
+  V_model <- .compute_model_vcov(Z, weights, sigma2 = NULL)
   sigma2 <- sum(weights * gpml_resid^2) / (n_obs - p)
-  V_model <- .compute_model_vcov(Z, weights, sigma2 = sigma2)
 
   list(alpha_coefs = alpha_coefs, beta_coefs = beta_coefs,
        fitted = mu, residuals = resid_raw, log_mu = log_mu,
