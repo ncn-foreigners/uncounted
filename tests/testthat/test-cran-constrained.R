@@ -90,3 +90,20 @@ test_that("constrained BC includes logit curvature (second derivative)", {
   expect_true(ps_c$estimate > ps_c$estimate_bc,
               info = "Bias correction should reduce the estimate")
 })
+
+# ---- Constrained summary output coverage ----
+
+test_that("constrained summary shows response-scale parameters", {
+  d <- small_data()
+  fit <- quick_fit(d, gamma = 0.005, constrained = TRUE)
+  out <- capture.output(summary(fit))
+  expect_true(any(grepl("Response-scale", out)))
+  expect_true(any(grepl("alpha.*\\(0,1\\)|beta.*> 0", out)))
+})
+
+test_that("constrained summary with total works", {
+  d <- small_data()
+  fit <- quick_fit(d, gamma = 0.005, constrained = TRUE, cov_alpha = ~sex)
+  out <- capture.output(summary(fit, total = TRUE))
+  expect_true(any(grepl("Total", out)))
+})

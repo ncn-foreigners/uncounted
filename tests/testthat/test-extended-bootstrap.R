@@ -76,3 +76,48 @@ test_that("bootstrap median differs from plugin", {
   boot <- bootstrap_popsize(fit, R = 99, seed = 42, verbose = FALSE)
   expect_false(identical(boot$t0, apply(boot$t, 2, median, na.rm = TRUE)))
 })
+
+# ---- Bootstrap coverage: point_estimate variants ----
+
+test_that("bootstrap point_estimate='plugin' works", {
+  skip_on_cran()
+  skip_if_not_installed("fwb")
+  fit <- quick_fit(testdata, gamma = 0.005)
+  boot <- bootstrap_popsize(fit, R = 49, seed = 42, verbose = FALSE,
+                            point_estimate = "plugin")
+  expect_true(all(is.finite(boot$popsize$estimate)))
+})
+
+test_that("bootstrap point_estimate='mean' works", {
+  skip_on_cran()
+  skip_if_not_installed("fwb")
+  fit <- quick_fit(testdata, gamma = 0.005)
+  boot <- bootstrap_popsize(fit, R = 49, seed = 42, verbose = FALSE,
+                            point_estimate = "mean")
+  expect_true(all(is.finite(boot$popsize$estimate)))
+})
+
+# ---- Bootstrap coverage: total ----
+
+test_that("bootstrap with total=TRUE includes total", {
+  skip_on_cran()
+  skip_if_not_installed("fwb")
+  fit <- quick_fit(testdata, gamma = 0.005, cov_alpha = ~sex)
+  boot <- bootstrap_popsize(fit, R = 49, seed = 42, verbose = FALSE,
+                            total = TRUE)
+  expect_true(!is.null(boot$total))
+  expect_true(boot$total$plugin > 0)
+  expect_true(boot$total$lower < boot$total$upper)
+})
+
+# ---- Bootstrap coverage: by parameter ----
+
+test_that("bootstrap with by parameter works", {
+  skip_on_cran()
+  skip_if_not_installed("fwb")
+  fit <- quick_fit(testdata, gamma = 0.005)
+  boot <- bootstrap_popsize(fit, R = 29, seed = 42, verbose = FALSE,
+                            by = ~ sex)
+  expect_true(nrow(boot$popsize) >= 2)
+  expect_true(any(c("M", "F") %in% boot$popsize$group))
+})

@@ -70,6 +70,36 @@ test_that("compare_loo table is sorted by max influence", {
   expect_true(all(diff(max_abs) <= 0))
 })
 
+# ---- LOO summary and plot coverage ----
+
+test_that("summary.uncounted_loo runs without error", {
+  skip_on_cran()
+  d <- small_data()
+  fit <- quick_fit(d, gamma = 0.005, countries = ~country)
+  loo_res <- loo(fit, by = "obs")
+  expect_output(summary(loo_res))
+})
+
+test_that("plot(loo_res, type = 'coef') runs without error", {
+  skip_on_cran()
+  d <- small_data()
+  fit <- quick_fit(d, gamma = 0.005, countries = ~country)
+  loo_res <- loo(fit, by = "obs")
+  expect_no_error(plot(loo_res, type = "coef"))
+})
+
+test_that("compare_loo with data and label_vars works", {
+  skip_on_cran()
+  d <- small_data()
+  fit_po <- quick_fit(d, method = "poisson", gamma = 0.005, countries = ~country)
+  fit_nb <- quick_fit(d, method = "nb", gamma = 0.005, vcov = "HC0",
+                      countries = ~country)
+  loo_po <- loo(fit_po, by = "country")
+  loo_nb <- loo(fit_nb, by = "country")
+  comp <- compare_loo(loo_po, loo_nb, data = d, label_vars = ~country)
+  expect_s3_class(comp, "uncounted_loo_compare")
+})
+
 test_that("R^2_D uses null model without covariates", {
   skip_on_cran()
   testdata$grp <- factor(rep(1:2, length.out = nrow(testdata)))

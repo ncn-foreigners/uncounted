@@ -88,6 +88,16 @@ test_that("HC0 < HC1 and HC2 < HC3 SE ordering", {
   expect_true(all(se_list[[3]] < se_list[[4]]))
 })
 
+test_that("HC4, HC4m, HC5 produce valid SEs", {
+  d <- small_data()
+  for (hc in c("HC4", "HC4m", "HC5")) {
+    fit <- quick_fit(d, gamma = 0.005, vcov = hc)
+    se <- sqrt(diag(vcov(fit)))
+    expect_true(all(is.finite(se)), info = hc)
+    expect_true(all(se > 0), info = hc)
+  }
+})
+
 test_that("model-based vcov is present", {
   d <- small_data()
   fit <- quick_fit(d, gamma = 0.005, vcov = "HC3")
