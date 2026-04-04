@@ -196,7 +196,7 @@ estimate_hidden_pop <- function(data,
                                 observed,
                                 auxiliary,
                                 reference_pop,
-                                method = c("poisson", "nb", "ols", "nls"),
+                                method = c("poisson", "nb", "ols", "nls", "iols"),
                                 cov_alpha = NULL,
                                 cov_beta = NULL,
                                 gamma = "estimate",
@@ -322,6 +322,17 @@ estimate_hidden_pop <- function(data,
               theta_start = theta_start,
               weights = weights, vcov_type = vcov_type,
               constrained = constrained)
+    },
+    "iols" = {
+      if (estimate_gamma) {
+        .fit_iols_gamma(m, N, ratio, log_N, X_alpha, X_beta,
+                        gamma_start, gamma_bounds,
+                        weights = weights, vcov_type = vcov_type)
+      } else {
+        .fit_iols(m, N, ratio, log_N, log_rate, X_alpha, X_beta,
+                  gamma_value = gamma_value,
+                  weights = weights, vcov_type = vcov_type)
+      }
     }
   )
 

@@ -9,7 +9,7 @@ estimate_hidden_pop(
   observed,
   auxiliary,
   reference_pop,
-  method = c("poisson", "nb", "ols", "nls"),
+  method = c("poisson", "nb", "ols", "nls", "iols"),
   cov_alpha = NULL,
   cov_beta = NULL,
   gamma = "estimate",

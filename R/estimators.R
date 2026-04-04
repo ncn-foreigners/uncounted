@@ -638,3 +638,256 @@
        convergence = opt$convergence,
        X_alpha = X_alpha, X_beta = X_beta)
 }
+
+
+# ---- iOLS estimator (Benatia, Bellego & Pape, 2024) ----
+#
+# Two-phase iterated OLS targeting GPML (Gamma PML) score equations.
+# Phase 1: warm-up with increasing delta and empirical centering.
+# Phase 2: limiting GPML transformation to remove O(delta^-2) bias.
+# At convergence, beta solves: Z'(m/mu - 1) = 0 (GPML first-order conditions).
+
+#' @noRd
+.fit_iols <- function(m, N, ratio, log_N, log_rate,
+                      X_alpha, X_beta, gamma_value = NULL,
+                      estimate_gamma = FALSE, gamma_start = 0.01,
+                      gamma_bounds = c(1e-10, 0.5),
+                      weights = NULL, vcov_type = "HC3",
+                      delta_grid = c(1, 10, 100, 1000),
+                      rho = 1,
+                      tol = 1e-6, max_iter = 100) {
+  n_obs <- length(m)
+  if (is.null(weights)) weights <- rep(1, n_obs)
+  p_alpha <- ncol(X_alpha)
+  p_beta <- ncol(X_beta)
+
+  Z <- cbind(X_alpha * log_N, X_beta * log_rate)
+  p <- ncol(Z)
+
+  # Initialize with log(m+1) OLS
+  y_start <- log(m + 1)
+  beta_hat <- if (all(weights == 1)) {
+    lm.fit(Z, y_start)$coefficients
+  } else {
+    lm.wfit(Z, y_start, weights)$coefficients
+  }
+
+  .ols_step <- function(Z, y, w) {
+    if (all(w == 1)) lm.fit(Z, y)$coefficients
+    else lm.wfit(Z, y, w)$coefficients
+  }
+
+  # Phase 1: warm-up with increasing delta and empirical centering
+  for (delta in delta_grid) {
+    for (iter in 1:max_iter) {
+      log_mu <- pmin(as.numeric(Z %*% beta_hat), 20)
+      mu <- exp(log_mu)
+      lhs <- log(m + delta * mu)
+      c_delta <- weighted.mean(lhs, weights)
+      y_tilde <- lhs - c_delta
+      beta_new <- .ols_step(Z, y_tilde, weights)
+      if (max(abs(beta_new - beta_hat)) < tol) {
+        beta_hat <- beta_new
+        break
+      }
+      beta_hat <- beta_new
+    }
+  }
+
+  # Phase 2: GPML limiting transformation
+  # Try increasing rho until contraction condition is met
+  for (rho_try in c(rho, 2, 5, 10, 50, 100)) {
+    beta_ph2 <- beta_hat
+    converged_ph2 <- FALSE
+    for (iter in 1:max_iter) {
+      log_mu <- pmin(pmax(as.numeric(Z %*% beta_ph2), -20), 20)
+      mu <- exp(log_mu)
+      u <- m / pmax(mu, 1e-300)
+      c_inf <- log(rho_try) + (1 / (1 + rho_try)) * (u - 1)
+      y_tilde <- log(m + rho_try * mu) - c_inf
+      bad <- !is.finite(y_tilde)
+      if (any(bad)) y_tilde[bad] <- log_mu[bad]
+      beta_new <- .ols_step(Z, y_tilde, weights)
+      if (max(abs(beta_new - beta_ph2)) < tol) {
+        beta_ph2 <- beta_new
+        converged_ph2 <- TRUE
+        break
+      }
+      # Check for divergence
+      if (max(abs(beta_new)) > 100) break
+      beta_ph2 <- beta_new
+    }
+    if (converged_ph2) {
+      beta_hat <- beta_ph2
+      break
+    }
+  }
+
+  # Final quantities
+  coefs <- beta_hat
+  names(coefs) <- colnames(Z)
+  alpha_coefs <- coefs[seq_len(p_alpha)]
+  beta_coefs <- coefs[p_alpha + seq_len(p_beta)]
+
+  log_mu <- as.numeric(Z %*% coefs)
+  mu <- exp(log_mu)
+  resid_raw <- m - mu
+
+  # Check GPML score condition: Z'(m/mu - 1) should be near zero
+  gpml_resid <- as.numeric(m / pmax(mu, 1e-300) - 1)
+  gpml_score <- as.numeric(crossprod(Z * weights, gpml_resid))
+  convergence <- if (max(abs(gpml_score)) < 0.1) 0L else 1L
+
+  if (convergence != 0L) {
+    warning("iOLS did not converge to GPML solution (max score = ",
+            round(max(abs(gpml_score)), 4), ").", call. = FALSE)
+  }
+
+  # GPML deviance as pseudo log-likelihood
+  loglik_gpml <- -sum(weights * (m / mu - log(pmax(m, 1e-300) / mu) - 1))
+
+  # Sandwich vcov using GPML score residual: (m/mu - 1)
+  h <- .hat_values_wls(Z, weights)
+  V <- .compute_sandwich_vcov(Z, gpml_resid, weights = weights,
+                              hat_values = h, vcov_type = vcov_type)
+
+  sigma2 <- sum(weights * gpml_resid^2) / (n_obs - p)
+  V_model <- .compute_model_vcov(Z, weights, sigma2 = sigma2)
+
+  list(alpha_coefs = alpha_coefs, beta_coefs = beta_coefs,
+       fitted = mu, residuals = resid_raw, log_mu = log_mu,
+       vcov = V, vcov_model = V_model,
+       model_matrix_full = Z, bread_weights = weights,
+       score_residuals = weights * gpml_resid,
+       n_obs = n_obs, df.residual = n_obs - p,
+       loglik = loglik_gpml, theta = NULL,
+       gamma_estimated = NULL,
+       sigma2 = sigma2, convergence = convergence)
+}
+
+
+# ---- iOLS with profiled gamma ----
+
+#' @noRd
+.fit_iols_gamma <- function(m, N, ratio, log_N, X_alpha, X_beta,
+                            gamma_start, gamma_bounds,
+                            weights = NULL, vcov_type = "HC3",
+                            delta_grid = c(1, 10, 100, 1000),
+                            rho = 1,
+                            tol = 1e-6, max_iter = 100) {
+  n_obs <- length(m)
+  if (is.null(weights)) weights <- rep(1, n_obs)
+  p_alpha <- ncol(X_alpha)
+  p_beta <- ncol(X_beta)
+
+  .ols_step <- function(Z, y, w) {
+    if (all(w == 1)) lm.fit(Z, y)$coefficients
+    else lm.wfit(Z, y, w)$coefficients
+  }
+
+  # GPML deviance for gamma profiling
+  .gpml_deviance <- function(m, mu, w) {
+    sum(w * (m / pmax(mu, 1e-300) - log(pmax(m, 1e-300) / pmax(mu, 1e-300)) - 1))
+  }
+
+  # Initialize
+  log_rate_init <- log(gamma_start + ratio)
+  Z_init <- cbind(X_alpha * log_N, X_beta * log_rate_init)
+  beta_hat <- .ols_step(Z_init, log(m + 1), weights)
+  gamma_hat <- gamma_start
+
+  # Phase 1: warm-up with increasing delta, profiling gamma via GPML deviance
+  for (delta in delta_grid) {
+    for (iter in 1:max_iter) {
+      # Profile gamma
+      obj_fn <- function(g) {
+        lr <- log(g + ratio)
+        Z_g <- cbind(X_alpha * log_N, X_beta * lr)
+        mu <- exp(as.numeric(Z_g %*% beta_hat))
+        .gpml_deviance(m, mu, weights)
+      }
+      gamma_hat <- optimize(obj_fn, c(gamma_bounds[1], gamma_bounds[2]))$minimum
+
+      log_rate <- log(gamma_hat + ratio)
+      Z <- cbind(X_alpha * log_N, X_beta * log_rate)
+      mu <- exp(as.numeric(Z %*% beta_hat))
+      lhs <- log(m + delta * mu)
+      c_delta <- weighted.mean(lhs, weights)
+      y_tilde <- lhs - c_delta
+      beta_new <- .ols_step(Z, y_tilde, weights)
+      if (max(abs(beta_new - beta_hat)) < tol) {
+        beta_hat <- beta_new
+        break
+      }
+      beta_hat <- beta_new
+    }
+  }
+
+  # Phase 2: GPML limiting transformation with gamma profiling
+  for (iter in 1:max_iter) {
+    # Profile gamma
+    obj_fn <- function(g) {
+      lr <- log(g + ratio)
+      Z_g <- cbind(X_alpha * log_N, X_beta * lr)
+      mu <- exp(as.numeric(Z_g %*% beta_hat))
+      .gpml_deviance(m, mu, weights)
+    }
+    gamma_hat <- optimize(obj_fn, c(gamma_bounds[1], gamma_bounds[2]))$minimum
+
+    log_rate <- log(gamma_hat + ratio)
+    Z <- cbind(X_alpha * log_N, X_beta * log_rate)
+    mu <- exp(as.numeric(Z %*% beta_hat))
+    u <- m / pmax(mu, 1e-300)
+    c_inf <- log(rho) + (1 / (1 + rho)) * (u - 1)
+    y_tilde <- log(m + rho * mu) - c_inf
+    beta_new <- .ols_step(Z, y_tilde, weights)
+    if (max(abs(beta_new - beta_hat)) < tol) {
+      beta_hat <- beta_new
+      break
+    }
+    beta_hat <- beta_new
+  }
+
+  # Final quantities
+  log_rate <- log(gamma_hat + ratio)
+  Z <- cbind(X_alpha * log_N, X_beta * log_rate)
+  coefs <- beta_hat
+  names(coefs) <- colnames(Z)
+  alpha_coefs <- coefs[seq_len(p_alpha)]
+  beta_coefs <- coefs[p_alpha + seq_len(p_beta)]
+
+  log_mu <- as.numeric(Z %*% coefs)
+  mu <- exp(log_mu)
+  resid_raw <- m - mu
+
+  gpml_resid <- as.numeric(m / pmax(mu, 1e-300) - 1)
+  gpml_score <- as.numeric(crossprod(Z * weights, gpml_resid))
+  convergence <- if (max(abs(gpml_score)) < 0.1) 0L else 1L
+
+  loglik_gpml <- -sum(weights * (m / mu - log(pmax(m, 1e-300) / mu) - 1))
+
+  # Sandwich with gamma column
+  beta_lin <- as.numeric(X_beta %*% beta_coefs)
+  J_gamma <- beta_lin / (gamma_hat + ratio)
+  J_full <- cbind(Z, gamma = J_gamma)
+  p_ab <- p_alpha + p_beta
+
+  h <- .hat_values_wls(J_full, weights)
+  V_full <- .compute_sandwich_vcov(J_full, gpml_resid, weights = weights,
+                                   hat_values = h, vcov_type = vcov_type)
+  V <- V_full[seq_len(p_ab), seq_len(p_ab), drop = FALSE]
+
+  sigma2 <- sum(weights * gpml_resid^2) / (n_obs - p_ab - 1)
+  V_model_full <- .compute_model_vcov(J_full, weights, sigma2 = sigma2)
+  V_model <- V_model_full[seq_len(p_ab), seq_len(p_ab), drop = FALSE]
+
+  list(alpha_coefs = alpha_coefs, beta_coefs = beta_coefs,
+       fitted = mu, residuals = resid_raw, log_mu = log_mu,
+       vcov = V, vcov_model = V_model, vcov_full = V_full,
+       model_matrix_full = J_full, bread_weights = weights,
+       score_residuals = weights * gpml_resid,
+       n_obs = n_obs, df.residual = n_obs - p_ab - 1,
+       loglik = loglik_gpml, theta = NULL,
+       gamma_estimated = gamma_hat,
+       sigma2 = sigma2, convergence = convergence)
+}
