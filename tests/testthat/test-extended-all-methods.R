@@ -180,3 +180,52 @@ test_that("All methods comparison: DGP recovery summary", {
   cat("  Population sizes:\n")
   for (m in methods) cat("  ", m, "xi =", round(popsizes[m]), "\n")
 })
+
+# ---- Monte Carlo simulation: bias correction ----
+
+test_that("Simulation: multiplicative BC reduces bias for xi", {
+  skip_on_cran()
+  set.seed(2025)
+  R <- 200  # enough for bias estimation, not too slow
+  N_vec <- testdata$N
+  n_vec <- testdata$n
+  ratio_vec <- n_vec / N_vec
+  mu_true <- N_vec^dgp$alpha * (dgp$gamma + ratio_vec)^dgp$beta
+  xi_true <- sum(N_vec^dgp$alpha)
+
+  xi_plugin <- xi_bc <- numeric(R)
+  n_ok <- 0
+  for (r in seq_len(R)) {
+    m_sim <- rpois(length(mu_true), mu_true)
+    d_sim <- data.frame(m = m_sim, n = n_vec, N = N_vec)
+    fit <- tryCatch(
+      estimate_hidden_pop(d_sim, ~m, ~n, ~N, method = "poisson", gamma = dgp$gamma),
+      error = function(e) NULL
+    )
+    if (is.null(fit)) next
+    n_ok <- n_ok + 1
+    xi_plugin[n_ok] <- sum(popsize(fit, bias_correction = FALSE)$estimate)
+    xi_bc[n_ok] <- sum(popsize(fit, bias_correction = TRUE)$estimate_bc)
+  }
+
+  xi_plugin <- xi_plugin[seq_len(n_ok)]
+  xi_bc <- xi_bc[seq_len(n_ok)]
+
+  cat("\n  xi_true =", round(xi_true), "\n")
+  cat("  mean(xi_plugin) =", round(mean(xi_plugin)),
+      " bias =", round(mean(xi_plugin) - xi_true), "\n")
+  cat("  mean(xi_bc) =", round(mean(xi_bc)),
+      " bias =", round(mean(xi_bc) - xi_true), "\n")
+  cat("  n_ok =", n_ok, "/", R, "\n")
+
+  # Plugin should be upward biased (Jensen's inequality)
+  expect_true(mean(xi_plugin) > xi_true,
+              info = "Plugin should overestimate xi (Jensen)")
+
+  # Multiplicative BC should reduce bias
+  expect_true(abs(mean(xi_bc) - xi_true) < abs(mean(xi_plugin) - xi_true),
+              info = "BC should reduce bias relative to plugin")
+
+  # BC should always be positive
+  expect_true(all(xi_bc > 0), info = "BC must always be positive")
+})

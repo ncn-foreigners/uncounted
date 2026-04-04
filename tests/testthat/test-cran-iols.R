@@ -95,8 +95,9 @@ test_that("iOLS popsize works", {
   ps <- popsize(fit)
   expect_true(is.data.frame(ps))
   expect_true(all(ps$estimate > 0))
-  expect_true(all(ps$lower < ps$estimate))
-  expect_true(all(ps$estimate < ps$upper))
+  expect_true(all(ps$estimate_bc > 0))
+  expect_true(all(ps$lower < ps$estimate_bc))
+  expect_true(all(ps$estimate_bc < ps$upper))
 })
 
 # ---- Covariates ----

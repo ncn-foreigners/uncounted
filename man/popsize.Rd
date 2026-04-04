@@ -80,11 +80,20 @@ around \eqn{\alpha_0} gives the approximate bias
 }
 where \eqn{\mathbf{x}_g} is the design vector for group \eqn{g} and
 \eqn{\mathbf{V}} is the variance-covariance matrix of \eqn{\hat{\alpha}}.
-The bias-corrected estimate is
-\eqn{\hat{\xi}^{BC}_g = \hat{\xi}_g - \widehat{\mathrm{Bias}}}.
-Model-based (homoscedastic) variance is used for bias correction rather
-than HC-robust variance, because HC3 can be inflated by high-leverage
-observations in skewed data, leading to overcorrection.
+For unconstrained models, the exact multiplicative correction is used:
+\deqn{
+  \hat{\xi}^{BC}_g = \sum_{i=1}^{n} N_i^{\hat{\alpha}_g}
+    \exp\!\left(-\frac{1}{2} (\log N_i)^2 \mathbf{x}_g' \mathbf{V}
+    \mathbf{x}_g\right),
+}
+which is exact under normality of \eqn{\hat{\alpha}} and always positive.
+For constrained models the subtractive Taylor correction is used instead
+(the logistic-normal integral has no closed form), and the bias can be
+positive or negative depending on \eqn{\alpha}.
+Model-based variance is used for bias correction rather than HC-robust
+variance. For iOLS/GPML, the model-based variance is
+\eqn{(\mathbf{Z}'\mathbf{Z})^{-1}} (Gamma Fisher information, no
+dispersion scaling).
 
 When \code{constrained = TRUE}, the delta method accounts for the
 logit link: \eqn{\mathrm{Var}(\alpha) = \mathrm{Var}(\eta) \cdot

@@ -25,11 +25,20 @@
 #' }
 #' where \eqn{\mathbf{x}_g} is the design vector for group \eqn{g} and
 #' \eqn{\mathbf{V}} is the variance-covariance matrix of \eqn{\hat{\alpha}}.
-#' The bias-corrected estimate is
-#' \eqn{\hat{\xi}^{BC}_g = \hat{\xi}_g - \widehat{\mathrm{Bias}}}.
-#' Model-based (homoscedastic) variance is used for bias correction rather
-#' than HC-robust variance, because HC3 can be inflated by high-leverage
-#' observations in skewed data, leading to overcorrection.
+#' For unconstrained models, the exact multiplicative correction is used:
+#' \deqn{
+#'   \hat{\xi}^{BC}_g = \sum_{i=1}^{n} N_i^{\hat{\alpha}_g}
+#'     \exp\!\left(-\frac{1}{2} (\log N_i)^2 \mathbf{x}_g' \mathbf{V}
+#'     \mathbf{x}_g\right),
+#' }
+#' which is exact under normality of \eqn{\hat{\alpha}} and always positive.
+#' For constrained models the subtractive Taylor correction is used instead
+#' (the logistic-normal integral has no closed form), and the bias can be
+#' positive or negative depending on \eqn{\alpha}.
+#' Model-based variance is used for bias correction rather than HC-robust
+#' variance. For iOLS/GPML, the model-based variance is
+#' \eqn{(\mathbf{Z}'\mathbf{Z})^{-1}} (Gamma Fisher information, no
+#' dispersion scaling).
 #'
 #' When \code{constrained = TRUE}, the delta method accounts for the
 #' logit link: \eqn{\mathrm{Var}(\alpha) = \mathrm{Var}(\eta) \cdot
@@ -206,32 +215,38 @@ popsize.uncounted <- function(object, by = NULL, level = 0.95,
     ci_lower_bc <- ci_lower
     ci_upper_bc <- ci_upper
     if (bias_correction) {
-      # Per-observation bias: 0.5 * N_i^alpha_i * (log N_i)^2 * x_i' V_model x_i
       log_N2 <- (log(N_g))^2
       x_sub <- X_alpha[idx, , drop = FALSE]
-      # x_i' V x_i for each obs
       xVx <- rowSums((x_sub %*% V_alpha_model) * x_sub)
+
       if (is_constr) {
-        # Full second derivative of N^{invlogit(eta)} w.r.t. eta:
-        # d2/deta2 N^alpha = N^alpha * [(log N)^2 * (alpha')^2 + log(N) * alpha'']
-        # where alpha' = alpha(1-alpha), alpha'' = alpha(1-alpha)(1-2*alpha)
-        dsig <- alpha_g * (1 - alpha_g)         # alpha'(eta)
-        dsig2 <- dsig^2                          # [alpha'(eta)]^2
-        dsig_dd <- dsig * (1 - 2 * alpha_g)     # alpha''(eta)
+        # Constrained (logit link): subtractive correction with sigma' and sigma''
+        # NOTE: h''(eta) is NOT always positive under logit — bias can go either
+        # direction. Near alpha=1, the correction can INCREASE the estimate.
+        dsig <- alpha_g * (1 - alpha_g)
+        dsig2 <- dsig^2
+        dsig_dd <- dsig * (1 - 2 * alpha_g)
         bias <- 0.5 * sum(N_g^alpha_g * (log_N2 * dsig2 + log(N_g) * dsig_dd) * xVx)
+        est_bc <- est - bias
+        # Clamp only to positive (bias can go either direction for constrained)
+        if (est_bc <= 0) est_bc <- est
+        if (!is.na(ci_lower) && est > 0 && est_bc > 0) {
+          bc_ratio <- est_bc / est
+          ci_lower_bc <- ci_lower * bc_ratio
+          ci_upper_bc <- ci_upper * bc_ratio
+        }
       } else {
-        bias <- 0.5 * sum(N_g^alpha_g * log_N2 * xVx)
-      }
-      est_bc <- est - bias
-      # Clamp: bias correction must not make the estimate negative
-      if (est_bc <= 0) {
-        est_bc <- est  # skip correction when it overshoots
-        ci_lower_bc <- ci_lower
-        ci_upper_bc <- ci_upper
-      } else if (!is.na(ci_lower) && est > 0) {
-        # Also correct CI bounds (approximate: same relative bias)
-        ci_lower_bc <- ci_lower - bias * (ci_lower / est)
-        ci_upper_bc <- ci_upper - bias * (ci_upper / est)
+        # Unconstrained: multiplicative lognormal correction (exact under normality)
+        # E[N^alpha_hat] = N^alpha_0 * exp(0.5 * (log N)^2 * x'Vx)
+        # So xi_BC = sum N^alpha_hat * exp(-0.5 * (log N)^2 * x'Vx)
+        # Always positive. More accurate than subtractive Taylor approx.
+        correction <- exp(-0.5 * log_N2 * xVx)
+        est_bc <- sum(N_g^alpha_g * correction)
+        if (!is.na(ci_lower) && est > 0) {
+          bc_ratio <- est_bc / est
+          ci_lower_bc <- ci_lower * bc_ratio
+          ci_upper_bc <- ci_upper * bc_ratio
+        }
       }
     }
 
