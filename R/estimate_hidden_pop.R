@@ -450,8 +450,38 @@ estimate_hidden_pop <- function(data,
     actual_type <- if (vcov %in% c("HC2","HC3","HC4","HC4m","HC5")) "HC1" else vcov
     out$vcov_requested <- vcov
     out$vcov_type <- actual_type
+  } else if (is.function(vcov)) {
+    # User-supplied vcov function: first build object with default HC vcov
+    # (so update() inside vcovFWB etc. doesn't recurse), then apply function.
+    V_default <- .compute_vcov_sandwich(out, "HC3", cluster_vec)
+    has_gamma_col <- ncol(result$model_matrix_full) > p_ab
+    if (has_gamma_col) {
+      out$vcov_full <- V_default
+      out$vcov <- V_default[seq_len(p_ab), seq_len(p_ab), drop = FALSE]
+    } else {
+      out$vcov_full <- V_default
+      out$vcov <- V_default
+    }
+    # Replace vcov in the stored call so update() doesn't re-invoke the function
+    out$vcov_spec <- "HC3"
+    out$call[["vcov"]] <- "HC3"
+    # Now apply the user function on the fully constructed object
+    V_user <- vcov(out)
+    if (ncol(V_user) > p_ab) {
+      out$vcov_full <- V_user
+      out$vcov <- V_user[seq_len(p_ab), seq_len(p_ab), drop = FALSE]
+    } else {
+      out$vcov <- V_user
+    }
+    # Restore the original vcov_spec for printing
+    out$vcov_spec <- vcov
+    # Store NB ingredients
+    if (method == "nb" && !is.null(result$hessian_nll)) {
+      out$score_full <- result$score_full
+      out$hessian_nll <- result$hessian_nll
+    }
   } else {
-    # Non-NB, or NB with user-supplied vcov function: use sandwich package
+    # Character vcov type: use sandwich package directly
     V_full <- .compute_vcov_sandwich(out, vcov, cluster_vec)
     has_gamma_col <- ncol(result$model_matrix_full) > p_ab
     if (has_gamma_col) {
@@ -461,7 +491,7 @@ estimate_hidden_pop <- function(data,
       out$vcov_full <- V_full
       out$vcov <- V_full
     }
-    # Store NB ingredients even when user vcov function is used
+    # Store NB ingredients
     if (method == "nb" && !is.null(result$hessian_nll)) {
       out$score_full <- result$score_full
       out$hessian_nll <- result$hessian_nll
@@ -649,6 +679,11 @@ update.uncounted <- function(object, ..., evaluate = TRUE) {
   extras <- match.call(expand.dots = FALSE)$...
   for (nm in names(extras)) {
     call[[nm]] <- extras[[nm]]
+  }
+  # If vcov was a function and update doesn't explicitly override it,
+  # replace with "HC3" to prevent infinite recursion from vcovFWB etc.
+  if (is.function(object$vcov_spec) && !"vcov" %in% names(extras)) {
+    call[["vcov"]] <- "HC3"
   }
   if (!evaluate) return(call)
   eval(call, parent.frame())
