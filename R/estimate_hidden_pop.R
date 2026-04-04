@@ -550,19 +550,18 @@ summary.uncounted <- function(object, total = FALSE, ...) {
   n <- object$n_obs
   p <- length(coefs)
 
-  if (object$method %in% c("ols", "nls")) {
+  use_t <- object$method %in% c("ols", "nls")
+  if (use_t) {
     df <- n - p
     pval <- 2 * pt(-abs(z), df = df)
   } else {
     pval <- 2 * pnorm(-abs(z))
   }
 
-  tab <- cbind(
-    Estimate = coefs,
-    `Std. Error` = se,
-    `z value` = z,
-    `Pr(>|z|)` = pval
-  )
+  stat_name <- if (use_t) "t value" else "z value"
+  p_name <- if (use_t) "Pr(>|t|)" else "Pr(>|z|)"
+  tab <- cbind(Estimate = coefs, `Std. Error` = se, z, pval)
+  colnames(tab)[3:4] <- c(stat_name, p_name)
 
   cat("Unauthorized population estimation\n")
   vcov_label <- if (is.function(object$vcov_spec)) {
