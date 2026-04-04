@@ -66,7 +66,12 @@
 #'   overcorrection from inflated leverage-driven standard errors.
 #' @param total Logical; if \code{TRUE} and multiple groups exist, compute a
 #'   delta-method total with SE and CI, stored in \code{attr(result, "total")}.
-#'   Default \code{FALSE}.
+#'   Default \code{FALSE}. \strong{Warning}: for panel data where groups are
+#'   defined by time periods (e.g., \code{by = ~ year}), the total sums
+#'   population estimates across years. This is generally not meaningful because
+#'   the same individuals may appear in multiple years. The total is only
+#'   appropriate when groups represent non-overlapping subpopulations
+#'   (e.g., \code{by = ~ sex} within a single year).
 #' @param ... Additional arguments (ignored).
 #'
 #' @return A data frame with columns:
@@ -74,7 +79,7 @@
 #'   \item{group}{Group label derived from alpha covariates, or \code{"(all)"}
 #'     when no alpha covariates are specified.}
 #'   \item{estimate}{Plug-in estimate \eqn{\hat{\xi}_g = \sum N_i^{\hat{\alpha}_g}}.}
-#'   \item{estimate_bc}{Bias-corrected estimate \eqn{\hat{\xi}^{BC}_g}.}
+#'   \item{estimate_bc}{Bias-corrected estimate \eqn{\hat{\xi}^{BC}_g}; \code{NA} when \code{bias_correction = FALSE}.}
 #'   \item{lower}{Lower bound of the (bias-corrected) confidence interval.}
 #'   \item{upper}{Upper bound of the (bias-corrected) confidence interval.}
 #'   \item{share_pct}{Group share as percentage of total \eqn{\hat{\xi}}.}
@@ -211,7 +216,7 @@ popsize.uncounted <- function(object, by = NULL, level = 0.95,
     }
 
     # --- Bias correction ---
-    est_bc <- est
+    est_bc <- NA_real_
     ci_lower_bc <- ci_lower
     ci_upper_bc <- ci_upper
     if (bias_correction) {
@@ -268,7 +273,7 @@ popsize.uncounted <- function(object, by = NULL, level = 0.95,
   # Total with delta-method CI
   if (total && nrow(ps) > 1) {
     xi_total <- sum(ps$estimate)
-    xi_total_bc <- sum(ps$estimate_bc)
+    xi_total_bc <- if (bias_correction) sum(ps$estimate_bc, na.rm = TRUE) else NA_real_
 
     # Total gradient over all observations
     if (is_constr) {
@@ -299,6 +304,22 @@ popsize.uncounted <- function(object, by = NULL, level = 0.95,
 
   class(ps) <- c("uncounted_popsize", "data.frame")
   ps
+}
+
+
+#' @export
+print.uncounted_popsize <- function(x, ...) {
+  # Print the data frame
+  print.data.frame(x, ...)
+  # Print total if present
+  tot <- attr(x, "total")
+  if (!is.null(tot)) {
+    cat("\nTotal: estimate =", format(round(tot$estimate), big.mark = ","),
+        " BC =", format(round(tot$estimate_bc), big.mark = ","),
+        " [", format(round(tot$lower), big.mark = ","),
+        ",", format(round(tot$upper), big.mark = ","), "]\n")
+  }
+  invisible(x)
 }
 
 

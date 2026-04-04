@@ -38,7 +38,12 @@ overcorrection from inflated leverage-driven standard errors.}
 
 \item{total}{Logical; if \code{TRUE} and multiple groups exist, compute a
 delta-method total with SE and CI, stored in \code{attr(result, "total")}.
-Default \code{FALSE}.}
+Default \code{FALSE}. \strong{Warning}: for panel data where groups are
+defined by time periods (e.g., \code{by = ~ year}), the total sums
+population estimates across years. This is generally not meaningful because
+the same individuals may appear in multiple years. The total is only
+appropriate when groups represent non-overlapping subpopulations
+(e.g., \code{by = ~ sex} within a single year).}
 }
 \value{
 A data frame with columns:
@@ -46,7 +51,7 @@ A data frame with columns:
 \item{group}{Group label derived from alpha covariates, or \code{"(all)"}
 when no alpha covariates are specified.}
 \item{estimate}{Plug-in estimate \eqn{\hat{\xi}_g = \sum N_i^{\hat{\alpha}_g}}.}
-\item{estimate_bc}{Bias-corrected estimate \eqn{\hat{\xi}^{BC}_g}.}
+\item{estimate_bc}{Bias-corrected estimate \eqn{\hat{\xi}^{BC}_g}; \code{NA} when \code{bias_correction = FALSE}.}
 \item{lower}{Lower bound of the (bias-corrected) confidence interval.}
 \item{upper}{Upper bound of the (bias-corrected) confidence interval.}
 \item{share_pct}{Group share as percentage of total \eqn{\hat{\xi}}.}

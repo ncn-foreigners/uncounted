@@ -746,7 +746,7 @@ update.uncounted <- function(object, ..., evaluate = TRUE) {
   }
 
   has_bc <- "estimate_bc" %in% names(ps) &&
-            !all(ps$estimate_bc == ps$estimate)
+            !all(is.na(ps$estimate_bc))
   has_obs <- "observed" %in% names(ps)
 
   if (has_bc) {

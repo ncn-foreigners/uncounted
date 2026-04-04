@@ -26,11 +26,11 @@ test_that("BC estimate is positive and <= plugin for Poisson and NB", {
   }
 })
 
-test_that("no BC when bias_correction=FALSE: estimate == estimate_bc", {
+test_that("no BC when bias_correction=FALSE: estimate_bc is NA", {
   d <- small_data()
   fit <- quick_fit(d, gamma = 0.005)
   ps <- popsize(fit, bias_correction = FALSE)
-  expect_equal(ps$estimate, ps$estimate_bc)
+  expect_true(all(is.na(ps$estimate_bc)))
 })
 
 test_that("popsize with covariates gives multiple rows", {
