@@ -56,7 +56,12 @@ popsize(
 
   Logical; if `TRUE` and multiple groups exist, compute a delta-method
   total with SE and CI, stored in `attr(result, "total")`. Default
-  `FALSE`.
+  `FALSE`. **Warning**: for panel data where groups are defined by time
+  periods (e.g., `by = ~ year`), the total sums population estimates
+  across years. This is generally not meaningful because the same
+  individuals may appear in multiple years. The total is only
+  appropriate when groups represent non-overlapping subpopulations
+  (e.g., `by = ~ sex` within a single year).
 
 ## Value
 
@@ -73,7 +78,8 @@ A data frame with columns:
 
 - estimate_bc:
 
-  Bias-corrected estimate \\\hat{\xi}^{BC}\_g\\.
+  Bias-corrected estimate \\\hat{\xi}^{BC}\_g\\; `NA` when
+  `bias_correction = FALSE`.
 
 - lower:
 
@@ -168,7 +174,7 @@ popsize(fit)
 # Without bias correction
 popsize(fit, bias_correction = FALSE)
 #>   group observed   estimate estimate_bc         lower         upper share_pct
-#> 1 (all)      752 0.03262174  0.03262174 3.458684e-219 3.076829e+215       100
+#> 1 (all)      752 0.03262174          NA 3.458684e-219 3.076829e+215       100
 
 # 90% confidence interval
 popsize(fit, level = 0.90)

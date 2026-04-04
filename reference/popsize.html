@@ -107,7 +107,12 @@ overcorrection from inflated leverage-driven standard errors.</p></dd>
 <dt id="arg-total">total<a class="anchor" aria-label="anchor" href="#arg-total"></a></dt>
 <dd><p>Logical; if <code>TRUE</code> and multiple groups exist, compute a
 delta-method total with SE and CI, stored in <code>attr(result, "total")</code>.
-Default <code>FALSE</code>.</p></dd>
+Default <code>FALSE</code>. <strong>Warning</strong>: for panel data where groups are
+defined by time periods (e.g., <code>by = ~ year</code>), the total sums
+population estimates across years. This is generally not meaningful because
+the same individuals may appear in multiple years. The total is only
+appropriate when groups represent non-overlapping subpopulations
+(e.g., <code>by = ~ sex</code> within a single year).</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -120,7 +125,7 @@ when no alpha covariates are specified.</p></dd>
 <dd><p>Plug-in estimate \(\hat{\xi}_g = \sum N_i^{\hat{\alpha}_g}\).</p></dd>
 
 <dt>estimate_bc</dt>
-<dd><p>Bias-corrected estimate \(\hat{\xi}^{BC}_g\).</p></dd>
+<dd><p>Bias-corrected estimate \(\hat{\xi}^{BC}_g\); <code>NA</code> when <code>bias_correction = FALSE</code>.</p></dd>
 
 <dt>lower</dt>
 <dd><p>Lower bound of the (bias-corrected) confidence interval.</p></dd>
@@ -214,7 +219,7 @@ approximation for positivity. This is stored in <code>attr(result, "total")</cod
 <span class="r-in"><span><span class="co"># Without bias correction</span></span></span>
 <span class="r-in"><span><span class="fu">popsize</span><span class="op">(</span><span class="va">fit</span>, bias_correction <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   group observed   estimate estimate_bc         lower         upper share_pct</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1 (all)      752 0.03262174  0.03262174 3.458684e-219 3.076829e+215       100</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1 (all)      752 0.03262174          NA 3.458684e-219 3.076829e+215       100</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># 90% confidence interval</span></span></span>
 <span class="r-in"><span><span class="fu">popsize</span><span class="op">(</span><span class="va">fit</span>, level <span class="op">=</span> <span class="fl">0.90</span><span class="op">)</span></span></span>
