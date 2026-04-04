@@ -223,8 +223,13 @@ popsize.uncounted <- function(object, by = NULL, level = 0.95,
         bias <- 0.5 * sum(N_g^alpha_g * log_N2 * xVx)
       }
       est_bc <- est - bias
-      # Also correct CI bounds (approximate: same relative bias)
-      if (!is.na(ci_lower) && est > 0) {
+      # Clamp: bias correction must not make the estimate negative
+      if (est_bc <= 0) {
+        est_bc <- est  # skip correction when it overshoots
+        ci_lower_bc <- ci_lower
+        ci_upper_bc <- ci_upper
+      } else if (!is.na(ci_lower) && est > 0) {
+        # Also correct CI bounds (approximate: same relative bias)
         ci_lower_bc <- ci_lower - bias * (ci_lower / est)
         ci_upper_bc <- ci_upper - bias * (ci_upper / est)
       }
