@@ -20,12 +20,12 @@ RoxygenNote: 7.3.3
 Imports:
     stats,
     MASS,
-    sandwich
+    sandwich,
+    generics
 LazyData: true
 Suggests:
     testthat (>= 3.0.0),
     fwb,
-    generics,
     modelsummary,
     knitr,
     rmarkdown,
