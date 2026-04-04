@@ -66,3 +66,5 @@
   : Summary of LOO Sensitivity Results
 - [`update(`*`<uncounted>`*`)`](https://ncn-foreigners.github.io/uncounted/reference/update.uncounted.md)
   : Update and re-fit an uncounted model
+- [`vcov_nb()`](https://ncn-foreigners.github.io/uncounted/reference/vcov_nb.md)
+  : Theta-Aware Full Variance-Covariance for NB Models
