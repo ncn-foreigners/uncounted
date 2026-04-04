@@ -13,7 +13,7 @@ least one insured foreigner registered in ZUS during 2019–2024."><meta propert
 
     <a class="navbar-brand me-2" href="../index.html">uncounted</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -25,6 +25,7 @@ least one insured foreigner registered in ZUS during 2019–2024."><meta propert
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/diagnostics.html">Model Diagnostics and Comparison</a></li>
+    <li><a class="dropdown-item" href="../articles/iols.html">iOLS: Iterated OLS for Gamma Pseudo-Maximum Likelihood</a></li>
     <li><a class="dropdown-item" href="../articles/shiny-app.html">Interactive Shiny Application</a></li>
     <li><a class="dropdown-item" href="../articles/theory.html">Theoretical Framework for Hidden Population Estimation</a></li>
     <li><a class="dropdown-item" href="../articles/workflow.html">Complete Analysis Workflow</a></li>
@@ -100,7 +101,7 @@ from a given country.</p></dd>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p>The dataset is used to estimate the size of the unauthorized foreign
-population using the method of Beresewicz, Gudaszewski &amp; Walsh (2025).</p>
+population using the power-law model of Zhang (2008).</p>
 <p>The key assumption of the estimation framework is that \(m\) and \(n\)
 are partial observations from a larger unauthorized population of size
 \(\xi\). The reference population \(N\) (insured foreigners) serves as
@@ -113,9 +114,12 @@ large number of small countries with no recorded apprehensions.</p>
     </div>
     <div class="section level2">
     <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a></h2>
-    <p>Beresewicz, M., Gudaszewski, G., and Walsh, P. (2025).
-Counting the uncounted: Estimating the unauthorized foreign population
-using administrative data. Working paper.</p>
+    <p>Zhang, L.-C. (2008). Developing methods for determining the number of
+unauthorized foreigners in Norway. <em>Documents</em> 2008/11, Statistics
+Norway. <a href="https://www.ssb.no/a/english/publikasjoner/pdf/doc_200811_en/doc_200811_en.pdf" class="external-link">https://www.ssb.no/a/english/publikasjoner/pdf/doc_200811_en/doc_200811_en.pdf</a></p>
+<p>Beresewicz, M. and Pawlukiewicz, K. (2020). Estimation of the number of
+irregular foreigners in Poland using non-linear count regression models.
+<em>arXiv preprint</em> arXiv:2008.09407.</p>
     </div>
 
     <div class="section level2">

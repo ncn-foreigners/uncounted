@@ -13,7 +13,7 @@ supports covariate-varying parameters through interaction formulas."><meta prope
 
     <a class="navbar-brand me-2" href="../index.html">uncounted</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -25,6 +25,7 @@ supports covariate-varying parameters through interaction formulas."><meta prope
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/diagnostics.html">Model Diagnostics and Comparison</a></li>
+    <li><a class="dropdown-item" href="../articles/iols.html">iOLS: Iterated OLS for Gamma Pseudo-Maximum Likelihood</a></li>
     <li><a class="dropdown-item" href="../articles/shiny-app.html">Interactive Shiny Application</a></li>
     <li><a class="dropdown-item" href="../articles/theory.html">Theoretical Framework for Hidden Population Estimation</a></li>
     <li><a class="dropdown-item" href="../articles/workflow.html">Complete Analysis Workflow</a></li>
@@ -332,7 +333,7 @@ irregular foreigners in Poland using non-linear count regression models.
 <span class="r-out co"><span class="r-pr">#&gt;</span> Population size estimation results:</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   (BC = bias-corrected using model-based variance)</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>       Observed Estimate Estimate (BC) CI lower CI upper</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> (all)      777   14,853        11,846    3,080   45,562</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> (all)      777   14,853        12,134    3,155   46,669</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># OLS with fixed gamma</span></span></span>
 <span class="r-in"><span><span class="va">fit_ols</span> <span class="op">&lt;-</span> <span class="fu">estimate_hidden_pop</span><span class="op">(</span></span></span>
@@ -358,7 +359,7 @@ irregular foreigners in Poland using non-linear count regression models.
 <span class="r-out co"><span class="r-pr">#&gt;</span> Population size estimation results:</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   (BC = bias-corrected using model-based variance)</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>       Observed Estimate Estimate (BC) CI lower CI upper</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> (all)      777   36,563        33,019    6,239  174,738</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> (all)      777   36,563        33,187    6,271  175,626</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Constrained Poisson (alpha in (0,1), beta &gt; 0)</span></span></span>
 <span class="r-in"><span><span class="va">fit_constr</span> <span class="op">&lt;-</span> <span class="fu">estimate_hidden_pop</span><span class="op">(</span></span></span>

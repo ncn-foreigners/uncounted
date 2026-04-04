@@ -20,7 +20,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">uncounted</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -34,6 +34,7 @@
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
 <li><a class="dropdown-item" href="../articles/diagnostics.html">Model Diagnostics and Comparison</a></li>
+    <li><a class="dropdown-item" href="../articles/iols.html">iOLS: Iterated OLS for Gamma Pseudo-Maximum Likelihood</a></li>
     <li><a class="dropdown-item" href="../articles/shiny-app.html">Interactive Shiny Application</a></li>
     <li><a class="dropdown-item" href="../articles/theory.html">Theoretical Framework for Hidden Population Estimation</a></li>
     <li><a class="dropdown-item" href="../articles/workflow.html">Complete Analysis Workflow</a></li>
@@ -79,8 +80,8 @@ border-guard apprehensions, police identifications, and social-insurance
 records – statistical models can exploit cross-source variation to infer
 the size of the population that escapes all sources.</p>
 <p>The <code>uncounted</code> package implements the estimation
-framework of Beresewicz, Gudaszewski and Walsh (2025), which builds on
-the dual-system ideas of Zhang (2008). The core insight is that the
+framework of Beresewicz and Pawlukiewicz (2020), which builds on the
+dual-system ideas of Zhang (2008). The core insight is that the
 <em>observed</em> count of unauthorized migrants in a given group (e.g.,
 a country-of-origin
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mo>×</mo><annotation encoding="application/x-tex">\times</annotation></semantics></math>
@@ -654,9 +655,9 @@ is right-skewed and the bootstrap mean tends to overestimate
 <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a>
 </h2>
 <ul>
-<li><p>Beresewicz, M., Gudaszewski, G., and Walsh, P. (2025). Counting
-the uncounted: Estimating the unauthorized foreign population using
-administrative data. Working paper.</p></li>
+<li><p>Beręsewicz, M., &amp; Pawlukiewicz, K. (2020). Estimation of the
+number of irregular foreigners in Poland using non-linear count
+regression models. arXiv preprint arXiv:2008.09407.</p></li>
 <li><p>Santos Silva, J. M. C. and Tenreyro, S. (2006). The log of
 gravity. <em>The Review of Economics and Statistics</em>, 88(4),
 641–658.</p></li>

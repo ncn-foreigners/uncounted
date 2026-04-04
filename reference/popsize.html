@@ -15,7 +15,7 @@ transformation of the Wald interval on the link scale."><meta property="og:image
 
     <a class="navbar-brand me-2" href="../index.html">uncounted</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -27,6 +27,7 @@ transformation of the Wald interval on the link scale."><meta property="og:image
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/diagnostics.html">Model Diagnostics and Comparison</a></li>
+    <li><a class="dropdown-item" href="../articles/iols.html">iOLS: Iterated OLS for Gamma Pseudo-Maximum Likelihood</a></li>
     <li><a class="dropdown-item" href="../articles/shiny-app.html">Interactive Shiny Application</a></li>
     <li><a class="dropdown-item" href="../articles/theory.html">Theoretical Framework for Hidden Population Estimation</a></li>
     <li><a class="dropdown-item" href="../articles/workflow.html">Complete Analysis Workflow</a></li>
@@ -152,11 +153,20 @@ $$
 $$
 where \(\mathbf{x}_g\) is the design vector for group \(g\) and
 \(\mathbf{V}\) is the variance-covariance matrix of \(\hat{\alpha}\).
-The bias-corrected estimate is
-\(\hat{\xi}^{BC}_g = \hat{\xi}_g - \widehat{\mathrm{Bias}}\).
-Model-based (homoscedastic) variance is used for bias correction rather
-than HC-robust variance, because HC3 can be inflated by high-leverage
-observations in skewed data, leading to overcorrection.</p>
+For unconstrained models, the exact multiplicative correction is used:
+$$
+  \hat{\xi}^{BC}_g = \sum_{i=1}^{n} N_i^{\hat{\alpha}_g}
+    \exp\!\left(-\frac{1}{2} (\log N_i)^2 \mathbf{x}_g' \mathbf{V}
+    \mathbf{x}_g\right),
+$$
+which is exact under normality of \(\hat{\alpha}\) and always positive.
+For constrained models the subtractive Taylor correction is used instead
+(the logistic-normal integral has no closed form), and the bias can be
+positive or negative depending on \(\alpha\).
+Model-based variance is used for bias correction rather than HC-robust
+variance. For iOLS/GPML, the model-based variance is
+\((\mathbf{Z}'\mathbf{Z})^{-1}\) (Gamma Fisher information, no
+dispersion scaling).</p>
 <p>When <code>constrained = TRUE</code>, the delta method accounts for the
 logit link: \(\mathrm{Var}(\alpha) = \mathrm{Var}(\eta) \cdot
 [\sigma'(\eta)]^2\) where \(\sigma'(\eta) = \alpha(1-\alpha)\).</p>
@@ -197,8 +207,8 @@ approximation for positivity. This is stored in <code>attr(result, "total")</cod
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Population size with bias correction and 95% CI</span></span></span>
 <span class="r-in"><span><span class="fu">popsize</span><span class="op">(</span><span class="va">fit</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   group observed   estimate estimate_bc         lower         upper share_pct</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1 (all)      752 0.03262174  0.03262174 3.458684e-219 3.076829e+215       100</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   group observed   estimate estimate_bc lower upper share_pct</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1 (all)      752 0.03262174           0     0     0       100</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Without bias correction</span></span></span>
 <span class="r-in"><span><span class="fu">popsize</span><span class="op">(</span><span class="va">fit</span>, bias_correction <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></span>
@@ -207,8 +217,8 @@ approximation for positivity. This is stored in <code>attr(result, "total")</cod
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># 90% confidence interval</span></span></span>
 <span class="r-in"><span><span class="fu">popsize</span><span class="op">(</span><span class="va">fit</span>, level <span class="op">=</span> <span class="fl">0.90</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   group observed   estimate estimate_bc         lower         upper share_pct</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1 (all)      752 0.03262174  0.03262174 2.646585e-184 4.020947e+180       100</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   group observed   estimate estimate_bc lower upper share_pct</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1 (all)      752 0.03262174           0     0     0       100</span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>

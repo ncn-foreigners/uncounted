@@ -313,7 +313,7 @@ summary(fit_pois)
 #> Population size estimation results:
 #>   (BC = bias-corrected using model-based variance)
 #>       Observed Estimate Estimate (BC) CI lower CI upper
-#> (all)      777   14,853        11,846    3,080   45,562
+#> (all)      777   14,853        12,134    3,155   46,669
 
 # OLS with fixed gamma
 fit_ols <- estimate_hidden_pop(
@@ -339,7 +339,7 @@ summary(fit_ols)
 #> Population size estimation results:
 #>   (BC = bias-corrected using model-based variance)
 #>       Observed Estimate Estimate (BC) CI lower CI upper
-#> (all)      777   36,563        33,019    6,239  174,738
+#> (all)      777   36,563        33,187    6,271  175,626
 
 # Constrained Poisson (alpha in (0,1), beta > 0)
 fit_constr <- estimate_hidden_pop(

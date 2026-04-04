@@ -106,12 +106,18 @@ gives the approximate bias \$\$ \mathrm{Bias}(\hat{\xi}\_g) \approx
 \frac{1}{2} \sum\_{i=1}^{n} N_i^{\alpha_g} (\log N_i)^2 \\
 \mathbf{x}\_g' \mathbf{V} \mathbf{x}\_g, \$\$ where \\\mathbf{x}\_g\\ is
 the design vector for group \\g\\ and \\\mathbf{V}\\ is the
-variance-covariance matrix of \\\hat{\alpha}\\. The bias-corrected
-estimate is \\\hat{\xi}^{BC}\_g = \hat{\xi}\_g -
-\widehat{\mathrm{Bias}}\\. Model-based (homoscedastic) variance is used
-for bias correction rather than HC-robust variance, because HC3 can be
-inflated by high-leverage observations in skewed data, leading to
-overcorrection.
+variance-covariance matrix of \\\hat{\alpha}\\. For unconstrained
+models, the exact multiplicative correction is used: \$\$
+\hat{\xi}^{BC}\_g = \sum\_{i=1}^{n} N_i^{\hat{\alpha}\_g}
+\exp\\\left(-\frac{1}{2} (\log N_i)^2 \mathbf{x}\_g' \mathbf{V}
+\mathbf{x}\_g\right), \$\$ which is exact under normality of
+\\\hat{\alpha}\\ and always positive. For constrained models the
+subtractive Taylor correction is used instead (the logistic-normal
+integral has no closed form), and the bias can be positive or negative
+depending on \\\alpha\\. Model-based variance is used for bias
+correction rather than HC-robust variance. For iOLS/GPML, the
+model-based variance is \\(\mathbf{Z}'\mathbf{Z})^{-1}\\ (Gamma Fisher
+information, no dispersion scaling).
 
 When `constrained = TRUE`, the delta method accounts for the logit link:
 \\\mathrm{Var}(\alpha) = \mathrm{Var}(\eta) \cdot \[\sigma'(\eta)\]^2\\
@@ -156,8 +162,8 @@ fit <- estimate_hidden_pop(
 
 # Population size with bias correction and 95% CI
 popsize(fit)
-#>   group observed   estimate estimate_bc         lower         upper share_pct
-#> 1 (all)      752 0.03262174  0.03262174 3.458684e-219 3.076829e+215       100
+#>   group observed   estimate estimate_bc lower upper share_pct
+#> 1 (all)      752 0.03262174           0     0     0       100
 
 # Without bias correction
 popsize(fit, bias_correction = FALSE)
@@ -166,6 +172,6 @@ popsize(fit, bias_correction = FALSE)
 
 # 90% confidence interval
 popsize(fit, level = 0.90)
-#>   group observed   estimate estimate_bc         lower         upper share_pct
-#> 1 (all)      752 0.03262174  0.03262174 2.646585e-184 4.020947e+180       100
+#>   group observed   estimate estimate_bc lower upper share_pct
+#> 1 (all)      752 0.03262174           0     0     0       100
 ```

@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">uncounted</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -19,6 +19,7 @@
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/diagnostics.html">Model Diagnostics and Comparison</a></li>
+    <li><a class="dropdown-item" href="../articles/iols.html">iOLS: Iterated OLS for Gamma Pseudo-Maximum Likelihood</a></li>
     <li><a class="dropdown-item" href="../articles/shiny-app.html">Interactive Shiny Application</a></li>
     <li><a class="dropdown-item" href="../articles/theory.html">Theoretical Framework for Hidden Population Estimation</a></li>
     <li><a class="dropdown-item" href="../articles/workflow.html">Complete Analysis Workflow</a></li>
@@ -38,6 +39,24 @@
       <small>Source: <a href="https://github.com/ncn-foreigners/uncounted/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.7.1" id="uncounted-071">uncounted 0.7.1<a class="anchor" aria-label="anchor" href="#uncounted-071"></a></h2>
+<div class="section level3">
+<h3 id="bug-fixes-0-7-1">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-0-7-1"></a></h3>
+<ul><li><p><strong>Multiplicative bias correction</strong>: Replaced the subtractive Taylor approximation <code>xi_BC = xi - bias</code> with the exact multiplicative lognormal form <code>xi_BC = sum N^alpha * exp(-0.5 * (log N)^2 * x'Vx)</code>. This is exact under normality of alpha-hat, always positive, and reduces bias by ~94% in Monte Carlo simulations (vs ~88% for the old subtractive form).</p></li>
+<li><p><strong>Constrained BC direction</strong>: Under the logit constraint, the second derivative <code>h''(eta)</code> can be negative when alpha is near 1, so the bias correction can go either direction. The code no longer assumes upward bias for constrained models.</p></li>
+<li><p><strong>iOLS model-based variance</strong>: Uses <code>(Z'Z)^{-1}</code> (GPML Fisher information) without sigma^2 scaling, preventing inflated bias correction on zero-heavy data.</p></li>
+<li>
+<p><strong>Removed nonexistent reference</strong>: Replaced Beresewicz, Gudaszewski &amp; Walsh</p>
+<ol start="2025" style="list-style-type: decimal"><li>with the correct Zhang (2008) and Beresewicz &amp; Pawlukiewicz (2020) references.</li>
+</ol></li>
+</ul></div>
+<div class="section level3">
+<h3 id="enhancements-0-7-1">Enhancements<a class="anchor" aria-label="anchor" href="#enhancements-0-7-1"></a></h3>
+<ul><li>
+<strong>Extended iOLS tests</strong>: 39 new tests covering bootstrap, LOO, dfbeta, cluster-robust SEs, HC types, the year*ukr migration specification, and iOLS vs Poisson numerical comparisons. 493 tests total.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.7.0" id="uncounted-070">uncounted 0.7.0<a class="anchor" aria-label="anchor" href="#uncounted-070"></a></h2>
 <div class="section level3">

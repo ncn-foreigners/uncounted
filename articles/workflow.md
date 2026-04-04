@@ -219,7 +219,7 @@ summary(fit_nb)
 #> Population size estimation results:
 #>   (BC = bias-corrected using model-based variance)
 #>       Observed  Estimate Estimate (BC) CI lower  CI upper
-#> (all)   27,105 1,259,565     1,231,048  731,136 2,072,775
+#> (all)   27,105 1,259,565     1,231,405  731,348 2,073,376
 ```
 
 ### Model 4: NB two-stage (gamma from Poisson, fixed in NB)
@@ -262,7 +262,7 @@ summary(fit_nb2)
 #> Population size estimation results:
 #>   (BC = bias-corrected using model-based variance)
 #>       Observed Estimate Estimate (BC) CI lower CI upper
-#> (all)   27,105  318,958       315,391  227,252  437,716
+#> (all)   27,105  318,958       315,415  227,269  437,749
 ```
 
 ## Population Size Estimates
@@ -277,7 +277,7 @@ bias-corrected estimates and confidence intervals.
 ps_pois <- popsize(fit_pois)
 ps_pois
 #>   group observed estimate estimate_bc    lower    upper share_pct
-#> 1 (all)    27105 290597.5    290498.3 127726.4 660703.2       100
+#> 1 (all)    27105 290597.5    290498.3 127726.5 660703.2       100
 ```
 
 The columns are:
@@ -316,10 +316,10 @@ ps_table <- do.call(rbind, lapply(names(models), function(nm) {
 }))
 ps_table
 #>            Model  Estimate        BC    Lower     Upper
-#> 1        Poisson  290597.5  290498.3 127726.4  660703.2
+#> 1        Poisson  290597.5  290498.3 127726.5  660703.2
 #> 2 Poisson_constr  290597.4  290520.0 127736.0  660752.4
-#> 3             NB 1259565.1 1231048.3 731135.6 2072775.5
-#> 4    NB_twostage  318957.8  315391.5 227251.8  437716.2
+#> 3             NB 1259565.1 1231405.2 731347.6 2073376.4
+#> 4    NB_twostage  318957.8  315415.1 227268.8  437749.0
 ```
 
 ### Stratified population size

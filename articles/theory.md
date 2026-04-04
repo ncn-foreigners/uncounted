@@ -12,13 +12,13 @@ records – statistical models can exploit cross-source variation to infer
 the size of the population that escapes all sources.
 
 The `uncounted` package implements the estimation framework of
-Beresewicz, Gudaszewski and Walsh (2025), which builds on the
-dual-system ideas of Zhang (2008). The core insight is that the
-*observed* count of unauthorized migrants in a given group (e.g., a
-country-of-origin $\times$ year cell) is a power-law function of the
-*reference* (known) population, modulated by an auxiliary registration
-rate. Fitting this power-law model and inverting it yields an estimate
-of the total hidden population.
+Beresewicz and Pawlukiewicz (2020), which builds on the dual-system
+ideas of Zhang (2008). The core insight is that the *observed* count of
+unauthorized migrants in a given group (e.g., a country-of-origin
+$\times$ year cell) is a power-law function of the *reference* (known)
+population, modulated by an auxiliary registration rate. Fitting this
+power-law model and inverting it yields an estimate of the total hidden
+population.
 
 This vignette describes the theory behind the model, the available
 estimation methods, and the inference procedures implemented in the
@@ -397,9 +397,9 @@ boot_result$popsize_full
 
 ## References
 
-- Beresewicz, M., Gudaszewski, G., and Walsh, P. (2025). Counting the
-  uncounted: Estimating the unauthorized foreign population using
-  administrative data. Working paper.
+- Beręsewicz, M., & Pawlukiewicz, K. (2020). Estimation of the number of
+  irregular foreigners in Poland using non-linear count regression
+  models. arXiv preprint arXiv:2008.09407.
 
 - Santos Silva, J. M. C. and Tenreyro, S. (2006). The log of gravity.
   *The Review of Economics and Statistics*, 88(4), 641–658.

@@ -68,16 +68,16 @@ summary(fit_po)
 #> Population size estimation results:
 #>   (BC = bias-corrected using model-based variance)
 #>                       Observed Estimate Estimate (BC) CI lower CI upper
-#> year=2019, sex=Female    1,535   21,115        21,084    3,390  131,112
-#> year=2019, sex=Male      5,069   60,042        59,958   10,174  353,337
+#> year=2019, sex=Female    1,535   21,115        21,084    3,390  131,113
+#> year=2019, sex=Male      5,069   60,042        59,959   10,174  353,337
 #> year=2020, sex=Female      698   23,598        23,533    6,029   91,857
-#> year=2020, sex=Male      2,700   66,629        66,438   22,985  192,041
+#> year=2020, sex=Male      2,700   66,629        66,439   22,985  192,042
 #> year=2021, sex=Female      483   22,736        22,671    7,262   70,775
-#> year=2021, sex=Male      2,622   65,001        64,807   32,342  129,862
-#> year=2022, sex=Female      317   14,110        14,074    2,476   79,996
-#> year=2022, sex=Male      2,632   32,902        32,825    7,365  146,303
+#> year=2021, sex=Male      2,622   65,001        64,808   32,342  129,863
+#> year=2022, sex=Female      317   14,110        14,074    2,476   79,997
+#> year=2022, sex=Male      2,632   32,902        32,825    7,365  146,304
 #> year=2023, sex=Female      523   12,077        12,056      533  272,610
-#> year=2023, sex=Male      3,839   28,872        28,828    1,219  681,885
+#> year=2023, sex=Male      3,839   28,872        28,828    1,219  681,886
 #> year=2024, sex=Female      956    7,109         7,103      576   87,558
 #> year=2024, sex=Male      5,731   17,473        17,459    1,176  259,155
 summary(fit_nb)
@@ -112,18 +112,18 @@ summary(fit_nb)
 #> Population size estimation results:
 #>   (BC = bias-corrected using model-based variance)
 #>                       Observed Estimate Estimate (BC) CI lower CI upper
-#> year=2019, sex=Female    1,535   27,910        25,477   12,604   51,498
-#> year=2019, sex=Male      5,069   82,523        74,904   35,406  158,465
-#> year=2020, sex=Female      698   19,951        17,944    6,681   48,194
-#> year=2020, sex=Male      2,700   57,293        51,163   18,632  140,491
-#> year=2021, sex=Female      483   82,783        71,915   23,983  215,643
-#> year=2021, sex=Male      2,622  256,883       221,256   71,025  689,252
-#> year=2022, sex=Female      317   38,056        34,260    7,879  148,976
-#> year=2022, sex=Male      2,632   89,735        81,522   20,767  320,013
-#> year=2023, sex=Female      523   66,645        60,407   20,174  180,872
-#> year=2023, sex=Male      3,839  159,095       145,748   52,517  404,487
-#> year=2024, sex=Female      956  120,782       110,601   46,318  264,099
-#> year=2024, sex=Male      5,731  302,685       279,446  120,646  647,267
+#> year=2019, sex=Female    1,535   27,910        25,594   12,662   51,735
+#> year=2019, sex=Male      5,069   82,523        75,288   35,587  159,278
+#> year=2020, sex=Female      698   19,951        18,057    6,723   48,499
+#> year=2020, sex=Male      2,700   57,293        51,526   18,764  141,486
+#> year=2021, sex=Female      483   82,783        72,663   24,232  217,886
+#> year=2021, sex=Male      2,622  256,883       223,824   71,849  697,253
+#> year=2022, sex=Female      317   38,056        34,467    7,926  149,878
+#> year=2022, sex=Male      2,632   89,735        81,933   20,872  321,625
+#> year=2023, sex=Female      523   66,645        60,721   20,279  181,814
+#> year=2023, sex=Male      3,839  159,095       146,352   52,735  406,164
+#> year=2024, sex=Female      956  120,782       111,059   46,510  265,191
+#> year=2024, sex=Male      5,731  302,685       280,401  121,058  649,479
 ```
 
 ## 2. Model comparison
@@ -475,9 +475,9 @@ head(prof)
 
 ## References
 
-- Beresewicz, M., Gudaszewski, G., and Walsh, P. (2025). Counting the
-  uncounted: Estimating the unauthorized foreign population using
-  administrative data. Working paper.
+- Beręsewicz, M., & Pawlukiewicz, K. (2020). Estimation of the number of
+  irregular foreigners in Poland using non-linear count regression
+  models. arXiv preprint arXiv:2008.09407.
 - Kleiber, C. and Zeileis, A. (2016). Visualizing Count Data Regressions
   Using Rootograms. *The American Statistician*, 70(3), 296–303.
 - McCullagh, P. and Nelder, J. A. (1989). *Generalized Linear Models*,

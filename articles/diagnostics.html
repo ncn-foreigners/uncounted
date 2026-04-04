@@ -20,7 +20,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">uncounted</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -34,6 +34,7 @@
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
 <li><a class="dropdown-item" href="../articles/diagnostics.html">Model Diagnostics and Comparison</a></li>
+    <li><a class="dropdown-item" href="../articles/iols.html">iOLS: Iterated OLS for Gamma Pseudo-Maximum Likelihood</a></li>
     <li><a class="dropdown-item" href="../articles/shiny-app.html">Interactive Shiny Application</a></li>
     <li><a class="dropdown-item" href="../articles/theory.html">Theoretical Framework for Hidden Population Estimation</a></li>
     <li><a class="dropdown-item" href="../articles/workflow.html">Complete Analysis Workflow</a></li>
@@ -131,16 +132,16 @@ and sex covariates on alpha and year covariates on beta.</p>
 <span><span class="co">#&gt; Population size estimation results:</span></span>
 <span><span class="co">#&gt;   (BC = bias-corrected using model-based variance)</span></span>
 <span><span class="co">#&gt;                       Observed Estimate Estimate (BC) CI lower CI upper</span></span>
-<span><span class="co">#&gt; year=2019, sex=Female    1,535   21,115        21,084    3,390  131,112</span></span>
-<span><span class="co">#&gt; year=2019, sex=Male      5,069   60,042        59,958   10,174  353,337</span></span>
+<span><span class="co">#&gt; year=2019, sex=Female    1,535   21,115        21,084    3,390  131,113</span></span>
+<span><span class="co">#&gt; year=2019, sex=Male      5,069   60,042        59,959   10,174  353,337</span></span>
 <span><span class="co">#&gt; year=2020, sex=Female      698   23,598        23,533    6,029   91,857</span></span>
-<span><span class="co">#&gt; year=2020, sex=Male      2,700   66,629        66,438   22,985  192,041</span></span>
+<span><span class="co">#&gt; year=2020, sex=Male      2,700   66,629        66,439   22,985  192,042</span></span>
 <span><span class="co">#&gt; year=2021, sex=Female      483   22,736        22,671    7,262   70,775</span></span>
-<span><span class="co">#&gt; year=2021, sex=Male      2,622   65,001        64,807   32,342  129,862</span></span>
-<span><span class="co">#&gt; year=2022, sex=Female      317   14,110        14,074    2,476   79,996</span></span>
-<span><span class="co">#&gt; year=2022, sex=Male      2,632   32,902        32,825    7,365  146,303</span></span>
+<span><span class="co">#&gt; year=2021, sex=Male      2,622   65,001        64,808   32,342  129,863</span></span>
+<span><span class="co">#&gt; year=2022, sex=Female      317   14,110        14,074    2,476   79,997</span></span>
+<span><span class="co">#&gt; year=2022, sex=Male      2,632   32,902        32,825    7,365  146,304</span></span>
 <span><span class="co">#&gt; year=2023, sex=Female      523   12,077        12,056      533  272,610</span></span>
-<span><span class="co">#&gt; year=2023, sex=Male      3,839   28,872        28,828    1,219  681,885</span></span>
+<span><span class="co">#&gt; year=2023, sex=Male      3,839   28,872        28,828    1,219  681,886</span></span>
 <span><span class="co">#&gt; year=2024, sex=Female      956    7,109         7,103      576   87,558</span></span>
 <span><span class="co">#&gt; year=2024, sex=Male      5,731   17,473        17,459    1,176  259,155</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">fit_nb</span><span class="op">)</span></span>
@@ -175,18 +176,18 @@ and sex covariates on alpha and year covariates on beta.</p>
 <span><span class="co">#&gt; Population size estimation results:</span></span>
 <span><span class="co">#&gt;   (BC = bias-corrected using model-based variance)</span></span>
 <span><span class="co">#&gt;                       Observed Estimate Estimate (BC) CI lower CI upper</span></span>
-<span><span class="co">#&gt; year=2019, sex=Female    1,535   27,910        25,477   12,604   51,498</span></span>
-<span><span class="co">#&gt; year=2019, sex=Male      5,069   82,523        74,904   35,406  158,465</span></span>
-<span><span class="co">#&gt; year=2020, sex=Female      698   19,951        17,944    6,681   48,194</span></span>
-<span><span class="co">#&gt; year=2020, sex=Male      2,700   57,293        51,163   18,632  140,491</span></span>
-<span><span class="co">#&gt; year=2021, sex=Female      483   82,783        71,915   23,983  215,643</span></span>
-<span><span class="co">#&gt; year=2021, sex=Male      2,622  256,883       221,256   71,025  689,252</span></span>
-<span><span class="co">#&gt; year=2022, sex=Female      317   38,056        34,260    7,879  148,976</span></span>
-<span><span class="co">#&gt; year=2022, sex=Male      2,632   89,735        81,522   20,767  320,013</span></span>
-<span><span class="co">#&gt; year=2023, sex=Female      523   66,645        60,407   20,174  180,872</span></span>
-<span><span class="co">#&gt; year=2023, sex=Male      3,839  159,095       145,748   52,517  404,487</span></span>
-<span><span class="co">#&gt; year=2024, sex=Female      956  120,782       110,601   46,318  264,099</span></span>
-<span><span class="co">#&gt; year=2024, sex=Male      5,731  302,685       279,446  120,646  647,267</span></span></code></pre></div>
+<span><span class="co">#&gt; year=2019, sex=Female    1,535   27,910        25,594   12,662   51,735</span></span>
+<span><span class="co">#&gt; year=2019, sex=Male      5,069   82,523        75,288   35,587  159,278</span></span>
+<span><span class="co">#&gt; year=2020, sex=Female      698   19,951        18,057    6,723   48,499</span></span>
+<span><span class="co">#&gt; year=2020, sex=Male      2,700   57,293        51,526   18,764  141,486</span></span>
+<span><span class="co">#&gt; year=2021, sex=Female      483   82,783        72,663   24,232  217,886</span></span>
+<span><span class="co">#&gt; year=2021, sex=Male      2,622  256,883       223,824   71,849  697,253</span></span>
+<span><span class="co">#&gt; year=2022, sex=Female      317   38,056        34,467    7,926  149,878</span></span>
+<span><span class="co">#&gt; year=2022, sex=Male      2,632   89,735        81,933   20,872  321,625</span></span>
+<span><span class="co">#&gt; year=2023, sex=Female      523   66,645        60,721   20,279  181,814</span></span>
+<span><span class="co">#&gt; year=2023, sex=Male      3,839  159,095       146,352   52,735  406,164</span></span>
+<span><span class="co">#&gt; year=2024, sex=Female      956  120,782       111,059   46,510  265,191</span></span>
+<span><span class="co">#&gt; year=2024, sex=Male      5,731  302,685       280,401  121,058  649,479</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="model-comparison">2. Model comparison<a class="anchor" aria-label="anchor" href="#model-comparison"></a>
@@ -543,9 +544,9 @@ the gamma range.</p>
 <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a>
 </h2>
 <ul>
-<li>Beresewicz, M., Gudaszewski, G., and Walsh, P. (2025). Counting the
-uncounted: Estimating the unauthorized foreign population using
-administrative data. Working paper.</li>
+<li>Beręsewicz, M., &amp; Pawlukiewicz, K. (2020). Estimation of the
+number of irregular foreigners in Poland using non-linear count
+regression models. arXiv preprint arXiv:2008.09407.</li>
 <li>Kleiber, C. and Zeileis, A. (2016). Visualizing Count Data
 Regressions Using Rootograms. <em>The American Statistician</em>, 70(3),
 296–303.</li>

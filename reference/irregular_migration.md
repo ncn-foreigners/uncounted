@@ -64,7 +64,7 @@ A data frame with 1,382 rows and 8 variables:
 ## Details
 
 The dataset is used to estimate the size of the unauthorized foreign
-population using the method of Beresewicz, Gudaszewski & Walsh (2025).
+population using the power-law model of Zhang (2008).
 
 The key assumption of the estimation framework is that \\m\\ and \\n\\
 are partial observations from a larger unauthorized population of size
@@ -79,9 +79,14 @@ apprehensions.
 
 ## References
 
-Beresewicz, M., Gudaszewski, G., and Walsh, P. (2025). Counting the
-uncounted: Estimating the unauthorized foreign population using
-administrative data. Working paper.
+Zhang, L.-C. (2008). Developing methods for determining the number of
+unauthorized foreigners in Norway. *Documents* 2008/11, Statistics
+Norway.
+<https://www.ssb.no/a/english/publikasjoner/pdf/doc_200811_en/doc_200811_en.pdf>
+
+Beresewicz, M. and Pawlukiewicz, K. (2020). Estimation of the number of
+irregular foreigners in Poland using non-linear count regression models.
+*arXiv preprint* arXiv:2008.09407.
 
 ## Examples
 

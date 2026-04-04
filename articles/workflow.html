@@ -20,7 +20,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">uncounted</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -34,6 +34,7 @@
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
 <li><a class="dropdown-item" href="../articles/diagnostics.html">Model Diagnostics and Comparison</a></li>
+    <li><a class="dropdown-item" href="../articles/iols.html">iOLS: Iterated OLS for Gamma Pseudo-Maximum Likelihood</a></li>
     <li><a class="dropdown-item" href="../articles/shiny-app.html">Interactive Shiny Application</a></li>
     <li><a class="dropdown-item" href="../articles/theory.html">Theoretical Framework for Hidden Population Estimation</a></li>
     <li><a class="dropdown-item" href="../articles/workflow.html">Complete Analysis Workflow</a></li>
@@ -287,7 +288,7 @@ overdispersion beyond what Poisson allows.</p>
 <span><span class="co">#&gt; Population size estimation results:</span></span>
 <span><span class="co">#&gt;   (BC = bias-corrected using model-based variance)</span></span>
 <span><span class="co">#&gt;       Observed  Estimate Estimate (BC) CI lower  CI upper</span></span>
-<span><span class="co">#&gt; (all)   27,105 1,259,565     1,231,048  731,136 2,072,775</span></span></code></pre></div>
+<span><span class="co">#&gt; (all)   27,105 1,259,565     1,231,405  731,348 2,073,376</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="model-4-nb-two-stage-gamma-from-poisson-fixed-in-nb">Model 4: NB two-stage (gamma from Poisson, fixed in NB)<a class="anchor" aria-label="anchor" href="#model-4-nb-two-stage-gamma-from-poisson-fixed-in-nb"></a>
@@ -329,7 +330,7 @@ simultaneously.</p>
 <span><span class="co">#&gt; Population size estimation results:</span></span>
 <span><span class="co">#&gt;   (BC = bias-corrected using model-based variance)</span></span>
 <span><span class="co">#&gt;       Observed Estimate Estimate (BC) CI lower CI upper</span></span>
-<span><span class="co">#&gt; (all)   27,105  318,958       315,391  227,252  437,716</span></span></code></pre></div>
+<span><span class="co">#&gt; (all)   27,105  318,958       315,415  227,269  437,749</span></span></code></pre></div>
 </div>
 </div>
 <div class="section level2">
@@ -343,7 +344,7 @@ along with bias-corrected estimates and confidence intervals.</p>
 <code class="sourceCode R"><span><span class="va">ps_pois</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/popsize.html">popsize</a></span><span class="op">(</span><span class="va">fit_pois</span><span class="op">)</span></span>
 <span><span class="va">ps_pois</span></span>
 <span><span class="co">#&gt;   group observed estimate estimate_bc    lower    upper share_pct</span></span>
-<span><span class="co">#&gt; 1 (all)    27105 290597.5    290498.3 127726.4 660703.2       100</span></span></code></pre></div>
+<span><span class="co">#&gt; 1 (all)    27105 290597.5    290498.3 127726.5 660703.2       100</span></span></code></pre></div>
 <p>The columns are:</p>
 <ul>
 <li>
@@ -391,10 +392,10 @@ total.</li>
 <span><span class="op">}</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="va">ps_table</span></span>
 <span><span class="co">#&gt;            Model  Estimate        BC    Lower     Upper</span></span>
-<span><span class="co">#&gt; 1        Poisson  290597.5  290498.3 127726.4  660703.2</span></span>
+<span><span class="co">#&gt; 1        Poisson  290597.5  290498.3 127726.5  660703.2</span></span>
 <span><span class="co">#&gt; 2 Poisson_constr  290597.4  290520.0 127736.0  660752.4</span></span>
-<span><span class="co">#&gt; 3             NB 1259565.1 1231048.3 731135.6 2072775.5</span></span>
-<span><span class="co">#&gt; 4    NB_twostage  318957.8  315391.5 227251.8  437716.2</span></span></code></pre></div>
+<span><span class="co">#&gt; 3             NB 1259565.1 1231405.2 731347.6 2073376.4</span></span>
+<span><span class="co">#&gt; 4    NB_twostage  318957.8  315415.1 227268.8  437749.0</span></span></code></pre></div>
 <div class="section level3">
 <h3 id="stratified-population-size">Stratified population size<a class="anchor" aria-label="anchor" href="#stratified-population-size"></a>
 </h3>
