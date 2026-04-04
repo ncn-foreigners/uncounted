@@ -129,6 +129,7 @@ fit_nb <- estimate_hidden_pop(
   countries = ~country
 )
 #> Warning: Some alpha values < 0 (min = -0.213). Consider using constrained = TRUE.
+#> NB with theta in sandwich: HC3 not available, using HC1 correction.
 
 loo_po <- loo(fit_po, by = "country")
 #> Warning: Some alpha values < 0 (min = -3.217). Consider using constrained = TRUE.
@@ -137,9 +138,14 @@ loo_po <- loo(fit_po, by = "country")
 #> Warning: Some alpha values > 1 (max = 2.877). Population size estimates may be unreliable. Consider using constrained = TRUE or simplifying cov_alpha.
 loo_nb <- loo(fit_nb, by = "country")
 #> Warning: Some alpha values < 0 (min = -3.217). Consider using constrained = TRUE.
+#> NB with theta in sandwich: HC3 not available, using HC1 correction.
+#> NB with theta in sandwich: HC3 not available, using HC1 correction.
 #> Warning: Some alpha values < 0 (min = -7.674). Consider using constrained = TRUE.
+#> NB with theta in sandwich: HC3 not available, using HC1 correction.
 #> Warning: Some alpha values > 1 (max = 4.281). Population size estimates may be unreliable. Consider using constrained = TRUE or simplifying cov_alpha.
+#> NB with theta in sandwich: HC3 not available, using HC1 correction.
 #> Warning: Some alpha values > 1 (max = 2.877). Population size estimates may be unreliable. Consider using constrained = TRUE or simplifying cov_alpha.
+#> NB with theta in sandwich: HC3 not available, using HC1 correction.
 comp <- compare_loo(loo_po, loo_nb, labels = c("Poisson", "NB"))
 print(comp)
 #> LOO comparison: Poisson vs NB 

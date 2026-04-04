@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">uncounted</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.5.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -38,6 +38,28 @@
       <small>Source: <a href="https://github.com/ncn-foreigners/uncounted/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.6.0" id="uncounted-060">uncounted 0.6.0<a class="anchor" aria-label="anchor" href="#uncounted-060"></a></h2>
+<div class="section level3">
+<h3 id="bug-fixes-0-6-0">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-0-6-0"></a></h3>
+<ul><li><p><strong>Total CI in printer</strong>: <code>.print_popsize_table()</code> now uses the delta-method total CI from <code>attr(ps, "total")</code> instead of naively summing subgroup confidence bounds, which ignored between-group correlation.</p></li>
+<li><p><strong>Constrained bias correction</strong>: The second-order Taylor bias correction for constrained models now includes the logit curvature term <code>alpha''(eta) = alpha(1-alpha)(1-2*alpha)</code>. Previously only <code>[alpha'(eta)]^2</code> was used, producing incomplete bias correction when alpha was far from 0.5.</p></li>
+<li><p><strong><code><a href="../reference/lrtest.html">lrtest()</a></code> nesting check</strong>: Now uses column-space inclusion (QR projection) to detect non-nested model pairs, replacing the previous heuristic. Also checks gamma specification compatibility.</p></li>
+</ul></div>
+<div class="section level3">
+<h3 id="enhancements-0-6-0">Enhancements<a class="anchor" aria-label="anchor" href="#enhancements-0-6-0"></a></h3>
+<ul><li><p><strong>NB sandwich with theta</strong>: The Negative Binomial estimator now includes theta (dispersion) in the sandwich variance-covariance computation via a dedicated NB covariance path using the full per-observation score vector and the observed Hessian from <code>optim(hessian = TRUE)</code>. This properly accounts for theta estimation uncertainty in coefficient standard errors. The fitted object now includes <code>theta_se</code>, <code>score_full</code>, and <code>hessian_nll</code>. Supports HC0, HC1, and cluster-robust variance; HC2+ falls back to HC1 with a message.</p></li>
+<li><p><strong>CI workflows</strong>: Added GitHub Actions for R-CMD-check (5 platforms), CRAN-like check, test coverage (Codecov), and pkgdown site deployment.</p></li>
+<li><p><strong>Unit test redesign</strong>: 340+ tests using a shared 200-row simulated fixture, split into CRAN (fast) and extended (GitHub-only) suites. Includes base R oracle tests against <code><a href="https://rdrr.io/r/stats/glm.html" class="external-link">glm()</a></code>, <code><a href="https://rdrr.io/r/stats/lm.html" class="external-link">lm()</a></code>, <code><a href="https://sandwich.R-Forge.R-project.org/reference/vcovHC.html" class="external-link">sandwich::vcovHC()</a></code>, and <code><a href="https://rdrr.io/pkg/MASS/man/glm.nb.html" class="external-link">MASS::glm.nb()</a></code>.</p></li>
+</ul></div>
+<div class="section level3">
+<h3 id="documentation-0-6-0">Documentation<a class="anchor" aria-label="anchor" href="#documentation-0-6-0"></a></h3>
+<ul><li><p>Fixed references: replaced incorrect Zhang (2008) citation, added URLs, added Beresewicz &amp; Pawlukiewicz (2020).</p></li>
+<li><p>OLS <code>log(m+1)</code> fitted-value scale limitation documented.</p></li>
+<li><p>Added <code>URL</code> and <code>BugReports</code> fields to DESCRIPTION.</p></li>
+<li><p><code>year</code> column in <code>irregular_migration</code> dataset converted to factor.</p></li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.5.1" id="uncounted-051">uncounted 0.5.1<a class="anchor" aria-label="anchor" href="#uncounted-051"></a></h2>
 <ul><li><p>Added Aniela Czerniawska as package author (original GitHub version).</p></li>

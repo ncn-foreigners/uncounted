@@ -20,7 +20,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">uncounted</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.5.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -266,6 +266,7 @@ overdispersion beyond what Poisson allows.</p>
 <span>  gamma <span class="op">=</span> <span class="st">"estimate"</span>,</span>
 <span>  countries <span class="op">=</span> <span class="op">~</span> <span class="va">country</span></span>
 <span><span class="op">)</span></span>
+<span><span class="co">#&gt; NB with theta in sandwich: HC3 not available, using HC1 correction.</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">fit_nb</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Unauthorized population estimation</span></span>
 <span><span class="co">#&gt; Method: NB | vcov: HC3 </span></span>
@@ -278,8 +279,8 @@ overdispersion beyond what Poisson allows.</p>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Coefficients:</span></span>
 <span><span class="co">#&gt;       Estimate Std. Error z value  Pr(&gt;|z|)    </span></span>
-<span><span class="co">#&gt; alpha 0.871636   0.021310  40.904 &lt; 2.2e-16 ***</span></span>
-<span><span class="co">#&gt; beta  1.034268   0.069422  14.898 &lt; 2.2e-16 ***</span></span>
+<span><span class="co">#&gt; alpha 0.871636   0.023598  36.938 &lt; 2.2e-16 ***</span></span>
+<span><span class="co">#&gt; beta  1.034268   0.080113  12.910 &lt; 2.2e-16 ***</span></span>
 <span><span class="co">#&gt; ---</span></span>
 <span><span class="co">#&gt; Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</span></span>
 <span><span class="co">#&gt; </span></span>
@@ -287,7 +288,7 @@ overdispersion beyond what Poisson allows.</p>
 <span><span class="co">#&gt; Population size estimation results:</span></span>
 <span><span class="co">#&gt;   (BC = bias-corrected using model-based variance)</span></span>
 <span><span class="co">#&gt;       Observed  Estimate Estimate (BC) CI lower  CI upper</span></span>
-<span><span class="co">#&gt; (all)   27,105 1,259,565     1,231,048  769,019 1,970,666</span></span></code></pre></div>
+<span><span class="co">#&gt; (all)   27,105 1,259,565     1,231,048  731,136 2,072,775</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="model-4-nb-two-stage-gamma-from-poisson-fixed-in-nb">Model 4: NB two-stage (gamma from Poisson, fixed in NB)<a class="anchor" aria-label="anchor" href="#model-4-nb-two-stage-gamma-from-poisson-fixed-in-nb"></a>
@@ -308,6 +309,7 @@ simultaneously.</p>
 <span>  gamma <span class="op">=</span> <span class="va">gamma_from_pois</span>,</span>
 <span>  countries <span class="op">=</span> <span class="op">~</span> <span class="va">country</span></span>
 <span><span class="op">)</span></span>
+<span><span class="co">#&gt; NB with theta in sandwich: HC3 not available, using HC1 correction.</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">fit_nb2</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Unauthorized population estimation</span></span>
 <span><span class="co">#&gt; Method: NB | vcov: HC3 </span></span>
@@ -320,8 +322,8 @@ simultaneously.</p>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Coefficients:</span></span>
 <span><span class="co">#&gt;       Estimate Std. Error z value  Pr(&gt;|z|)    </span></span>
-<span><span class="co">#&gt; alpha 0.745560   0.017208  43.327 &lt; 2.2e-16 ***</span></span>
-<span><span class="co">#&gt; beta  0.597130   0.024661  24.214 &lt; 2.2e-16 ***</span></span>
+<span><span class="co">#&gt; alpha 0.745560   0.015958  46.721 &lt; 2.2e-16 ***</span></span>
+<span><span class="co">#&gt; beta  0.597130   0.023991  24.890 &lt; 2.2e-16 ***</span></span>
 <span><span class="co">#&gt; ---</span></span>
 <span><span class="co">#&gt; Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</span></span>
 <span><span class="co">#&gt; </span></span>
@@ -329,7 +331,7 @@ simultaneously.</p>
 <span><span class="co">#&gt; Population size estimation results:</span></span>
 <span><span class="co">#&gt;   (BC = bias-corrected using model-based variance)</span></span>
 <span><span class="co">#&gt;       Observed Estimate Estimate (BC) CI lower CI upper</span></span>
-<span><span class="co">#&gt; (all)   27,105  318,958       315,391  221,491  449,101</span></span></code></pre></div>
+<span><span class="co">#&gt; (all)   27,105  318,958       315,391  227,252  437,716</span></span></code></pre></div>
 </div>
 </div>
 <div class="section level2">
@@ -393,8 +395,8 @@ total.</li>
 <span><span class="co">#&gt;            Model  Estimate        BC    Lower     Upper</span></span>
 <span><span class="co">#&gt; 1        Poisson  290597.5  290498.3 127726.4  660703.2</span></span>
 <span><span class="co">#&gt; 2 Poisson_constr  290597.4  290520.0 127736.0  660752.4</span></span>
-<span><span class="co">#&gt; 3             NB 1259565.1 1231048.3 769019.3 1970665.7</span></span>
-<span><span class="co">#&gt; 4    NB_twostage  318957.8  315391.5 221490.9  449101.1</span></span></code></pre></div>
+<span><span class="co">#&gt; 3             NB 1259565.1 1231048.3 731135.6 2072775.5</span></span>
+<span><span class="co">#&gt; 4    NB_twostage  318957.8  315391.5 227251.8  437716.2</span></span></code></pre></div>
 <div class="section level3">
 <h3 id="stratified-population-size">Stratified population size<a class="anchor" aria-label="anchor" href="#stratified-population-size"></a>
 </h3>
@@ -488,6 +490,8 @@ therefore the recommended point estimate.</p>
 <span>  NB_twostage    <span class="op">=</span> <span class="va">fit_nb2</span>,</span>
 <span>  sort_by <span class="op">=</span> <span class="st">"AIC"</span></span>
 <span><span class="op">)</span></span>
+<span><span class="co">#&gt; NB with theta in sandwich: HC3 not available, using HC1 correction.</span></span>
+<span><span class="co">#&gt; NB with theta in sandwich: HC3 not available, using HC1 correction.</span></span>
 <span><span class="va">comp</span></span>
 <span><span class="co">#&gt; Model comparison</span></span>
 <span><span class="co">#&gt; ------------------------------------------------------------ </span></span>

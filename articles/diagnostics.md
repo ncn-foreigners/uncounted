@@ -32,6 +32,7 @@ fit_nb <- estimate_hidden_pop(
   cov_alpha = ~ factor(year) + sex, cov_beta = ~ factor(year),
   countries = ~ country_code
 )
+#> NB with theta in sandwich: HC3 not available, using HC1 correction.
 ```
 
 Quick summaries:
@@ -92,19 +93,19 @@ summary(fit_nb)
 #> 
 #> Coefficients:
 #>                         Estimate Std. Error z value  Pr(>|z|)    
-#> alpha:(Intercept)       0.815763   0.036317 22.4626 < 2.2e-16 ***
-#> alpha:factor(year)2020 -0.041935   0.062793 -0.6678  0.504251    
-#> alpha:factor(year)2021  0.075384   0.058645  1.2854  0.198644    
-#> alpha:factor(year)2022 -0.030016   0.068502 -0.4382  0.661256    
-#> alpha:factor(year)2023  0.015622   0.054492  0.2867  0.774347    
-#> alpha:factor(year)2024  0.069686   0.046240  1.5071  0.131794    
-#> alpha:sexMale           0.044307   0.012390  3.5759  0.000349 ***
-#> beta:(Intercept)        0.873278   0.080372 10.8654 < 2.2e-16 ***
-#> beta:factor(year)2020   0.140450   0.123353  1.1386  0.254870    
-#> beta:factor(year)2021   0.468045   0.119175  3.9274 8.588e-05 ***
-#> beta:factor(year)2022   0.185007   0.142919  1.2945  0.195496    
-#> beta:factor(year)2023   0.183906   0.106222  1.7313  0.083390 .  
-#> beta:factor(year)2024   0.132760   0.089854  1.4775  0.139541    
+#> alpha:(Intercept)       0.815763   0.034303 23.7813 < 2.2e-16 ***
+#> alpha:factor(year)2020 -0.041935   0.057013 -0.7355 0.4620172    
+#> alpha:factor(year)2021  0.075384   0.059612  1.2646 0.2060253    
+#> alpha:factor(year)2022 -0.030016   0.073386 -0.4090 0.6825273    
+#> alpha:factor(year)2023  0.015622   0.055914  0.2794 0.7799363    
+#> alpha:factor(year)2024  0.069686   0.047747  1.4595 0.1444258    
+#> alpha:sexMale           0.044307   0.013135  3.3732 0.0007431 ***
+#> beta:(Intercept)        0.873278   0.092193  9.4723 < 2.2e-16 ***
+#> beta:factor(year)2020   0.140450   0.116659  1.2039 0.2286151    
+#> beta:factor(year)2021   0.468045   0.121517  3.8517 0.0001173 ***
+#> beta:factor(year)2022   0.185007   0.151468  1.2214 0.2219238    
+#> beta:factor(year)2023   0.183906   0.110409  1.6657 0.0957766 .  
+#> beta:factor(year)2024   0.132760   0.092741  1.4315 0.1522851    
 #> ---
 #> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 #> 
@@ -112,18 +113,18 @@ summary(fit_nb)
 #> Population size estimation results:
 #>   (BC = bias-corrected using model-based variance)
 #>                       Observed Estimate Estimate (BC) CI lower CI upper
-#> year=2019, sex=Female    1,535   27,910        25,477   12,094   53,670
-#> year=2019, sex=Male      5,069   82,523        74,904   35,310  158,895
-#> year=2020, sex=Female      698   19,951        17,944    5,973   53,906
-#> year=2020, sex=Male      2,700   57,293        51,163   16,788  155,927
-#> year=2021, sex=Female      483   82,783        71,915   25,464  203,097
-#> year=2021, sex=Male      2,622  256,883       221,256   76,097  643,309
-#> year=2022, sex=Female      317   38,056        34,260    8,960  131,002
-#> year=2022, sex=Male      2,632   89,735        81,522   22,713  292,595
-#> year=2023, sex=Female      523   66,645        60,407   21,979  166,018
-#> year=2023, sex=Male      3,839  159,095       145,748   57,513  369,350
-#> year=2024, sex=Female      956  120,782       110,601   51,566  237,222
-#> year=2024, sex=Male      5,731  302,685       279,446  137,049  569,794
+#> year=2019, sex=Female    1,535   27,910        25,477   12,604   51,498
+#> year=2019, sex=Male      5,069   82,523        74,904   35,406  158,465
+#> year=2020, sex=Female      698   19,951        17,944    6,681   48,194
+#> year=2020, sex=Male      2,700   57,293        51,163   18,632  140,491
+#> year=2021, sex=Female      483   82,783        71,915   23,983  215,643
+#> year=2021, sex=Male      2,622  256,883       221,256   71,025  689,252
+#> year=2022, sex=Female      317   38,056        34,260    7,879  148,976
+#> year=2022, sex=Male      2,632   89,735        81,522   20,767  320,013
+#> year=2023, sex=Female      523   66,645        60,407   20,174  180,872
+#> year=2023, sex=Male      3,839  159,095       145,748   52,517  404,487
+#> year=2024, sex=Female      956  120,782       110,601   46,318  264,099
+#> year=2024, sex=Male      5,731  302,685       279,446  120,646  647,267
 ```
 
 ## 2. Model comparison
@@ -152,6 +153,7 @@ it only becomes informative when covariates are present.
 
 ``` r
 comp <- compare_models(Poisson = fit_po, NB = fit_nb, sort_by = "AIC")
+#> NB with theta in sandwich: HC3 not available, using HC1 correction.
 comp
 #> Model comparison
 #> ------------------------------------------------------------ 
@@ -439,6 +441,16 @@ curves:
 
 ``` r
 prof <- profile_gamma(fit_nb, gamma_grid = seq(1e-4, 0.5, length.out = 10))
+#> NB with theta in sandwich: HC3 not available, using HC1 correction.
+#> NB with theta in sandwich: HC3 not available, using HC1 correction.
+#> NB with theta in sandwich: HC3 not available, using HC1 correction.
+#> NB with theta in sandwich: HC3 not available, using HC1 correction.
+#> NB with theta in sandwich: HC3 not available, using HC1 correction.
+#> NB with theta in sandwich: HC3 not available, using HC1 correction.
+#> NB with theta in sandwich: HC3 not available, using HC1 correction.
+#> NB with theta in sandwich: HC3 not available, using HC1 correction.
+#> NB with theta in sandwich: HC3 not available, using HC1 correction.
+#> NB with theta in sandwich: HC3 not available, using HC1 correction.
 ```
 
 ![](diagnostics_files/figure-html/profile-gamma-1.png)
@@ -463,6 +475,26 @@ The profiling results are returned invisibly as a data frame:
 
 ``` r
 prof <- profile_gamma(fit_nb, plot = FALSE)
+#> NB with theta in sandwich: HC3 not available, using HC1 correction.
+#> NB with theta in sandwich: HC3 not available, using HC1 correction.
+#> NB with theta in sandwich: HC3 not available, using HC1 correction.
+#> NB with theta in sandwich: HC3 not available, using HC1 correction.
+#> NB with theta in sandwich: HC3 not available, using HC1 correction.
+#> NB with theta in sandwich: HC3 not available, using HC1 correction.
+#> NB with theta in sandwich: HC3 not available, using HC1 correction.
+#> NB with theta in sandwich: HC3 not available, using HC1 correction.
+#> NB with theta in sandwich: HC3 not available, using HC1 correction.
+#> NB with theta in sandwich: HC3 not available, using HC1 correction.
+#> NB with theta in sandwich: HC3 not available, using HC1 correction.
+#> NB with theta in sandwich: HC3 not available, using HC1 correction.
+#> NB with theta in sandwich: HC3 not available, using HC1 correction.
+#> NB with theta in sandwich: HC3 not available, using HC1 correction.
+#> NB with theta in sandwich: HC3 not available, using HC1 correction.
+#> NB with theta in sandwich: HC3 not available, using HC1 correction.
+#> NB with theta in sandwich: HC3 not available, using HC1 correction.
+#> NB with theta in sandwich: HC3 not available, using HC1 correction.
+#> NB with theta in sandwich: HC3 not available, using HC1 correction.
+#> NB with theta in sandwich: HC3 not available, using HC1 correction.
 head(prof)
 #>        gamma        xi    loglik
 #> 1 0.00010000  105426.3 -2719.707

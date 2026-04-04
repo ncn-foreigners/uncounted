@@ -1,5 +1,59 @@
 # Changelog
 
+## uncounted 0.6.0
+
+### Bug fixes
+
+- **Total CI in printer**: `.print_popsize_table()` now uses the
+  delta-method total CI from `attr(ps, "total")` instead of naively
+  summing subgroup confidence bounds, which ignored between-group
+  correlation.
+
+- **Constrained bias correction**: The second-order Taylor bias
+  correction for constrained models now includes the logit curvature
+  term `alpha''(eta) = alpha(1-alpha)(1-2*alpha)`. Previously only
+  `[alpha'(eta)]^2` was used, producing incomplete bias correction when
+  alpha was far from 0.5.
+
+- **[`lrtest()`](https://ncn-foreigners.github.io/uncounted/reference/lrtest.md)
+  nesting check**: Now uses column-space inclusion (QR projection) to
+  detect non-nested model pairs, replacing the previous heuristic. Also
+  checks gamma specification compatibility.
+
+### Enhancements
+
+- **NB sandwich with theta**: The Negative Binomial estimator now
+  includes theta (dispersion) in the sandwich variance-covariance
+  computation via a dedicated NB covariance path using the full
+  per-observation score vector and the observed Hessian from
+  `optim(hessian = TRUE)`. This properly accounts for theta estimation
+  uncertainty in coefficient standard errors. The fitted object now
+  includes `theta_se`, `score_full`, and `hessian_nll`. Supports HC0,
+  HC1, and cluster-robust variance; HC2+ falls back to HC1 with a
+  message.
+
+- **CI workflows**: Added GitHub Actions for R-CMD-check (5 platforms),
+  CRAN-like check, test coverage (Codecov), and pkgdown site deployment.
+
+- **Unit test redesign**: 340+ tests using a shared 200-row simulated
+  fixture, split into CRAN (fast) and extended (GitHub-only) suites.
+  Includes base R oracle tests against
+  [`glm()`](https://rdrr.io/r/stats/glm.html),
+  [`lm()`](https://rdrr.io/r/stats/lm.html),
+  [`sandwich::vcovHC()`](https://sandwich.R-Forge.R-project.org/reference/vcovHC.html),
+  and [`MASS::glm.nb()`](https://rdrr.io/pkg/MASS/man/glm.nb.html).
+
+### Documentation
+
+- Fixed references: replaced incorrect Zhang (2008) citation, added
+  URLs, added Beresewicz & Pawlukiewicz (2020).
+
+- OLS `log(m+1)` fitted-value scale limitation documented.
+
+- Added `URL` and `BugReports` fields to DESCRIPTION.
+
+- `year` column in `irregular_migration` dataset converted to factor.
+
 ## uncounted 0.5.1
 
 - Added Aniela Czerniawska as package author (original GitHub version).

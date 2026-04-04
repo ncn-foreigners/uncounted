@@ -75,6 +75,7 @@ fit_po <- estimate_hidden_pop(data = df, observed = ~m, auxiliary = ~n,
 fit_nb <- estimate_hidden_pop(data = df, observed = ~m, auxiliary = ~n,
                               reference_pop = ~N, method = "nb")
 #> Warning: Some alpha values < 0 (min = -1.244). Consider using constrained = TRUE.
+#> NB with theta in sandwich: HC3 not available, using HC1 correction.
 
 # Test for overdispersion (Poisson vs NB)
 lrtest(fit_po, fit_nb)

@@ -102,10 +102,12 @@ fit_po <- estimate_hidden_pop(data = df, observed = ~m, auxiliary = ~n,
 fit_nb <- estimate_hidden_pop(data = df, observed = ~m, auxiliary = ~n,
                               reference_pop = ~N, method = "nb")
 #> Warning: Some alpha values < 0 (min = -1.244). Consider using constrained = TRUE.
+#> NB with theta in sandwich: HC3 not available, using HC1 correction.
 
 comp <- compare_models(Poisson = fit_po, NB = fit_nb, sort_by = "AIC")
 #> Warning: Some alpha values < 0 (min = -1.274). Consider using constrained = TRUE.
 #> Warning: Some alpha values < 0 (min = -1.244). Consider using constrained = TRUE.
+#> NB with theta in sandwich: HC3 not available, using HC1 correction.
 comp
 #> Model comparison
 #> ------------------------------------------------------------ 

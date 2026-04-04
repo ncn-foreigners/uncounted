@@ -198,6 +198,7 @@ fit_nb <- estimate_hidden_pop(
   gamma = "estimate",
   countries = ~ country
 )
+#> NB with theta in sandwich: HC3 not available, using HC1 correction.
 summary(fit_nb)
 #> Unauthorized population estimation
 #> Method: NB | vcov: HC3 
@@ -210,8 +211,8 @@ summary(fit_nb)
 #> 
 #> Coefficients:
 #>       Estimate Std. Error z value  Pr(>|z|)    
-#> alpha 0.871636   0.021310  40.904 < 2.2e-16 ***
-#> beta  1.034268   0.069422  14.898 < 2.2e-16 ***
+#> alpha 0.871636   0.023598  36.938 < 2.2e-16 ***
+#> beta  1.034268   0.080113  12.910 < 2.2e-16 ***
 #> ---
 #> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 #> 
@@ -219,7 +220,7 @@ summary(fit_nb)
 #> Population size estimation results:
 #>   (BC = bias-corrected using model-based variance)
 #>       Observed  Estimate Estimate (BC) CI lower  CI upper
-#> (all)   27,105 1,259,565     1,231,048  769,019 1,970,666
+#> (all)   27,105 1,259,565     1,231,048  731,136 2,072,775
 ```
 
 ### Model 4: NB two-stage (gamma from Poisson, fixed in NB)
@@ -241,6 +242,7 @@ fit_nb2 <- estimate_hidden_pop(
   gamma = gamma_from_pois,
   countries = ~ country
 )
+#> NB with theta in sandwich: HC3 not available, using HC1 correction.
 summary(fit_nb2)
 #> Unauthorized population estimation
 #> Method: NB | vcov: HC3 
@@ -253,8 +255,8 @@ summary(fit_nb2)
 #> 
 #> Coefficients:
 #>       Estimate Std. Error z value  Pr(>|z|)    
-#> alpha 0.745560   0.017208  43.327 < 2.2e-16 ***
-#> beta  0.597130   0.024661  24.214 < 2.2e-16 ***
+#> alpha 0.745560   0.015958  46.721 < 2.2e-16 ***
+#> beta  0.597130   0.023991  24.890 < 2.2e-16 ***
 #> ---
 #> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 #> 
@@ -262,7 +264,7 @@ summary(fit_nb2)
 #> Population size estimation results:
 #>   (BC = bias-corrected using model-based variance)
 #>       Observed Estimate Estimate (BC) CI lower CI upper
-#> (all)   27,105  318,958       315,391  221,491  449,101
+#> (all)   27,105  318,958       315,391  227,252  437,716
 ```
 
 ## Population Size Estimates
@@ -318,8 +320,8 @@ ps_table
 #>            Model  Estimate        BC    Lower     Upper
 #> 1        Poisson  290597.5  290498.3 127726.4  660703.2
 #> 2 Poisson_constr  290597.4  290520.0 127736.0  660752.4
-#> 3             NB 1259565.1 1231048.3 769019.3 1970665.7
-#> 4    NB_twostage  318957.8  315391.5 221490.9  449101.1
+#> 3             NB 1259565.1 1231048.3 731135.6 2072775.5
+#> 4    NB_twostage  318957.8  315391.5 227251.8  437716.2
 ```
 
 ### Stratified population size
@@ -414,6 +416,8 @@ comp <- compare_models(
   NB_twostage    = fit_nb2,
   sort_by = "AIC"
 )
+#> NB with theta in sandwich: HC3 not available, using HC1 correction.
+#> NB with theta in sandwich: HC3 not available, using HC1 correction.
 comp
 #> Model comparison
 #> ------------------------------------------------------------ 
