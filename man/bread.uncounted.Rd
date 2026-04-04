@@ -16,3 +16,10 @@ Returns the bread component B such that the model-based variance is B/n.
 Specifically: \eqn{B = n (Z' W Z)^{-1}} where Z is the model matrix and
 \eqn{W = \mathrm{diag}(\mathrm{bread\_weights})}.
 }
+\note{
+For NB models, these methods operate on the mean-model parameters
+(alpha, beta, and optionally gamma) only, excluding theta. The stored
+\code{vcov()} on NB objects uses a dedicated theta-aware path instead.
+Calling \code{sandwich::vcovHC()} directly on an NB object gives
+theta-conditional standard errors, which differ from \code{vcov()}.
+}

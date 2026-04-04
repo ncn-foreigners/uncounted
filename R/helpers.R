@@ -203,14 +203,17 @@
     G <- nlevels(cl)
     score_g <- rowsum(score_full, cl, reorder = FALSE)
     meat <- crossprod(score_g)
-    correction <- (G / (G - 1)) * ((n_obs - 1) / (n_obs - p))
+    # HC0 (CR0): no correction; HC1 (CR1): small-sample correction
+    correction <- if (vcov_type == "HC0") {
+      1
+    } else {
+      (G / (G - 1)) * ((n_obs - 1) / (n_obs - p))
+    }
     return(H_inv %*% (correction * meat) %*% H_inv)
   }
 
   meat <- crossprod(score_full)
   if (vcov_type %in% c("HC2", "HC3", "HC4", "HC4m", "HC5")) {
-    message("NB with theta in sandwich: ", vcov_type,
-            " not available, using HC1 correction.")
     vcov_type <- "HC1"
   }
   if (vcov_type == "HC1") {

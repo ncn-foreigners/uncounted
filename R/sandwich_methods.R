@@ -52,6 +52,13 @@ hatvalues.uncounted <- function(model, ...) {
 #'
 #' @param x An uncounted object
 #' @param ... Ignored
+#'
+#' @note For NB models, these methods operate on the mean-model parameters
+#'   (alpha, beta, and optionally gamma) only, excluding theta. The stored
+#'   \code{vcov()} on NB objects uses a dedicated theta-aware path instead.
+#'   Calling \code{sandwich::vcovHC()} directly on an NB object gives
+#'   theta-conditional standard errors, which differ from \code{vcov()}.
+#'
 #' @export
 bread.uncounted <- function(x, ...) {
   Z <- x$model_matrix_full

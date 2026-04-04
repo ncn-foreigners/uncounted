@@ -419,14 +419,13 @@ estimate_hidden_pop <- function(data,
   # ---- Compute vcov ----
   p_ab <- p_alpha + p_beta
 
-  if (method == "nb" && !is.null(result$hessian_nll)) {
-    # NB: dedicated sandwich path that includes theta uncertainty
-    vcov_type_str <- if (is.character(vcov)) vcov else "HC0"
+  if (method == "nb" && !is.null(result$hessian_nll) && is.character(vcov)) {
+    # NB with character vcov: dedicated sandwich path including theta
     V_nb_full <- .compute_nb_sandwich(
       hessian_nll = result$hessian_nll,
       score_full  = result$score_full,
       n_obs       = nrow(data),
-      vcov_type   = vcov_type_str,
+      vcov_type   = vcov,
       cluster     = cluster_vec
     )
     out$vcov <- V_nb_full[seq_len(p_ab), seq_len(p_ab), drop = FALSE]
@@ -434,8 +433,11 @@ estimate_hidden_pop <- function(data,
     out$theta_se <- sqrt(max(0, V_nb_full[p_ab + 1, p_ab + 1]))
     out$score_full <- result$score_full
     out$hessian_nll <- result$hessian_nll
+    # Update vcov_type to reflect what was actually computed
+    actual_type <- if (vcov %in% c("HC2","HC3","HC4","HC4m","HC5")) "HC1" else vcov
+    out$vcov_type <- actual_type
   } else {
-    # Non-NB (or NB without Hessian): use sandwich package
+    # Non-NB, or NB with user-supplied vcov function: use sandwich package
     V_full <- .compute_vcov_sandwich(out, vcov, cluster_vec)
     has_gamma_col <- ncol(result$model_matrix_full) > p_ab
     if (has_gamma_col) {
@@ -444,6 +446,11 @@ estimate_hidden_pop <- function(data,
     } else {
       out$vcov_full <- V_full
       out$vcov <- V_full
+    }
+    # Store NB ingredients even when user vcov function is used
+    if (method == "nb" && !is.null(result$hessian_nll)) {
+      out$score_full <- result$score_full
+      out$hessian_nll <- result$hessian_nll
     }
   }
 

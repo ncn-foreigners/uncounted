@@ -85,3 +85,46 @@ test_that("Poisson does NOT have theta_se or score_full", {
   expect_null(fit$theta_se)
   expect_null(fit$score_full)
 })
+
+# ---- Regression: user-supplied vcov function respected for NB ----
+
+test_that("NB respects user-supplied vcov function", {
+  d <- small_data()
+  custom_vcov <- function(x) sandwich::vcovHC(x, type = "HC0")
+  fit <- estimate_hidden_pop(d, ~m, ~n, ~N, method = "nb",
+                              gamma = 0.005, vcov = custom_vcov)
+  # User function should be used (no theta_se from dedicated path)
+  expect_null(fit$theta_se)
+  # But hessian/score are still stored for potential later use
+  expect_true(!is.null(fit$hessian_nll))
+  expect_true(all(diag(fit$vcov) > 0))
+})
+
+# ---- Regression: clustered NB HC0 differs from HC1 ----
+
+test_that("NB clustered HC0 and HC1 produce different SEs", {
+  d <- small_data()
+  fit_hc0 <- quick_fit(d, method = "nb", gamma = 0.005,
+                       vcov = "HC0", cluster = ~country)
+  fit_hc1 <- quick_fit(d, method = "nb", gamma = 0.005,
+                       vcov = "HC1", cluster = ~country)
+  se_hc0 <- sqrt(diag(fit_hc0$vcov))
+  se_hc1 <- sqrt(diag(fit_hc1$vcov))
+  expect_false(all(abs(se_hc0 - se_hc1) < 1e-10),
+               info = "HC0 and HC1 clustered SEs should differ")
+})
+
+# ---- Regression: NB vcov_type label reflects actual computation ----
+
+test_that("NB with default HC3 reports HC1 (downgraded)", {
+  d <- small_data()
+  # Default vcov is HC3, but NB downgrades to HC1
+  fit <- quick_fit(d, method = "nb", gamma = 0.005)
+  expect_equal(fit$vcov_type, "HC1")
+})
+
+test_that("NB with HC0 reports HC0", {
+  d <- small_data()
+  fit <- quick_fit(d, method = "nb", gamma = 0.005, vcov = "HC0")
+  expect_equal(fit$vcov_type, "HC0")
+})
