@@ -40,7 +40,7 @@ least one insured foreigner registered in ZUS during 2019--2024.
 }
 \details{
 The dataset is used to estimate the size of the unauthorized foreign
-population using the method of Beresewicz, Gudaszewski & Walsh (2025).
+population using the power-law model of Zhang (2008).
 
 The key assumption of the estimation framework is that \eqn{m} and \eqn{n}
 are partial observations from a larger unauthorized population of size
@@ -66,8 +66,12 @@ fit <- estimate_hidden_pop(
 summary(fit)
 }
 \references{
-Beresewicz, M., Gudaszewski, G., and Walsh, P. (2025).
-Counting the uncounted: Estimating the unauthorized foreign population
-using administrative data. Working paper.
+Zhang, L.-C. (2008). Developing methods for determining the number of
+unauthorized foreigners in Norway. \emph{Documents} 2008/11, Statistics
+Norway. \url{https://www.ssb.no/a/english/publikasjoner/pdf/doc_200811_en/doc_200811_en.pdf}
+
+Beresewicz, M. and Pawlukiewicz, K. (2020). Estimation of the number of
+irregular foreigners in Poland using non-linear count regression models.
+\emph{arXiv preprint} arXiv:2008.09407.
 }
 \keyword{datasets}

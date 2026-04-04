@@ -1,3 +1,32 @@
+# uncounted 0.7.1
+
+## Bug fixes
+
+* **Multiplicative bias correction**: Replaced the subtractive Taylor
+  approximation `xi_BC = xi - bias` with the exact multiplicative lognormal
+  form `xi_BC = sum N^alpha * exp(-0.5 * (log N)^2 * x'Vx)`. This is exact
+  under normality of alpha-hat, always positive, and reduces bias by ~94%
+  in Monte Carlo simulations (vs ~88% for the old subtractive form).
+
+* **Constrained BC direction**: Under the logit constraint, the second
+  derivative `h''(eta)` can be negative when alpha is near 1, so the bias
+  correction can go either direction. The code no longer assumes upward bias
+  for constrained models.
+
+* **iOLS model-based variance**: Uses `(Z'Z)^{-1}` (GPML Fisher information)
+  without sigma^2 scaling, preventing inflated bias correction on zero-heavy
+  data.
+
+* **Removed nonexistent reference**: Replaced Beresewicz, Gudaszewski & Walsh
+  (2025) with the correct Zhang (2008) and Beresewicz & Pawlukiewicz (2020)
+  references.
+
+## Enhancements
+
+* **Extended iOLS tests**: 39 new tests covering bootstrap, LOO, dfbeta,
+  cluster-robust SEs, HC types, the year*ukr migration specification, and
+  iOLS vs Poisson numerical comparisons. 493 tests total.
+
 # uncounted 0.7.0
 
 ## New features

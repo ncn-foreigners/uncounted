@@ -336,9 +336,7 @@ head(prof)
 
 ## References
 
-- Beresewicz, M., Gudaszewski, G., and Walsh, P. (2025). Counting the
-  uncounted: Estimating the unauthorized foreign population using
-  administrative data. Working paper.
+- Beręsewicz, M., & Pawlukiewicz, K. (2020). Estimation of the number of irregular foreigners in Poland using non-linear count regression models. arXiv preprint arXiv:2008.09407.
 - Kleiber, C. and Zeileis, A. (2016). Visualizing Count Data
   Regressions Using Rootograms. *The American Statistician*, 70(3),
   296--303.
