@@ -32,13 +32,8 @@ data(irregular_migration)
 d <- irregular_migration[irregular_migration$year == "2019", ]
 fit <- estimate_hidden_pop(d, ~ m, ~ n, ~ N, method = "poisson",
                            gamma = 0.005)
-# Fitted values
 head(predict(fit))
-
-# Predictions for new data
 head(predict(fit, newdata = d[1:5, ]))
-
-# Linear predictor (log scale)
 head(predict(fit, type = "link"))
 
 }

@@ -18,6 +18,22 @@ test_that("tidy with conf.int adds CI columns", {
   expect_true(all(c("conf.low", "conf.high") %in% names(td)))
 })
 
+test_that("tidy OLS CI uses t-distribution, not z", {
+  skip_if_not_installed("generics")
+  d <- positive_data(small_data())
+  fit <- quick_fit(d, method = "ols", gamma = NULL)
+  td <- generics::tidy(fit, conf.int = TRUE, conf.level = 0.95)
+  # Manually compute t-based CI
+  se <- sqrt(diag(vcov(fit)))
+  crit_t <- qt(0.975, df = fit$df.residual)
+  crit_z <- qnorm(0.975)
+  # t critical value > z critical value for finite df
+  expect_true(crit_t > crit_z)
+  # CI should use t, so conf.low should be wider than z-based
+  expected_low <- coef(fit) - crit_t * se
+  expect_equal(td$conf.low, as.numeric(expected_low), tolerance = 1e-10)
+})
+
 test_that("glance.uncounted returns 1-row data frame", {
   skip_if_not_installed("generics")
   d <- small_data()

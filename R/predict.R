@@ -1,5 +1,51 @@
 # ---- Prediction method ----
 
+# Build design matrix for prediction, aligned with training columns.
+# Uses the training data's model.frame to extract terms/xlev for
+# consistent factor encoding (same reference level, same dummies).
+#' @noRd
+.predict_design <- function(cov_formula, newdata, X_train, prefix,
+                            train_data) {
+  train_cols <- colnames(X_train)
+  n <- nrow(newdata)
+
+  if (is.null(cov_formula)) {
+    X <- matrix(1, nrow = n, ncol = 1)
+    colnames(X) <- train_cols
+    return(X)
+  }
+
+  # Strip prefix from training column names to get raw model.matrix names
+  raw_train_cols <- sub(paste0("^", prefix, ":"), "", train_cols)
+
+  # Build terms + xlev from training data for consistent encoding
+  mf_train <- model.frame(cov_formula, data = train_data)
+  tt <- terms(mf_train)
+  xlev <- .getXlevels(tt, mf_train)
+
+  X <- tryCatch(
+    model.matrix(tt, data = newdata, xlev = xlev),
+    error = function(e) NULL
+  )
+  if (is.null(X)) {
+    stop("Cannot build design matrix from newdata. Ensure all covariate ",
+         "levels present in newdata match the training data.", call. = FALSE)
+  }
+
+  # Align: match raw model.matrix columns to raw training columns
+  raw_new_cols <- colnames(X)
+  result <- matrix(0, nrow = n, ncol = length(train_cols))
+  colnames(result) <- train_cols
+  for (j in seq_along(train_cols)) {
+    idx <- match(raw_train_cols[j], raw_new_cols)
+    if (!is.na(idx)) {
+      result[, j] <- X[, idx]
+    }
+  }
+  result
+}
+
+
 #' Predict from an uncounted model
 #'
 #' Returns predicted values from a fitted \code{uncounted} model, optionally
@@ -21,13 +67,8 @@
 #' d <- irregular_migration[irregular_migration$year == "2019", ]
 #' fit <- estimate_hidden_pop(d, ~ m, ~ n, ~ N, method = "poisson",
 #'                            gamma = 0.005)
-#' # Fitted values
 #' head(predict(fit))
-#'
-#' # Predictions for new data
 #' head(predict(fit, newdata = d[1:5, ]))
-#'
-#' # Linear predictor (log scale)
 #' head(predict(fit, type = "link"))
 #'
 #' @export
@@ -40,48 +81,27 @@ predict.uncounted <- function(object, newdata = NULL,
     return(object$log_mu)
   }
 
-  # Reconstruct design matrix for new data
+  # Extract variable names from the original call
   call_args <- object$call_args
-  observed_var <- all.vars(call_args$observed)
-  auxiliary_var <- all.vars(call_args$auxiliary)
   refpop_var <- all.vars(call_args$reference_pop)
+  auxiliary_var <- all.vars(call_args$auxiliary)
 
   N_new <- newdata[[refpop_var]]
   n_new <- newdata[[auxiliary_var]]
   ratio_new <- n_new / N_new
 
   gamma_val <- object$gamma
-  if (!is.null(gamma_val)) {
-    log_rate_new <- log(gamma_val + ratio_new)
-  } else {
-    log_rate_new <- log(ratio_new)
-  }
+  log_rate_new <- if (!is.null(gamma_val)) log(gamma_val + ratio_new) else log(ratio_new)
   log_N_new <- log(N_new)
 
-  # Build covariate design matrices
-  cov_alpha_formula <- object$call$cov_alpha
-  cov_beta_formula <- object$call$cov_beta
+  # Build covariate design matrices aligned with training encoding
+  cov_alpha_f <- if (!is.null(object$call$cov_alpha)) eval(object$call$cov_alpha) else NULL
+  cov_beta_f <- if (!is.null(object$call$cov_beta)) eval(object$call$cov_beta) else NULL
 
-  if (!is.null(cov_alpha_formula)) {
-    cov_alpha_formula <- eval(cov_alpha_formula)
-    X_alpha_new <- .build_model_matrix(cov_alpha_formula, newdata)
-  } else {
-    X_alpha_new <- matrix(1, nrow = nrow(newdata), ncol = 1)
-    colnames(X_alpha_new) <- "alpha"
-  }
+  X_alpha_new <- .predict_design(cov_alpha_f, newdata, object$X_alpha, "alpha", object$data)
+  X_beta_new <- .predict_design(cov_beta_f, newdata, object$X_beta, "beta", object$data)
 
-  if (!is.null(cov_beta_formula)) {
-    cov_beta_formula <- eval(cov_beta_formula)
-    X_beta_new <- .build_model_matrix(cov_beta_formula, newdata)
-  } else {
-    X_beta_new <- matrix(1, nrow = nrow(newdata), ncol = 1)
-    colnames(X_beta_new) <- "beta"
-  }
-
-  # Build full design matrix
-  Z_new <- cbind(X_alpha_new * log_N_new, X_beta_new * log_rate_new)
-
-  # Handle constrained models
+  # Compute linear predictors
   alpha_coefs <- object$alpha_coefs
   beta_coefs <- object$beta_coefs
   is_constr <- isTRUE(object$constrained)

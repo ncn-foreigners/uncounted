@@ -46,9 +46,13 @@ tidy.uncounted <- function(x, conf.int = FALSE, conf.level = 0.95, ...) {
     stringsAsFactors = FALSE
   )
   if (conf.int) {
-    z <- qnorm((1 + conf.level) / 2)
-    result$conf.low <- as.numeric(coefs - z * se)
-    result$conf.high <- as.numeric(coefs + z * se)
+    crit <- if (x$method %in% c("ols", "nls")) {
+      qt((1 + conf.level) / 2, df = x$df.residual)
+    } else {
+      qnorm((1 + conf.level) / 2)
+    }
+    result$conf.low <- as.numeric(coefs - crit * se)
+    result$conf.high <- as.numeric(coefs + crit * se)
   }
   result
 }
