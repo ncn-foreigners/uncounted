@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">uncounted</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.3</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -20,6 +20,7 @@
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/diagnostics.html">Model Diagnostics and Comparison</a></li>
     <li><a class="dropdown-item" href="../articles/iols.html">iOLS: Iterated OLS for Gamma Pseudo-Maximum Likelihood</a></li>
+    <li><a class="dropdown-item" href="../articles/model-comparison.html">Model Comparison and Reporting</a></li>
     <li><a class="dropdown-item" href="../articles/shiny-app.html">Interactive Shiny Application</a></li>
     <li><a class="dropdown-item" href="../articles/theory.html">Theoretical Framework for Hidden Population Estimation</a></li>
     <li><a class="dropdown-item" href="../articles/workflow.html">Complete Analysis Workflow</a></li>
@@ -39,6 +40,24 @@
       <small>Source: <a href="https://github.com/ncn-foreigners/uncounted/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.7.3" id="uncounted-073">uncounted 0.7.3<a class="anchor" aria-label="anchor" href="#uncounted-073"></a></h2>
+<div class="section level3">
+<h3 id="bug-fixes-0-7-3">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-0-7-3"></a></h3>
+<ul><li><p><strong><code><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict()</a></code> factor encoding</strong>: Now uses the training data’s <code>terms</code> object and <code>xlev</code> for consistent dummy encoding in <code>newdata</code>. Reordered factor levels or single-level subsets produce correct predictions.</p></li>
+<li><p><strong><code><a href="https://generics.r-lib.org/reference/tidy.html" class="external-link">tidy()</a></code> confidence intervals</strong>: OLS/NLS models now use <code><a href="https://rdrr.io/r/stats/TDist.html" class="external-link">qt()</a></code> (matching the t-based p-values) instead of <code><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">qnorm()</a></code> for confidence intervals.</p></li>
+</ul></div>
+</div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.7.2" id="uncounted-072">uncounted 0.7.2<a class="anchor" aria-label="anchor" href="#uncounted-072"></a></h2>
+<div class="section level3">
+<h3 id="new-features-0-7-2">New features<a class="anchor" aria-label="anchor" href="#new-features-0-7-2"></a></h3>
+<ul><li><p><strong><code>plot(popsize(fit))</code></strong>: New S3 plot method for population size estimates. <code>type = "estimate"</code> (default) shows bias-corrected estimates with CIs; <code>type = "compare"</code> shows plug-in and bias-corrected side by side.</p></li>
+<li><p><strong><code>compare_popsize(fit1, fit2, ...)</code></strong>: Compare population size estimates across models, with print and plot methods. Supports <code>by</code> parameter for grouped comparison and custom labels.</p></li>
+<li><p><strong><code>predict(fit, newdata)</code></strong>: Prediction method supporting new data, with <code>type = "response"</code> (counts) or <code>type = "link"</code> (log scale). Enables compatibility with the <code>marginaleffects</code> package.</p></li>
+<li><p><strong><code>tidy(fit)</code></strong> and <strong><code>glance(fit)</code></strong>: broom-compatible methods enabling <code><a href="https://modelsummary.com/man/modelsummary.html" class="external-link">modelsummary::modelsummary()</a></code> for side-by-side model comparison tables. Requires <code>generics</code> package (in Suggests).</p></li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.7.1" id="uncounted-071">uncounted 0.7.1<a class="anchor" aria-label="anchor" href="#uncounted-071"></a></h2>
 <div class="section level3">

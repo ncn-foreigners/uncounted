@@ -10,6 +10,8 @@
   : Compare LOO Results from Two Models
 - [`compare_models()`](https://ncn-foreigners.github.io/uncounted/reference/compare_models.md)
   : Compare multiple uncounted models
+- [`compare_popsize()`](https://ncn-foreigners.github.io/uncounted/reference/compare_popsize.md)
+  : Compare Population Size Across Models
 - [`deviance(`*`<uncounted>`*`)`](https://ncn-foreigners.github.io/uncounted/reference/deviance.uncounted.md)
   : Deviance for uncounted models
 - [`dfbeta(`*`<uncounted>`*`)`](https://ncn-foreigners.github.io/uncounted/reference/dfbeta.uncounted.md)
@@ -20,6 +22,8 @@
   : Empirical estimating functions (score contributions)
 - [`estimate_hidden_pop()`](https://ncn-foreigners.github.io/uncounted/reference/estimate_hidden_pop.md)
   : Estimate the Size of an Unauthorized Migrant Population
+- [`glance(`*`<uncounted>`*`)`](https://ncn-foreigners.github.io/uncounted/reference/glance.uncounted.md)
+  : Glance at an uncounted model
 - [`hatvalues(`*`<uncounted>`*`)`](https://ncn-foreigners.github.io/uncounted/reference/hatvalues.uncounted.md)
   : Hat values (leverage)
 - [`irregular_migration`](https://ncn-foreigners.github.io/uncounted/reference/irregular_migration.md)
@@ -40,10 +44,14 @@
   : Plot LOO Sensitivity Results
 - [`plot(`*`<uncounted_loo_compare>`*`)`](https://ncn-foreigners.github.io/uncounted/reference/plot.uncounted_loo_compare.md)
   : Plot LOO Comparison: Scatter and Barplot
+- [`plot(`*`<uncounted_popsize>`*`)`](https://ncn-foreigners.github.io/uncounted/reference/plot.uncounted_popsize.md)
+  : Plot Population Size Estimates
 - [`plot_explore()`](https://ncn-foreigners.github.io/uncounted/reference/plot_explore.md)
   : Exploratory plots for the power-law model
 - [`popsize()`](https://ncn-foreigners.github.io/uncounted/reference/popsize.md)
   : Estimated Population Size
+- [`predict(`*`<uncounted>`*`)`](https://ncn-foreigners.github.io/uncounted/reference/predict.uncounted.md)
+  : Predict from an uncounted model
 - [`print(`*`<uncounted_boot>`*`)`](https://ncn-foreigners.github.io/uncounted/reference/print.uncounted_boot.md)
   : Print Bootstrap Population Size Results
 - [`print(`*`<uncounted_loo>`*`)`](https://ncn-foreigners.github.io/uncounted/reference/print.uncounted_loo.md)
@@ -64,6 +72,8 @@
   : Summary of Bootstrap Population Size Results
 - [`summary(`*`<uncounted_loo>`*`)`](https://ncn-foreigners.github.io/uncounted/reference/summary.uncounted_loo.md)
   : Summary of LOO Sensitivity Results
+- [`tidy(`*`<uncounted>`*`)`](https://ncn-foreigners.github.io/uncounted/reference/tidy.uncounted.md)
+  : Tidy an uncounted model
 - [`update(`*`<uncounted>`*`)`](https://ncn-foreigners.github.io/uncounted/reference/update.uncounted.md)
   : Update and re-fit an uncounted model
 - [`vcov_nb()`](https://ncn-foreigners.github.io/uncounted/reference/vcov_nb.md)

@@ -1,0 +1,125 @@
+# Model Comparison and Reporting
+
+## Introduction
+
+This vignette demonstrates how to compare estimation methods and present
+results using the **uncounted** package’s plotting and reporting tools.
+
+``` r
+library(uncounted)
+data(irregular_migration)
+d <- irregular_migration
+```
+
+## Fitting multiple models
+
+The package supports five estimation methods. We fit Poisson, NB, and
+iOLS to the same data for comparison:
+
+``` r
+fit_po <- estimate_hidden_pop(d, ~ m, ~ n, ~ N,
+  method = "poisson", cov_alpha = ~ year + sex,
+  gamma = "estimate", countries = ~ country_code)
+
+fit_nb <- estimate_hidden_pop(d, ~ m, ~ n, ~ N,
+  method = "nb", cov_alpha = ~ year + sex,
+  gamma = fit_po$gamma, countries = ~ country_code)
+
+fit_io <- estimate_hidden_pop(d, ~ m, ~ n, ~ N,
+  method = "iols", cov_alpha = ~ year + sex,
+  gamma = fit_po$gamma, countries = ~ country_code)
+```
+
+## Coefficient tables with modelsummary
+
+The package provides
+[`tidy()`](https://generics.r-lib.org/reference/tidy.html) and
+[`glance()`](https://generics.r-lib.org/reference/glance.html) methods
+compatible with the **modelsummary** package:
+
+``` r
+library(modelsummary)
+modelsummary(
+  list(Poisson = fit_po, NB = fit_nb, iOLS = fit_io),
+  stars = TRUE
+)
+```
+
+Individual coefficient tables:
+
+``` r
+tidy(fit_po, conf.int = TRUE)
+glance(fit_po)
+```
+
+## Plotting population size estimates
+
+The
+[`popsize()`](https://ncn-foreigners.github.io/uncounted/reference/popsize.md)
+function returns an object that can be plotted directly:
+
+``` r
+# By year
+ps <- popsize(fit_po, by = ~ year)
+plot(ps)
+
+# Compare plug-in vs bias-corrected
+plot(ps, type = "compare")
+```
+
+## Comparing models visually
+
+[`compare_popsize()`](https://ncn-foreigners.github.io/uncounted/reference/compare_popsize.md)
+produces side-by-side population size estimates:
+
+``` r
+comp <- compare_popsize(fit_po, fit_nb, fit_io,
+  labels = c("Poisson", "NB", "iOLS"),
+  by = ~ year)
+
+print(comp)
+plot(comp)
+```
+
+## Predictions
+
+The [`predict()`](https://rdrr.io/r/stats/predict.html) method supports
+new data:
+
+``` r
+# Fitted values
+head(predict(fit_po))
+
+# Log-scale (linear predictor)
+head(predict(fit_po, type = "link"))
+
+# Predictions for new data
+new_d <- d[1:10, ]
+predict(fit_po, newdata = new_d)
+```
+
+## Model selection guidance
+
+| Situation                      | Recommended method             |
+|--------------------------------|--------------------------------|
+| Default analysis               | Poisson (robust, well-studied) |
+| Overdispersion suspected       | NB, then LR test vs Poisson    |
+| Sensitivity to large countries | iOLS alongside Poisson         |
+| Quick exploration              | OLS with fixed gamma           |
+
+When Poisson and iOLS agree, the result is robust to the choice of
+weighting. When they diverge, report both and discuss which observations
+drive the difference.
+
+## References
+
+- Santos Silva, J. M. C. & Tenreyro, S. (2006). The Log of Gravity.
+  *Review of Economics and Statistics*, 88(4), 641–658.
+- Benatia, D., Bellego, C. & Pape, L.-D. (2024). Dealing with Logs and
+  Zeros in Regression Models. arXiv:2203.11820v3.
+- Zhang, L.-C. (2008). *Developing methods for determining the number of
+  unauthorized foreigners in Norway* (Documents 2008/11). Statistics
+  Norway.
+- Beresewicz, M. & Pawlukiewicz, K. (2020). Estimation of the number of
+  irregular foreigners in Poland using non-linear count regression
+  models. arXiv:2008.09407.
