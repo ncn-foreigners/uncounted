@@ -309,7 +309,7 @@ summary(fit_pois)
 #> Coefficients:
 #>         Estimate Std. Error z value Pr(>|z|)    
 #> alpha   0.559800   0.066707  8.3919   <2e-16 ***
-#> beta    3.113112 221.225025  0.0141   0.9888    
+#> beta    3.113112 221.225019  0.0141   0.9888    
 #> ---
 #> Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
 #> 
@@ -362,8 +362,8 @@ summary(fit_constr)
 #> 
 #> Coefficients (link scale: logit for alpha, log for beta):
 #>        Estimate Std. Error z value Pr(>|z|)
-#> alpha  0.229319   0.261549  0.8768   0.3806
-#> beta  -0.025916   0.779612 -0.0332   0.9735
+#> alpha  0.229393   0.261552  0.8770   0.3805
+#> beta  -0.025858   0.779565 -0.0332   0.9735
 #> 
 #> Response-scale parameters (alpha in (0,1), beta > 0):
 #>   Alpha (response scale):
@@ -371,11 +371,11 @@ summary(fit_constr)
 #> (all) 0.5571    0.0645
 #>   Beta (response scale):
 #>     beta SE(beta)
-#> 1 0.9744   0.7597
+#> 1 0.9745   0.7597
 #> 
 #> -----------------------
 #> Population size estimation results:
 #>   (BC = bias-corrected using model-based variance)
 #>       Observed Estimate Estimate (BC) CI lower CI upper
-#> (all)      777   14,443        11,512    3,128   42,375
+#> (all)      777   14,445        11,515    3,128   42,383
 ```

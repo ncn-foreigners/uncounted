@@ -162,7 +162,7 @@ influential observations side by side for both models, ranked by
 <span class="r-in"><span>  reference_pop <span class="op">=</span> <span class="op">~</span><span class="va">N</span>, method <span class="op">=</span> <span class="st">"nb"</span>,</span></span>
 <span class="r-in"><span>  countries <span class="op">=</span> <span class="op">~</span><span class="va">country</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Some alpha values &lt; 0 (min = -0.213). Consider using constrained = TRUE.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Some alpha values &lt; 0 (min = -1.876). Consider using constrained = TRUE.</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="va">loo_po</span> <span class="op">&lt;-</span> <span class="fu"><a href="loo.html">loo</a></span><span class="op">(</span><span class="va">fit_po</span>, by <span class="op">=</span> <span class="st">"country"</span><span class="op">)</span></span></span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Some alpha values &lt; 0 (min = -3.217). Consider using constrained = TRUE.</span>
@@ -178,15 +178,15 @@ influential observations side by side for both models, ranked by
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">comp</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> LOO comparison: Poisson vs NB </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Dropped by: country </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Full xi -- Poisson : 0 | NB : 1 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Full xi -- Poisson : 0 | NB : 0 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Top 15 most influential (by max |%change|):</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  label dxi_Poisson   pct_Poisson   dxi_NB        pct_NB        max_abs_pct </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  C4     3.012532e+25  9.234739e+28  3.012437e+25  3.275959e+27 9.234739e+28</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  C5     2.996660e+17  9.186084e+20  2.996660e+17  3.258801e+19 9.186084e+20</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  C2     3.874090e+03  1.187578e+07  3.873200e+03  4.212019e+05 1.187578e+07</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  C3    -3.000000e-02 -1.000000e+02 -9.200000e-01 -1.000000e+02 1.000000e+02</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  C1    -3.000000e-02 -1.000000e+02 -9.200000e-01 -1.000000e+02 1.000000e+02</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  label dxi_Poisson   pct_Poisson   dxi_NB       pct_NB        max_abs_pct </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  C4     3.012532e+25  9.234739e+28 3.012437e+25  9.823604e+36 9.823604e+36</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  C5     2.996660e+17  9.186084e+20 2.996660e+17  9.772155e+28 9.772155e+28</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  C2     3.874090e+03  1.187578e+07 3.874120e+03  1.263356e+15 1.263356e+15</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  C3    -3.000000e-02 -1.000000e+02 0.000000e+00 -1.000000e+02 1.000000e+02</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  C1    -3.000000e-02 -1.000000e+02 0.000000e+00 -1.000000e+02 1.000000e+02</span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">comp</span>, type <span class="op">=</span> <span class="st">"scatter"</span><span class="op">)</span></span></span>
 <span class="r-plt img"><img src="compare_loo-1.png" alt="" width="700" height="433"></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">comp</span>, type <span class="op">=</span> <span class="st">"bar"</span><span class="op">)</span></span></span>

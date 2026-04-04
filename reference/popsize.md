@@ -168,7 +168,7 @@ popsize(fit)
 # Without bias correction
 popsize(fit, bias_correction = FALSE)
 #>   group observed   estimate estimate_bc         lower         upper share_pct
-#> 1 (all)      752 0.03262174  0.03262174 3.458684e-219 3.076829e+215       100
+#> 1 (all)      752 0.03262174  0.03262174 3.457897e-219 3.077529e+215       100
 
 # 90% confidence interval
 popsize(fit, level = 0.90)

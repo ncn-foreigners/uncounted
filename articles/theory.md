@@ -103,9 +103,31 @@ fit <- estimate_hidden_pop(
   method    = "poisson"
 )
 summary(fit)
+#> Unauthorized population estimation
+#> Method: POISSON | vcov: HC3 
+#> N obs: 1382 
+#> Gamma: 0.001831 (estimated) 
+#> Log-likelihood: -11380.65 
+#> AIC: 22767.3  BIC: 22782.99 
+#> Deviance: 20158.5 
+#> 
+#> Coefficients:
+#>       Estimate Std. Error z value  Pr(>|z|)    
+#> alpha 0.736646   0.040258  18.298 < 2.2e-16 ***
+#> beta  0.575046   0.091861   6.260  3.85e-10 ***
+#> ---
+#> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+#> 
+#> -----------------------
+#> Population size estimation results:
+#>   (BC = bias-corrected using model-based variance)
+#>       Observed Estimate Estimate (BC) CI lower CI upper
+#> (all)   27,105  290,597       290,498  127,726  660,703
 
 ## Population size estimate with 95% CI
 popsize(fit)
+#>   group observed estimate estimate_bc    lower    upper share_pct
+#> 1 (all)    27105 290597.5    290498.3 127726.5 660703.2       100
 ```
 
 ## Covariates
@@ -148,6 +170,29 @@ fit_cov <- estimate_hidden_pop(
   cov_beta  = ~ sex
 )
 summary(fit_cov)
+#> Unauthorized population estimation
+#> Method: POISSON | vcov: HC3 
+#> N obs: 1382 
+#> Gamma: 0.004998 (estimated) 
+#> Log-likelihood: -11113.89 
+#> AIC: 22237.78  BIC: 22263.94 
+#> Deviance: 19624.98 
+#> 
+#> Coefficients:
+#>                   Estimate Std. Error z value  Pr(>|z|)    
+#> alpha:(Intercept) 0.670239   0.077201  8.6817 < 2.2e-16 ***
+#> alpha:sexMale     0.075696   0.085822  0.8820 0.3777710    
+#> beta:(Intercept)  0.528611   0.140139  3.7721 0.0001619 ***
+#> beta:sexMale      0.082153   0.139500  0.5889 0.5559223    
+#> ---
+#> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+#> 
+#> -----------------------
+#> Population size estimation results:
+#>   (BC = bias-corrected using model-based variance)
+#>            Observed Estimate Estimate (BC) CI lower CI upper
+#> sex=Female    4,512   55,913        55,837   12,446  250,514
+#> sex=Male     22,593  198,638       198,553   78,555  501,855
 
 ## Constrained Poisson: alpha in (0,1), beta > 0
 fit_constr <- estimate_hidden_pop(
@@ -160,6 +205,37 @@ fit_constr <- estimate_hidden_pop(
   constrained = TRUE
 )
 summary(fit_constr)
+#> Unauthorized population estimation
+#> Method: POISSON | vcov: HC3 
+#> N obs: 1382 
+#> Gamma: 0.005432 (estimated) 
+#> Log-likelihood: -11133.17 
+#> AIC: 22274.33  BIC: 22295.26 
+#> Deviance: 19663.53 
+#> 
+#> Coefficients (link scale: logit for alpha, log for beta):
+#>                   Estimate Std. Error z value  Pr(>|z|)    
+#> alpha:(Intercept)  0.82810    0.24580  3.3691 0.0007542 ***
+#> alpha:sexMale      0.21610    0.18499  1.1682 0.2427387    
+#> beta              -0.52089    0.17947 -2.9025 0.0037025 ** 
+#> ---
+#> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+#> 
+#> Response-scale parameters (alpha in (0,1), beta > 0):
+#>   Alpha (response scale):
+#>             alpha SE(alpha)
+#> sex=Female 0.6960    0.0520
+#> sex=Male   0.7397    0.0407
+#>   Beta (response scale):
+#>    beta SE(beta)
+#> 1 0.594   0.1066
+#> 
+#> -----------------------
+#> Population size estimation results:
+#>   (BC = bias-corrected using model-based variance)
+#>            Observed Estimate Estimate (BC) CI lower CI upper
+#> sex=Female    4,512   72,385        72,355   25,688  203,803
+#> sex=Male     22,593  186,088       186,035   81,314  425,626
 ```
 
 ## Estimation Methods
@@ -259,8 +335,14 @@ fit_nb <- estimate_hidden_pop(
 
 ## Extract population size estimates
 popsize(fit_ols)
+#>   group observed estimate estimate_bc    lower    upper share_pct
+#> 1 (all)    27105 23991.01    23864.32 18430.34 30900.45       100
 popsize(fit_pois)
+#>   group observed estimate estimate_bc    lower    upper share_pct
+#> 1 (all)    27105 290597.5    290498.3 127726.5 660703.2       100
 popsize(fit_nb)
+#>   group observed estimate estimate_bc    lower   upper share_pct
+#> 1 (all)    27105  1259565     1231405 731347.6 2073376       100
 ```
 
 ## Inference
@@ -385,14 +467,24 @@ fit <- estimate_hidden_pop(
 ## Cluster bootstrap with 199 replicates
 boot_result <- bootstrap_popsize(
   fit,
-  R       = 199,
+  R       = 49,
   cluster = ~ country_code,
   seed    = 42
 )
 boot_result
+#> Bootstrap population size estimation
+#> R = 49 | CI type: perc | Point estimate: median | Converged: 49 / 49 
+#> Cluster bootstrap
+#> 95% CI
+#> 
+#>   Point estimate: bootstrap median (recommended) | CI: bootstrap percentile
+#>        Plugin Plugin (BC) Boot median Boot mean CI lower CI upper
+#> (all) 290,597     290,498     330,467   388,022  185,961  741,945
 
 ## Access the full results table
 boot_result$popsize_full
+#>   group   plugin plugin_bc boot_median boot_mean    lower    upper
+#> 1 (all) 290597.5  290498.3    330466.8  388022.4 185961.5 741945.3
 ```
 
 ## References

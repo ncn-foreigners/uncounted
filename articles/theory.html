@@ -223,9 +223,31 @@ a property exploited for confidence interval construction.</p>
 <span>  method    <span class="op">=</span> <span class="st">"poisson"</span></span>
 <span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Unauthorized population estimation</span></span>
+<span><span class="co">#&gt; Method: POISSON | vcov: HC3 </span></span>
+<span><span class="co">#&gt; N obs: 1382 </span></span>
+<span><span class="co">#&gt; Gamma: 0.001831 (estimated) </span></span>
+<span><span class="co">#&gt; Log-likelihood: -11380.65 </span></span>
+<span><span class="co">#&gt; AIC: 22767.3  BIC: 22782.99 </span></span>
+<span><span class="co">#&gt; Deviance: 20158.5 </span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Coefficients:</span></span>
+<span><span class="co">#&gt;       Estimate Std. Error z value  Pr(&gt;|z|)    </span></span>
+<span><span class="co">#&gt; alpha 0.736646   0.040258  18.298 &lt; 2.2e-16 ***</span></span>
+<span><span class="co">#&gt; beta  0.575046   0.091861   6.260  3.85e-10 ***</span></span>
+<span><span class="co">#&gt; ---</span></span>
+<span><span class="co">#&gt; Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; -----------------------</span></span>
+<span><span class="co">#&gt; Population size estimation results:</span></span>
+<span><span class="co">#&gt;   (BC = bias-corrected using model-based variance)</span></span>
+<span><span class="co">#&gt;       Observed Estimate Estimate (BC) CI lower CI upper</span></span>
+<span><span class="co">#&gt; (all)   27,105  290,597       290,498  127,726  660,703</span></span>
 <span></span>
 <span><span class="co">## Population size estimate with 95% CI</span></span>
-<span><span class="fu"><a href="../reference/popsize.html">popsize</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu"><a href="../reference/popsize.html">popsize</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span></span>
+<span><span class="co">#&gt;   group observed estimate estimate_bc    lower    upper share_pct</span></span>
+<span><span class="co">#&gt; 1 (all)    27105 290597.5    290498.3 127726.5 660703.2       100</span></span></code></pre></div>
 </div>
 </div>
 <div class="section level2">
@@ -292,6 +314,29 @@ then reported on the link scale; response-scale values are shown by
 <span>  cov_beta  <span class="op">=</span> <span class="op">~</span> <span class="va">sex</span></span>
 <span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">fit_cov</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Unauthorized population estimation</span></span>
+<span><span class="co">#&gt; Method: POISSON | vcov: HC3 </span></span>
+<span><span class="co">#&gt; N obs: 1382 </span></span>
+<span><span class="co">#&gt; Gamma: 0.004998 (estimated) </span></span>
+<span><span class="co">#&gt; Log-likelihood: -11113.89 </span></span>
+<span><span class="co">#&gt; AIC: 22237.78  BIC: 22263.94 </span></span>
+<span><span class="co">#&gt; Deviance: 19624.98 </span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Coefficients:</span></span>
+<span><span class="co">#&gt;                   Estimate Std. Error z value  Pr(&gt;|z|)    </span></span>
+<span><span class="co">#&gt; alpha:(Intercept) 0.670239   0.077201  8.6817 &lt; 2.2e-16 ***</span></span>
+<span><span class="co">#&gt; alpha:sexMale     0.075696   0.085822  0.8820 0.3777710    </span></span>
+<span><span class="co">#&gt; beta:(Intercept)  0.528611   0.140139  3.7721 0.0001619 ***</span></span>
+<span><span class="co">#&gt; beta:sexMale      0.082153   0.139500  0.5889 0.5559223    </span></span>
+<span><span class="co">#&gt; ---</span></span>
+<span><span class="co">#&gt; Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; -----------------------</span></span>
+<span><span class="co">#&gt; Population size estimation results:</span></span>
+<span><span class="co">#&gt;   (BC = bias-corrected using model-based variance)</span></span>
+<span><span class="co">#&gt;            Observed Estimate Estimate (BC) CI lower CI upper</span></span>
+<span><span class="co">#&gt; sex=Female    4,512   55,913        55,837   12,446  250,514</span></span>
+<span><span class="co">#&gt; sex=Male     22,593  198,638       198,553   78,555  501,855</span></span>
 <span></span>
 <span><span class="co">## Constrained Poisson: alpha in (0,1), beta &gt; 0</span></span>
 <span><span class="va">fit_constr</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/estimate_hidden_pop.html">estimate_hidden_pop</a></span><span class="op">(</span></span>
@@ -303,7 +348,38 @@ then reported on the link scale; response-scale values are shown by
 <span>  cov_alpha <span class="op">=</span> <span class="op">~</span> <span class="va">sex</span>,</span>
 <span>  constrained <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">fit_constr</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">fit_constr</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Unauthorized population estimation</span></span>
+<span><span class="co">#&gt; Method: POISSON | vcov: HC3 </span></span>
+<span><span class="co">#&gt; N obs: 1382 </span></span>
+<span><span class="co">#&gt; Gamma: 0.005432 (estimated) </span></span>
+<span><span class="co">#&gt; Log-likelihood: -11133.17 </span></span>
+<span><span class="co">#&gt; AIC: 22274.33  BIC: 22295.26 </span></span>
+<span><span class="co">#&gt; Deviance: 19663.53 </span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Coefficients (link scale: logit for alpha, log for beta):</span></span>
+<span><span class="co">#&gt;                   Estimate Std. Error z value  Pr(&gt;|z|)    </span></span>
+<span><span class="co">#&gt; alpha:(Intercept)  0.82810    0.24580  3.3691 0.0007542 ***</span></span>
+<span><span class="co">#&gt; alpha:sexMale      0.21610    0.18499  1.1682 0.2427387    </span></span>
+<span><span class="co">#&gt; beta              -0.52089    0.17947 -2.9025 0.0037025 ** </span></span>
+<span><span class="co">#&gt; ---</span></span>
+<span><span class="co">#&gt; Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Response-scale parameters (alpha in (0,1), beta &gt; 0):</span></span>
+<span><span class="co">#&gt;   Alpha (response scale):</span></span>
+<span><span class="co">#&gt;             alpha SE(alpha)</span></span>
+<span><span class="co">#&gt; sex=Female 0.6960    0.0520</span></span>
+<span><span class="co">#&gt; sex=Male   0.7397    0.0407</span></span>
+<span><span class="co">#&gt;   Beta (response scale):</span></span>
+<span><span class="co">#&gt;    beta SE(beta)</span></span>
+<span><span class="co">#&gt; 1 0.594   0.1066</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; -----------------------</span></span>
+<span><span class="co">#&gt; Population size estimation results:</span></span>
+<span><span class="co">#&gt;   (BC = bias-corrected using model-based variance)</span></span>
+<span><span class="co">#&gt;            Observed Estimate Estimate (BC) CI lower CI upper</span></span>
+<span><span class="co">#&gt; sex=Female    4,512   72,385        72,355   25,688  203,803</span></span>
+<span><span class="co">#&gt; sex=Male     22,593  186,088       186,035   81,314  425,626</span></span></code></pre></div>
 </div>
 </div>
 <div class="section level2">
@@ -436,8 +512,14 @@ for all observations.</li>
 <span></span>
 <span><span class="co">## Extract population size estimates</span></span>
 <span><span class="fu"><a href="../reference/popsize.html">popsize</a></span><span class="op">(</span><span class="va">fit_ols</span><span class="op">)</span></span>
+<span><span class="co">#&gt;   group observed estimate estimate_bc    lower    upper share_pct</span></span>
+<span><span class="co">#&gt; 1 (all)    27105 23991.01    23864.32 18430.34 30900.45       100</span></span>
 <span><span class="fu"><a href="../reference/popsize.html">popsize</a></span><span class="op">(</span><span class="va">fit_pois</span><span class="op">)</span></span>
-<span><span class="fu"><a href="../reference/popsize.html">popsize</a></span><span class="op">(</span><span class="va">fit_nb</span><span class="op">)</span></span></code></pre></div>
+<span><span class="co">#&gt;   group observed estimate estimate_bc    lower    upper share_pct</span></span>
+<span><span class="co">#&gt; 1 (all)    27105 290597.5    290498.3 127726.5 660703.2       100</span></span>
+<span><span class="fu"><a href="../reference/popsize.html">popsize</a></span><span class="op">(</span><span class="va">fit_nb</span><span class="op">)</span></span>
+<span><span class="co">#&gt;   group observed estimate estimate_bc    lower   upper share_pct</span></span>
+<span><span class="co">#&gt; 1 (all)    27105  1259565     1231405 731347.6 2073376       100</span></span></code></pre></div>
 </div>
 </div>
 <div class="section level2">
@@ -642,14 +724,24 @@ is right-skewed and the bootstrap mean tends to overestimate
 <span><span class="co">## Cluster bootstrap with 199 replicates</span></span>
 <span><span class="va">boot_result</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/bootstrap_popsize.html">bootstrap_popsize</a></span><span class="op">(</span></span>
 <span>  <span class="va">fit</span>,</span>
-<span>  R       <span class="op">=</span> <span class="fl">199</span>,</span>
+<span>  R       <span class="op">=</span> <span class="fl">49</span>,</span>
 <span>  cluster <span class="op">=</span> <span class="op">~</span> <span class="va">country_code</span>,</span>
 <span>  seed    <span class="op">=</span> <span class="fl">42</span></span>
 <span><span class="op">)</span></span>
 <span><span class="va">boot_result</span></span>
+<span><span class="co">#&gt; Bootstrap population size estimation</span></span>
+<span><span class="co">#&gt; R = 49 | CI type: perc | Point estimate: median | Converged: 49 / 49 </span></span>
+<span><span class="co">#&gt; Cluster bootstrap</span></span>
+<span><span class="co">#&gt; 95% CI</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt;   Point estimate: bootstrap median (recommended) | CI: bootstrap percentile</span></span>
+<span><span class="co">#&gt;        Plugin Plugin (BC) Boot median Boot mean CI lower CI upper</span></span>
+<span><span class="co">#&gt; (all) 290,597     290,498     330,467   388,022  185,961  741,945</span></span>
 <span></span>
 <span><span class="co">## Access the full results table</span></span>
-<span><span class="va">boot_result</span><span class="op">$</span><span class="va">popsize_full</span></span></code></pre></div>
+<span><span class="va">boot_result</span><span class="op">$</span><span class="va">popsize_full</span></span>
+<span><span class="co">#&gt;   group   plugin plugin_bc boot_median boot_mean    lower    upper</span></span>
+<span><span class="co">#&gt; 1 (all) 290597.5  290498.3    330466.8  388022.4 185961.5 741945.3</span></span></code></pre></div>
 </div>
 </div>
 <div class="section level2">
