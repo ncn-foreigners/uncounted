@@ -86,3 +86,47 @@ estfun.uncounted <- function(x, ...) {
   colnames(ef) <- colnames(Z)
   ef
 }
+
+
+#' Theta-Aware Full Variance-Covariance for NB Models
+#'
+#' Returns the full sandwich variance-covariance matrix for NB models,
+#' including the theta (dispersion) parameter. For non-NB models, returns
+#' \code{vcov(object)} unchanged.
+#'
+#' This is the explicit interface for the theta-aware covariance that
+#' \code{vcov()} uses internally for NB fits. Use this when you need the
+#' full matrix including theta, or when you want to be explicit about
+#' which covariance you are requesting.
+#'
+#' @param object A fitted \code{uncounted} object.
+#' @param vcov_type HC type for the sandwich (\code{"HC0"} or \code{"HC1"}).
+#'   Default \code{"HC1"}. HC2+ are not available for the theta-aware path.
+#' @param cluster Optional cluster vector for cluster-robust variance.
+#' @return A square variance-covariance matrix. For NB models, dimensions
+#'   are \code{p + 1} (or \code{p + 2} if gamma is estimated), where the
+#'   extra row/column corresponds to \code{log(theta)}. For non-NB models,
+#'   returns \code{vcov(object)}.
+#'
+#' @examples
+#' data(irregular_migration)
+#' d <- irregular_migration[irregular_migration$year == "2019", ]
+#' fit <- estimate_hidden_pop(d, ~m, ~n, ~N, method = "nb", gamma = 0.005)
+#' vcov_nb(fit)  # includes theta row/column
+#' vcov(fit)     # alpha/beta only (same as vcov_nb submatrix)
+#'
+#' @export
+vcov_nb <- function(object, vcov_type = "HC1", cluster = NULL) {
+  if (!inherits(object, "uncounted"))
+    stop("'object' must be of class 'uncounted'")
+  if (is.null(object$hessian_nll) || is.null(object$score_full)) {
+    return(vcov(object))
+  }
+  .compute_nb_sandwich(
+    hessian_nll = object$hessian_nll,
+    score_full  = object$score_full,
+    n_obs       = object$n_obs,
+    vcov_type   = vcov_type,
+    cluster     = cluster
+  )
+}

@@ -433,8 +433,10 @@ estimate_hidden_pop <- function(data,
     out$theta_se <- sqrt(max(0, V_nb_full[p_ab + 1, p_ab + 1]))
     out$score_full <- result$score_full
     out$hessian_nll <- result$hessian_nll
-    # Update vcov_type to reflect what was actually computed
+    # Store both requested and actual vcov types.
+    # NB theta-aware sandwich supports HC0 and HC1 only; HC2+ downgraded to HC1.
     actual_type <- if (vcov %in% c("HC2","HC3","HC4","HC4m","HC5")) "HC1" else vcov
+    out$vcov_requested <- vcov
     out$vcov_type <- actual_type
   } else {
     # Non-NB, or NB with user-supplied vcov function: use sandwich package

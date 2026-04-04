@@ -128,3 +128,54 @@ test_that("NB with HC0 reports HC0", {
   fit <- quick_fit(d, method = "nb", gamma = 0.005, vcov = "HC0")
   expect_equal(fit$vcov_type, "HC0")
 })
+
+# ---- Regression: vcov() and sandwich::vcovHC() intentionally differ for NB ----
+
+test_that("NB vcov() differs from sandwich::vcovHC() (theta-aware vs conditional)", {
+  d <- small_data()
+  fit <- quick_fit(d, method = "nb", gamma = 0.005, vcov = "HC0")
+  V_model <- vcov(fit)                              # theta-aware
+  V_sandwich <- sandwich::vcovHC(fit, type = "HC0") # theta-conditional
+  # They should have the same dimensions (alpha/beta only)
+  expect_equal(dim(V_model), dim(V_sandwich))
+  # But different values (theta uncertainty changes SEs)
+  expect_false(isTRUE(all.equal(as.numeric(V_model), as.numeric(V_sandwich))),
+               info = "vcov() and sandwich::vcovHC() should differ for NB")
+})
+
+# ---- NB stores both requested and actual vcov type ----
+
+test_that("NB stores vcov_requested and vcov_type separately", {
+  d <- small_data()
+  fit <- quick_fit(d, method = "nb", gamma = 0.005)  # default HC3
+  expect_equal(fit$vcov_requested, "HC3")
+  expect_equal(fit$vcov_type, "HC1")
+})
+
+# ---- NB HC3 silently downgraded to HC1 ----
+
+test_that("NB with HC3 silently uses HC1 (visible in vcov_type)", {
+  d <- small_data()
+  fit <- quick_fit(d, method = "nb", gamma = 0.005, vcov = "HC3")
+  expect_equal(fit$vcov_requested, "HC3")
+  expect_equal(fit$vcov_type, "HC1")
+})
+
+# ---- vcov_nb() explicit helper ----
+
+test_that("vcov_nb() returns full matrix with theta for NB", {
+  d <- small_data()
+  fit <- quick_fit(d, method = "nb", gamma = 0.005, vcov = "HC0")
+  V_full <- vcov_nb(fit, vcov_type = "HC0")  # match the fit's type
+  p_ab <- length(coef(fit))
+  expect_equal(nrow(V_full), p_ab + 1)  # +1 for theta
+  # Coefficient submatrix matches vcov()
+  expect_equal(as.numeric(V_full[1:p_ab, 1:p_ab]),
+               as.numeric(vcov(fit)), tolerance = 1e-10)
+})
+
+test_that("vcov_nb() returns vcov() for non-NB models", {
+  d <- small_data()
+  fit <- quick_fit(d, method = "poisson", gamma = 0.005)
+  expect_equal(vcov_nb(fit), vcov(fit))
+})
