@@ -92,7 +92,7 @@ which are the GPML first-order conditions.
 
 ## Usage
 
-```{r basic-fit, eval = FALSE}
+```{r basic-fit, eval = TRUE}
 library(uncounted)
 data(irregular_migration)
 d <- irregular_migration

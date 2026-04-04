@@ -227,7 +227,7 @@ The `by` parameter allows computing population size by any variable in the
 data, not just the `cov_alpha` groups. This is useful when alpha varies by
 sex but you want totals by year, continent, or country.
 
-```{r popsize-by-year, eval = FALSE}
+```{r popsize-by-year, eval = TRUE}
 # Population size by year (using the same fitted alpha)
 popsize(fit_pois, by = ~ factor(year))
 
@@ -246,25 +246,25 @@ The `bootstrap_popsize()` function uses the fractional weighted bootstrap
 (FWB) of Xu et al. (2020). Cluster bootstrap by country is recommended
 to account for within-country correlation across years.
 
-```{r bootstrap, eval = FALSE}
+```{r bootstrap, eval = requireNamespace("fwb", quietly = TRUE)}
 set.seed(2025)
 boot_pois <- bootstrap_popsize(
   fit_pois,
-  R = 999,
+  R = 49,
   cluster = ~ country_code,
   ci_type = "perc",
   seed = 2025
 )
 boot_pois
 # #> Bootstrap population size estimation
-# #> R = 999 | CI type: perc | Point estimate: median | Converged: 998 / 999
+# #> R = 49 | CI type: perc | Point estimate: median | Converged: 998 / 999
 # #> Cluster bootstrap
 # #> 95% CI
 ```
 
 Access the detailed results:
 
-```{r bootstrap-details, eval = FALSE}
+```{r bootstrap-details, eval = requireNamespace("fwb", quietly = TRUE)}
 # Main table (selected point estimate + CI)
 boot_pois$popsize
 
@@ -277,7 +277,7 @@ summary(boot_pois)
 
 ### Comparing bootstrap and analytical CIs
 
-```{r ci-compare, eval = FALSE}
+```{r ci-compare, eval = TRUE}
 ps_analytical <- popsize(fit_pois)
 data.frame(
   Type       = c("Analytical", "Bootstrap"),
@@ -392,7 +392,7 @@ plot_explore(fit_pois)
 LOO analysis refits the model dropping one country at a time and reports the
 change in $\hat{\xi}$.
 
-```{r loo-country, eval = FALSE}
+```{r loo-country, eval = TRUE}
 loo_pois <- loo(fit_pois, by = "country")
 print(loo_pois)
 # #> Leave-one-out sensitivity analysis
@@ -404,19 +404,19 @@ print(loo_pois)
 # #>   ...
 ```
 
-```{r loo-plot, eval = FALSE}
+```{r loo-plot, eval = TRUE}
 plot(loo_pois)
 ```
 
 The coefficient stability summary shows how much alpha and beta shift:
 
-```{r loo-summary, eval = FALSE}
+```{r loo-summary, eval = TRUE}
 summary(loo_pois)
 ```
 
 ### Comparing LOO across models
 
-```{r compare-loo, eval = FALSE}
+```{r compare-loo, eval = TRUE}
 loo_nb <- loo(fit_nb, by = "country")
 comp_loo <- compare_loo(loo_pois, loo_nb, labels = c("Poisson", "NB"))
 print(comp_loo)
@@ -449,7 +449,7 @@ head(prof)
 To prepare results for a paper, combine the analytical and bootstrap estimates
 into a single summary table.
 
-```{r results-table, eval = FALSE}
+```{r results-table, eval = TRUE}
 # Analytical results
 ps_a <- popsize(fit_pois)
 

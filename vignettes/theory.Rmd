@@ -111,7 +111,7 @@ reference population is unauthorized.  The population size $\hat\xi$ is
 a monotone increasing function of $\alpha$ (for $N_i \geq 1$), a
 property exploited for confidence interval construction.
 
-```{r basic-model, eval = FALSE}
+```{r basic-model, eval = TRUE}
 library(uncounted)
 data(irregular_migration)
 
@@ -164,7 +164,7 @@ estimation is available for the Poisson and Negative Binomial methods
 (set `constrained = TRUE`).  Coefficients are then reported on the link
 scale; response-scale values are shown by `summary()`.
 
-```{r covariates, eval = FALSE}
+```{r covariates, eval = TRUE}
 ## Alpha and beta varying by sex
 fit_cov <- estimate_hidden_pop(
   data      = irregular_migration,
@@ -274,7 +274,7 @@ method:
   or omitted entirely (`gamma = NULL`), the latter requiring $n_i > 0$ for
   all observations.
 
-```{r methods, eval = FALSE}
+```{r methods, eval = TRUE}
 ## Compare estimation methods
 fit_ols <- estimate_hidden_pop(
   data = irregular_migration,
@@ -421,7 +421,7 @@ transformation $\xi = \sum N_i^\alpha$ is convex, so the bootstrap
 distribution of $\hat\xi$ is right-skewed and the bootstrap mean
 tends to overestimate $\xi$.
 
-```{r bootstrap, eval = FALSE}
+```{r bootstrap, eval = requireNamespace("fwb", quietly = TRUE)}
 ## Fit a model with country-level grouping
 fit <- estimate_hidden_pop(
   data      = irregular_migration,
@@ -435,7 +435,7 @@ fit <- estimate_hidden_pop(
 ## Cluster bootstrap with 199 replicates
 boot_result <- bootstrap_popsize(
   fit,
-  R       = 199,
+  R       = 49,
   cluster = ~ country_code,
   seed    = 42
 )

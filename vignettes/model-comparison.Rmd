@@ -21,7 +21,7 @@ knitr::opts_chunk$set(
 This vignette demonstrates how to compare estimation methods and present
 results using the **uncounted** package's plotting and reporting tools.
 
-```{r load, eval = FALSE}
+```{r load, eval = TRUE}
 library(uncounted)
 data(irregular_migration)
 d <- irregular_migration
@@ -32,7 +32,7 @@ d <- irregular_migration
 The package supports five estimation methods. We fit Poisson, NB, and iOLS
 to the same data for comparison:
 
-```{r fit-models, eval = FALSE}
+```{r fit-models, eval = TRUE}
 fit_po <- estimate_hidden_pop(d, ~ m, ~ n, ~ N,
   method = "poisson", cov_alpha = ~ year + sex,
   gamma = "estimate", countries = ~ country_code)
@@ -51,7 +51,7 @@ fit_io <- estimate_hidden_pop(d, ~ m, ~ n, ~ N,
 The package provides `tidy()` and `glance()` methods compatible with
 the **modelsummary** package:
 
-```{r modelsummary, eval = FALSE}
+```{r modelsummary, eval = requireNamespace("modelsummary", quietly = TRUE)}
 library(modelsummary)
 modelsummary(
   list(Poisson = fit_po, NB = fit_nb, iOLS = fit_io),
@@ -61,7 +61,7 @@ modelsummary(
 
 Individual coefficient tables:
 
-```{r tidy, eval = FALSE}
+```{r tidy, eval = TRUE}
 tidy(fit_po, conf.int = TRUE)
 glance(fit_po)
 ```
@@ -70,7 +70,7 @@ glance(fit_po)
 
 The `popsize()` function returns an object that can be plotted directly:
 
-```{r plot-popsize, eval = FALSE}
+```{r plot-popsize, eval = TRUE}
 # By year
 ps <- popsize(fit_po, by = ~ year)
 plot(ps)
@@ -83,7 +83,7 @@ plot(ps, type = "compare")
 
 `compare_popsize()` produces side-by-side population size estimates:
 
-```{r compare-popsize, eval = FALSE}
+```{r compare-popsize, eval = TRUE}
 comp <- compare_popsize(fit_po, fit_nb, fit_io,
   labels = c("Poisson", "NB", "iOLS"),
   by = ~ year)
@@ -96,7 +96,7 @@ plot(comp)
 
 The `predict()` method supports new data:
 
-```{r predict, eval = FALSE}
+```{r predict, eval = TRUE}
 # Fitted values
 head(predict(fit_po))
 
