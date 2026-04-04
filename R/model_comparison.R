@@ -230,11 +230,13 @@ lrtest <- function(object1, object2) {
     stop("Models have the same number of parameters -- not nested.")
   }
 
-  # Warn if covariate structures differ (models may not be nested)
-  names1 <- names(coef(object1))
-  names2 <- names(coef(object2))
-  if (!all(names1 %in% names2)) {
-    warning("Models may not be nested: covariate specifications differ. ",
+  # Warn if covariate structures suggest non-nesting.
+  # A nested pair should have p_alpha_simple <= p_alpha_complex AND
+  # p_beta_simple <= p_beta_complex. If the simpler model has MORE of one
+  # parameter type but FEWER of another, the models are likely not nested.
+  if (object1$p_alpha > object2$p_alpha || object1$p_beta > object2$p_beta) {
+    warning("Models may not be nested: the simpler model has more parameters ",
+            "in one component than the complex model. ",
             "LR test is only valid for nested models.", call. = FALSE)
   }
 

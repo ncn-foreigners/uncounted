@@ -72,10 +72,19 @@ test_that("lrtest errors with OLS models", {
 
 test_that("lrtest warns for non-nested models", {
   d <- small_data()
-  # Non-nested: different covariates with different parameter counts
-  # so the df != 0 check doesn't trigger, but nesting check does
-  fit1 <- quick_fit(d, gamma = 0.005)  # 2 params (alpha, beta)
-  fit2 <- quick_fit(d, gamma = 0.005, cov_alpha = ~sex, cov_beta = ~sex)  # 4 params
-  # fit1's coef names (alpha, beta) are NOT a subset of fit2's (alpha:sexF, alpha:sexM, ...)
+  # Non-nested: fit1 has more alpha params but fewer beta params than fit2
+  # fit1: p_alpha=2, p_beta=1 = 3 total
+  # fit2: p_alpha=1, p_beta=2, theta=1 = 4 total (NB adds theta)
+  # So df > 0 but p_alpha_1 > p_alpha_2 triggers the warning
+  fit1 <- quick_fit(d, gamma = 0.005, cov_alpha = ~sex)           # 3 params
+  fit2 <- quick_fit(d, method = "nb", gamma = 0.005, cov_beta = ~sex)  # 4 params
   expect_warning(lrtest(fit1, fit2), "not be nested")
+})
+
+test_that("lrtest does NOT warn for genuinely nested models", {
+  d <- small_data()
+  # Nested: intercept-only is nested in sex-covariate model
+  fit1 <- quick_fit(d, gamma = 0.005)                     # p_alpha=1, p_beta=1
+  fit2 <- quick_fit(d, gamma = 0.005, cov_alpha = ~sex)   # p_alpha=2, p_beta=1
+  expect_no_warning(lrtest(fit1, fit2))
 })
