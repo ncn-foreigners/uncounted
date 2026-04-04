@@ -3,6 +3,10 @@
 
 <!-- badges: start -->
 
+[![R-CMD-check](https://github.com/ncn-foreigners/uncounted/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/ncn-foreigners/uncounted/actions/workflows/R-CMD-check.yaml)
+[![CRAN-check](https://github.com/ncn-foreigners/uncounted/actions/workflows/cran-check.yaml/badge.svg)](https://github.com/ncn-foreigners/uncounted/actions/workflows/cran-check.yaml)
+[![Codecov test
+coverage](https://codecov.io/gh/ncn-foreigners/uncounted/graph/badge.svg)](https://app.codecov.io/gh/ncn-foreigners/uncounted)
 <!-- badges: end -->
 
 R package for estimating the size of unauthorised (hidden) populations
