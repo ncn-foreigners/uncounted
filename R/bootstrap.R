@@ -153,6 +153,7 @@ bootstrap_popsize <- function(object, R = 199, cluster = NULL,
   method <- object$method
   cov_alpha <- if (!is.null(cl$cov_alpha)) eval(cl$cov_alpha) else NULL
   cov_beta <- if (!is.null(cl$cov_beta)) eval(cl$cov_beta) else NULL
+  cov_gamma <- if (!is.null(cl$cov_gamma)) eval(cl$cov_gamma) else NULL
   gamma_arg <- if (object$gamma_estimated) "estimate"
                else if (!is.null(object$gamma)) object$gamma
                else NULL
@@ -195,6 +196,7 @@ bootstrap_popsize <- function(object, R = 199, cluster = NULL,
         cov_alpha = cov_alpha,
         cov_beta = cov_beta,
         gamma = gamma_arg,
+        cov_gamma = cov_gamma,
         gamma_bounds = gamma_bounds,
         theta_start = theta_start,
         vcov = "HC0",

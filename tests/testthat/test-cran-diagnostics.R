@@ -114,13 +114,12 @@ test_that("OLS gamma profiling uses log(m) when no zeros", {
   expect_true(abs(mean(resid_manual)) < 0.5)
 })
 
-test_that("cov_gamma parameter no longer accepted", {
+test_that("cov_gamma parameter works with estimated gamma", {
   d <- small_data()
   d$sex2 <- d$sex
-  expect_error(
-    quick_fit(d, gamma = "estimate", cov_gamma = ~sex2),
-    "unused argument"
-  )
+  fit <- quick_fit(d, gamma = "estimate", cov_gamma = ~sex2)
+  expect_s3_class(fit, "uncounted")
+  expect_true(!is.null(fit$gamma_coefs))
 })
 
 # ---- Regression: OLS zero handling scale consistency ----

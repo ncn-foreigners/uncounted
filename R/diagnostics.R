@@ -296,7 +296,9 @@ residuals.uncounted <- function(object, type = c("response", "pearson", "devianc
 #' @noRd
 .count_params <- function(object) {
   p <- object$p_alpha + object$p_beta
-  if (object$gamma_estimated) p <- p + 1
+  if (object$gamma_estimated) {
+    p <- p + if (!is.null(object$p_gamma) && object$p_gamma > 0) object$p_gamma else 1L
+  }
   if (!is.null(object$theta)) p <- p + 1  # NB theta
   if (object$method %in% c("ols", "nls")) p <- p + 1  # sigma2
   p

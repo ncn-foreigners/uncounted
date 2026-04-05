@@ -101,7 +101,8 @@ test_that("tidy shows finite gamma SE when gamma is estimated", {
   expect_equal(nrow(gamma_row), 1)
   expect_true(is.finite(gamma_row$std.error))
   expect_true(gamma_row$std.error > 0)
-  expect_true(is.finite(gamma_row$statistic))
+  # Gamma statistic is NA (no natural null hypothesis for a positive parameter)
+  expect_true(is.na(gamma_row$statistic))
 })
 
 # ---- Regression: vcov function preserved in call for update() ----

@@ -260,9 +260,24 @@ lrtest <- function(object1, object2) {
   # Check nesting via column-space inclusion
   nested_alpha <- .is_col_subspace(object1$X_alpha, object2$X_alpha)
   nested_beta  <- .is_col_subspace(object1$X_beta, object2$X_beta)
-  gamma_ok <- identical(object1$gamma, object2$gamma) ||
-              (is.numeric(object1$gamma) && isTRUE(object2$gamma_estimated)) ||
-              (isTRUE(object1$gamma_estimated) && isTRUE(object2$gamma_estimated))
+  # Check gamma nesting: compare X_gamma column spaces when both have cov_gamma.
+  # A fixed-gamma or scalar-gamma model is only nested in a cov_gamma model if
+  # that model's X_gamma design can represent a constant (i.e., a ones vector
+  # is in the column space of X_gamma).
+  gamma_ok <- if (!is.null(object1$X_gamma) && !is.null(object2$X_gamma)) {
+    .is_col_subspace(object1$X_gamma, object2$X_gamma)
+  } else if (is.numeric(object1$gamma) && !is.null(object2$X_gamma)) {
+    # Fixed gamma nested in cov_gamma: check constant is representable
+    ones <- matrix(1, nrow = nrow(object2$X_gamma), ncol = 1)
+    .is_col_subspace(ones, object2$X_gamma)
+  } else if (!is.null(object1$X_gamma) && is.numeric(object2$gamma)) {
+    ones <- matrix(1, nrow = nrow(object1$X_gamma), ncol = 1)
+    .is_col_subspace(ones, object1$X_gamma)
+  } else {
+    identical(object1$gamma, object2$gamma) ||
+      (is.numeric(object1$gamma) && isTRUE(object2$gamma_estimated)) ||
+      (isTRUE(object1$gamma_estimated) && isTRUE(object2$gamma_estimated))
+  }
   if (!(nested_alpha && nested_beta && gamma_ok)) {
     warning("Models may not be nested: covariate or gamma specifications differ. ",
             "LR test is only valid for nested models.", call. = FALSE)

@@ -90,8 +90,17 @@ predict.uncounted <- function(object, newdata = NULL,
   n_new <- newdata[[auxiliary_var]]
   ratio_new <- n_new / N_new
 
-  gamma_val <- object$gamma
-  log_rate_new <- if (!is.null(gamma_val)) log(gamma_val + ratio_new) else log(ratio_new)
+  # Compute gamma for new data
+  cov_gamma_f <- if (!is.null(object$call$cov_gamma)) eval(object$call$cov_gamma) else NULL
+  if (!is.null(cov_gamma_f) && !is.null(object$gamma_coefs) &&
+      isTRUE(object$has_cov_gamma)) {
+    X_gamma_new <- .predict_design(cov_gamma_f, newdata, object$X_gamma, "gamma", object$data)
+    gamma_vals <- exp(as.numeric(X_gamma_new %*% object$gamma_coefs))
+    log_rate_new <- log(gamma_vals + ratio_new)
+  } else {
+    gamma_val <- object$gamma
+    log_rate_new <- if (!is.null(gamma_val)) log(gamma_val + ratio_new) else log(ratio_new)
+  }
   log_N_new <- log(N_new)
 
   # Build covariate design matrices aligned with training encoding

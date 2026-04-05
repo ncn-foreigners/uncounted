@@ -557,7 +557,12 @@ run_app <- function(...) {
         rootogram(fit, style = input$rootogram_style, max_count = 50)
       },
       gamma = {
-        if (!is.null(fit$gamma)) {
+        if (isTRUE(fit$has_cov_gamma)) {
+          plot.new()
+          text(0.5, 0.5,
+               "Gamma profile not available\nfor covariate-varying gamma models",
+               cex = 1.2)
+        } else if (!is.null(fit$gamma)) {
           profile_gamma(fit, gamma_grid = seq(1e-4, 0.3, length.out = 30))
         } else {
           plot.new()

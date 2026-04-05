@@ -58,17 +58,25 @@ tidy.uncounted <- function(x, conf.int = FALSE, conf.level = 0.95, ...) {
     result$conf.high <- as.numeric(coefs + crit * se)
   }
 
-  # Add gamma row if estimated
-  if (isTRUE(x$gamma_estimated) && !is.null(x$gamma)) {
-    gamma_se <- NA_real_
+  # Add gamma row(s) if estimated
+  # When cov_gamma: gamma coefs are already in x$coefficients
+  # and appear in the main table. Only add separate gamma row for scalar case.
+  if (isTRUE(x$gamma_estimated) && !is.null(x$gamma) &&
+      !isTRUE(x$has_cov_gamma)) {
+    # vcov_full["gamma","gamma"] is the variance of log(gamma) (optimizer scale).
+    # Delta method: SE(gamma) = gamma * SE(log_gamma)
+    gamma_se_log <- NA_real_
     if (!is.null(x$vcov_full)) {
       gamma_idx <- which(colnames(x$vcov_full) == "gamma")
       if (length(gamma_idx) == 1) {
-        gamma_se <- sqrt(max(0, x$vcov_full[gamma_idx, gamma_idx]))
+        gamma_se_log <- sqrt(max(0, x$vcov_full[gamma_idx, gamma_idx]))
       }
     }
-    gamma_stat <- if (is.finite(gamma_se) && gamma_se > 0) x$gamma / gamma_se else NA_real_
-    gamma_p <- if (is.finite(gamma_stat)) 2 * pnorm(-abs(gamma_stat)) else NA_real_
+    gamma_se <- if (is.finite(gamma_se_log)) x$gamma * gamma_se_log else NA_real_
+    # No natural null hypothesis for gamma (positive nuisance parameter),
+    # so statistic and p-value are not reported.
+    gamma_stat <- NA_real_
+    gamma_p <- NA_real_
     gamma_row <- data.frame(
       term = "gamma",
       estimate = x$gamma,
@@ -78,8 +86,13 @@ tidy.uncounted <- function(x, conf.int = FALSE, conf.level = 0.95, ...) {
       stringsAsFactors = FALSE
     )
     if (conf.int) {
-      gamma_row$conf.low <- if (is.finite(gamma_se)) x$gamma - crit * gamma_se else NA_real_
-      gamma_row$conf.high <- if (is.finite(gamma_se)) x$gamma + crit * gamma_se else NA_real_
+      # CI via exp of log-scale CI: gamma * exp(+/- crit * SE_log)
+      gamma_row$conf.low <- if (is.finite(gamma_se_log)) {
+        x$gamma * exp(-crit * gamma_se_log)
+      } else NA_real_
+      gamma_row$conf.high <- if (is.finite(gamma_se_log)) {
+        x$gamma * exp(crit * gamma_se_log)
+      } else NA_real_
     }
     result <- rbind(result, gamma_row)
   }

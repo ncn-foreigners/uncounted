@@ -253,12 +253,14 @@
                          X_alpha, X_beta, gamma_value = NULL,
                          estimate_gamma = FALSE, gamma_start = 0.01,
                          gamma_bounds = c(1e-10, 1),
+                         X_gamma = NULL,
                          weights = NULL, vcov_type = "HC3",
                          constrained = FALSE) {
   n_obs <- length(m)
   if (is.null(weights)) weights <- rep(1, n_obs)
   p_alpha <- ncol(X_alpha)
   p_beta <- ncol(X_beta)
+  p_gamma <- if (!is.null(X_gamma)) ncol(X_gamma) else 0L
 
   # Transform functions for constrained optimization
   # alpha = inverse logit(eta) -> (0,1); beta = exp(zeta) -> (0, Inf)
@@ -270,8 +272,9 @@
     b <- par[p_alpha + seq_len(p_beta)]
     alpha_lin <- .alpha_fn(as.numeric(X_alpha %*% a))
     if (estimate_gamma) {
-      g <- exp(par[p_alpha + p_beta + 1])
-      lr <- log(g + ratio)
+      gamma_coefs_cur <- par[p_alpha + p_beta + seq_len(p_gamma)]
+      gamma_lin <- exp(pmin(as.numeric(X_gamma %*% gamma_coefs_cur), 10))
+      lr <- log(gamma_lin + ratio)
     } else {
       lr <- log_rate
     }
@@ -291,8 +294,9 @@
     alpha_lin <- .alpha_fn(eta_alpha)
     beta_lin <- .beta_fn(zeta_beta)
     if (estimate_gamma) {
-      g <- exp(par[p_alpha + p_beta + 1])
-      rate <- g + ratio
+      gamma_coefs_cur <- par[p_alpha + p_beta + seq_len(p_gamma)]
+      gamma_lin <- exp(pmin(as.numeric(X_gamma %*% gamma_coefs_cur), 10))
+      rate <- gamma_lin + ratio
       lr <- log(rate)
     } else {
       lr <- log_rate
@@ -314,7 +318,9 @@
     g_alpha <- colSums(score * log_N * dalpha * X_alpha)
     g_beta <- colSums(score * lr * dbeta * X_beta)
     if (estimate_gamma) {
-      g_gamma <- sum(score * beta_lin / rate) * g
+      # d/d(gamma_coef_k) = sum_i score_i * beta_i * gamma_i/(gamma_i+ratio_i) * X_gamma[i,k]
+      dgamma_dcoef <- (gamma_lin / rate) * X_gamma  # n x p_gamma
+      g_gamma <- colSums(score * beta_lin * dgamma_dcoef)
       c(g_alpha, g_beta, g_gamma)
     } else {
       c(g_alpha, g_beta)
@@ -333,9 +339,13 @@
   }
 
   if (estimate_gamma) {
-    start_par <- c(start_par, log(gamma_start))
-    lower <- c(rep(-Inf, p_alpha + p_beta), log(gamma_bounds[1]))
-    upper <- c(rep(Inf, p_alpha + p_beta), log(gamma_bounds[2]))
+    gamma_start_coefs <- rep(0, p_gamma)
+    gamma_start_coefs[1] <- log(gamma_start)
+    start_par <- c(start_par, gamma_start_coefs)
+    lower_gamma <- c(log(gamma_bounds[1]), rep(-Inf, max(0, p_gamma - 1)))
+    upper_gamma <- c(log(gamma_bounds[2]), rep(Inf, max(0, p_gamma - 1)))
+    lower <- c(rep(-Inf, p_alpha + p_beta), lower_gamma)
+    upper <- c(rep(Inf, p_alpha + p_beta), upper_gamma)
   } else {
     lower <- rep(-Inf, p_alpha + p_beta)
     upper <- rep(Inf, p_alpha + p_beta)
@@ -352,7 +362,18 @@
 
   a_raw <- opt$par[seq_len(p_alpha)]
   b_raw <- opt$par[p_alpha + seq_len(p_beta)]
-  gamma_hat <- if (estimate_gamma) exp(opt$par[p_alpha + p_beta + 1]) else gamma_value
+
+  # Extract gamma on response scale
+  if (estimate_gamma) {
+    gamma_coefs_hat <- opt$par[p_alpha + p_beta + seq_len(p_gamma)]
+    gamma_lin_hat <- exp(pmin(as.numeric(X_gamma %*% gamma_coefs_hat), 10))
+    gamma_hat <- if (p_gamma == 1) gamma_lin_hat[1] else NULL
+    names(gamma_coefs_hat) <- colnames(X_gamma)
+  } else {
+    gamma_coefs_hat <- NULL
+    gamma_lin_hat <- NULL
+    gamma_hat <- gamma_value
+  }
 
   # Transform to response scale
   eta_alpha <- as.numeric(X_alpha %*% a_raw)
@@ -361,7 +382,7 @@
   beta_lin <- .beta_fn(zeta_beta)
 
   if (estimate_gamma) {
-    rate_final <- gamma_hat + ratio
+    rate_final <- gamma_lin_hat + ratio
     lr_final <- log(rate_final)
   } else {
     lr_final <- log_rate
@@ -380,7 +401,10 @@
     Z <- cbind(log_N * X_alpha, lr_final * X_beta)
   }
   if (estimate_gamma) {
-    Z <- cbind(Z, gamma = beta_lin / rate_final)
+    # Jacobian: d(log_mu)/d(gamma_coefs) = beta_i * gamma_i/(gamma_i+ratio_i) * X_gamma
+    gamma_cols <- (beta_lin * gamma_lin_hat / rate_final) * X_gamma
+    colnames(gamma_cols) <- colnames(X_gamma)
+    Z <- cbind(Z, gamma_cols)
   }
 
   # Sandwich vcov (on link scale)
@@ -404,9 +428,10 @@
     V_model_full
   }
 
-  ## Z is the full model matrix (including gamma col if estimated)
+  ## Z is the full model matrix (including gamma cols if estimated)
   list(alpha_coefs = a_raw, beta_coefs = b_raw,
        alpha_values = alpha_lin, beta_values = beta_lin,
+       gamma_coefs = gamma_coefs_hat, gamma_values = gamma_lin_hat,
        fitted = mu, residuals = resid_raw, log_mu = log_mu,
        vcov = V, vcov_model = V_model,
        vcov_full = if (estimate_gamma) V_full else V,
@@ -414,7 +439,9 @@
        score_residuals = weights * resid_raw,
        n_obs = n_obs, df.residual = n_obs - length(opt$par),
        loglik = -opt$value, theta = NULL,
-       gamma_estimated = if (estimate_gamma) gamma_hat else NULL,
+       gamma_estimated = if (estimate_gamma) {
+         gamma_lin_hat[1]
+       } else NULL,
        constrained = constrained,
        convergence = opt$convergence,
        X_alpha = X_alpha, X_beta = X_beta)
@@ -428,25 +455,31 @@
                     X_alpha, X_beta, gamma_value = NULL,
                     estimate_gamma = FALSE, gamma_start = 0.01,
                     gamma_bounds = c(1e-10, 1), theta_start = 1,
+                    X_gamma = NULL,
                     weights = NULL, vcov_type = "HC3",
                     constrained = FALSE) {
   n_obs <- length(m)
   if (is.null(weights)) weights <- rep(1, n_obs)
   p_alpha <- ncol(X_alpha)
   p_beta <- ncol(X_beta)
+  p_gamma <- if (!is.null(X_gamma)) ncol(X_gamma) else 0L
 
   .alpha_fn <- if (constrained) function(x) .inv_logit(x) else identity
   .beta_fn  <- if (constrained) function(x) exp(x) else identity
 
+  # NB parameter layout: c(alpha[p_a], beta[p_b], log_theta[1], gamma[p_g])
+  idx_theta <- p_alpha + p_beta + 1
+  idx_gamma_start <- p_alpha + p_beta + 2
+
   nll <- function(par) {
     a <- par[seq_len(p_alpha)]
     b <- par[p_alpha + seq_len(p_beta)]
-    theta <- exp(par[p_alpha + p_beta + 1])
+    theta <- exp(par[idx_theta])
     alpha_lin <- .alpha_fn(as.numeric(X_alpha %*% a))
-    idx_gamma <- p_alpha + p_beta + 2
     if (estimate_gamma) {
-      g <- exp(par[idx_gamma])
-      lr <- log(g + ratio)
+      gamma_coefs_cur <- par[idx_gamma_start - 1 + seq_len(p_gamma)]
+      gamma_lin <- exp(pmin(as.numeric(X_gamma %*% gamma_coefs_cur), 10))
+      lr <- log(gamma_lin + ratio)
     } else {
       lr <- log_rate
     }
@@ -461,15 +494,15 @@
   grad_nll <- function(par) {
     a <- par[seq_len(p_alpha)]
     b <- par[p_alpha + seq_len(p_beta)]
-    theta <- exp(par[p_alpha + p_beta + 1])
+    theta <- exp(par[idx_theta])
     eta_alpha <- as.numeric(X_alpha %*% a)
     zeta_beta <- as.numeric(X_beta %*% b)
     alpha_lin <- .alpha_fn(eta_alpha)
     beta_lin <- .beta_fn(zeta_beta)
-    idx_gamma <- p_alpha + p_beta + 2
     if (estimate_gamma) {
-      g <- exp(par[idx_gamma])
-      rate <- g + ratio
+      gamma_coefs_cur <- par[idx_gamma_start - 1 + seq_len(p_gamma)]
+      gamma_lin <- exp(pmin(as.numeric(X_gamma %*% gamma_coefs_cur), 10))
+      rate <- gamma_lin + ratio
       lr <- log(rate)
     } else {
       lr <- log_rate
@@ -499,7 +532,8 @@
 
     grad <- c(g_alpha, g_beta, g_theta)
     if (estimate_gamma) {
-      g_gamma <- sum(w_nb * beta_lin / rate) * g
+      dgamma_dcoef <- (gamma_lin / rate) * X_gamma  # n x p_gamma
+      g_gamma <- colSums(w_nb * beta_lin * dgamma_dcoef)
       grad <- c(grad, g_gamma)
     }
     grad
@@ -518,7 +552,8 @@
       fit_uc <- .fit_nb(m, N, ratio, log_N, log_rate, X_alpha, X_beta,
                         gamma_value = gamma_value, estimate_gamma = estimate_gamma,
                         gamma_start = gamma_start, gamma_bounds = gamma_bounds,
-                        theta_start = theta_start, weights = weights,
+                        theta_start = theta_start, X_gamma = X_gamma,
+                        weights = weights,
                         vcov_type = "HC0", constrained = FALSE)
       c(fit_uc$alpha_coefs, fit_uc$beta_coefs)
     }, error = function(e) start_ab)
@@ -530,9 +565,13 @@
   start_par <- c(start_ab, log(theta_start))
 
   if (estimate_gamma) {
-    start_par <- c(start_par, log(gamma_start))
-    lower <- c(rep(-Inf, p_alpha + p_beta), log(0.01), log(gamma_bounds[1]))
-    upper <- c(rep(Inf, p_alpha + p_beta), log(1e6), log(gamma_bounds[2]))
+    gamma_start_coefs <- rep(0, p_gamma)
+    gamma_start_coefs[1] <- log(gamma_start)
+    start_par <- c(start_par, gamma_start_coefs)
+    lower_gamma <- c(log(gamma_bounds[1]), rep(-Inf, max(0, p_gamma - 1)))
+    upper_gamma <- c(log(gamma_bounds[2]), rep(Inf, max(0, p_gamma - 1)))
+    lower <- c(rep(-Inf, p_alpha + p_beta), log(0.01), lower_gamma)
+    upper <- c(rep(Inf, p_alpha + p_beta), log(1e6), upper_gamma)
   } else {
     lower <- c(rep(-Inf, p_alpha + p_beta), log(0.01))
     upper <- c(rep(Inf, p_alpha + p_beta), log(1e6))
@@ -549,8 +588,19 @@
 
   a_raw <- opt$par[seq_len(p_alpha)]
   b_raw <- opt$par[p_alpha + seq_len(p_beta)]
-  theta <- exp(opt$par[p_alpha + p_beta + 1])
-  gamma_hat <- if (estimate_gamma) exp(opt$par[p_alpha + p_beta + 2]) else gamma_value
+  theta <- exp(opt$par[idx_theta])
+
+  # Extract gamma on response scale
+  if (estimate_gamma) {
+    gamma_coefs_hat <- opt$par[idx_gamma_start - 1 + seq_len(p_gamma)]
+    gamma_lin_hat <- exp(pmin(as.numeric(X_gamma %*% gamma_coefs_hat), 10))
+    gamma_hat <- if (p_gamma == 1) gamma_lin_hat[1] else NULL
+    names(gamma_coefs_hat) <- colnames(X_gamma)
+  } else {
+    gamma_coefs_hat <- NULL
+    gamma_lin_hat <- NULL
+    gamma_hat <- gamma_value
+  }
 
   eta_alpha <- as.numeric(X_alpha %*% a_raw)
   zeta_beta <- as.numeric(X_beta %*% b_raw)
@@ -558,7 +608,7 @@
   beta_lin <- .beta_fn(zeta_beta)
 
   if (estimate_gamma) {
-    rate_final <- gamma_hat + ratio
+    rate_final <- gamma_lin_hat + ratio
     lr_final <- log(rate_final)
   } else {
     lr_final <- log_rate
@@ -578,7 +628,9 @@
     Z <- cbind(log_N * X_alpha, lr_final * X_beta)
   }
   if (estimate_gamma) {
-    Z <- cbind(Z, gamma = beta_lin / rate_final)
+    gamma_cols <- (beta_lin * gamma_lin_hat / rate_final) * X_gamma
+    colnames(gamma_cols) <- colnames(X_gamma)
+    Z <- cbind(Z, gamma_cols)
   }
 
   w_nb <- weights * mu * theta / (theta + mu)
@@ -618,12 +670,16 @@
   ) * theta  # on log-theta scale
   score_full <- cbind(score_alpha, score_beta, theta = score_theta)
   if (estimate_gamma) {
-    score_gamma <- w_nb_signed * beta_lin / rate_final * gamma_hat
-    score_full <- cbind(score_full, gamma = score_gamma)
+    # Per-observation score for gamma coefficients
+    dgamma_dcoef_final <- (gamma_lin_hat / rate_final) * X_gamma
+    score_gamma_mat <- w_nb_signed * beta_lin * dgamma_dcoef_final
+    colnames(score_gamma_mat) <- colnames(X_gamma)
+    score_full <- cbind(score_full, score_gamma_mat)
   }
 
   list(alpha_coefs = a_raw, beta_coefs = b_raw,
        alpha_values = alpha_lin, beta_values = beta_lin,
+       gamma_coefs = gamma_coefs_hat, gamma_values = gamma_lin_hat,
        fitted = mu, residuals = resid_raw, log_mu = log_mu,
        vcov = V, vcov_model = V_model,
        vcov_full = if (estimate_gamma) V_full else V,
@@ -633,7 +689,9 @@
        hessian_nll = opt$hessian,
        n_obs = n_obs, df.residual = n_obs - length(opt$par),
        loglik = -opt$value, theta = theta,
-       gamma_estimated = if (estimate_gamma) gamma_hat else NULL,
+       gamma_estimated = if (estimate_gamma) {
+         gamma_lin_hat[1]
+       } else NULL,
        constrained = constrained,
        convergence = opt$convergence,
        X_alpha = X_alpha, X_beta = X_beta)

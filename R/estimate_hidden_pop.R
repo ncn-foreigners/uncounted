@@ -21,6 +21,13 @@
 #'     \item A numeric value: fixed gamma, uses \eqn{\log(\gamma + n_i / N_i)}.
 #'     \item \code{NULL}: no gamma, uses \eqn{\log(n_i / N_i)} (requires \eqn{n_i > 0}).
 #'   }
+#' @param cov_gamma Optional formula for covariates in gamma (e.g.,
+#'   \code{~ sex} or \code{~ year}). When specified, gamma varies across
+#'   observations via \eqn{\gamma_i = \exp(\mathbf{X}_{\gamma,i}' \boldsymbol{\delta})}{gamma_i = exp(X_gamma_i' delta)},
+#'   where \eqn{\boldsymbol{\delta}}{delta} are estimated coefficients on the
+#'   log scale. Requires \code{gamma = "estimate"} and
+#'   \code{method} \code{"poisson"} or \code{"nb"}.
+#'   Default \code{NULL} means a single scalar gamma (intercept only).
 #' @param gamma_bounds Numeric vector of length 2: lower and upper bounds for
 #'   the estimated gamma parameter. Default \code{c(1e-10, 0.5)}.
 #' @param theta_start Starting value for the NB dispersion parameter (used
@@ -203,6 +210,7 @@ estimate_hidden_pop <- function(data,
                                 cov_alpha = NULL,
                                 cov_beta = NULL,
                                 gamma = "estimate",
+                                cov_gamma = NULL,
                                 gamma_bounds = c(1e-10, 0.5),
                                 theta_start = 1,
                                 vcov = "HC3",
@@ -221,6 +229,7 @@ estimate_hidden_pop <- function(data,
   call$reference_pop <- reference_pop
   if (!is.null(cov_alpha)) call$cov_alpha <- cov_alpha
   if (!is.null(cov_beta)) call$cov_beta <- cov_beta
+  if (!is.null(cov_gamma)) call$cov_gamma <- cov_gamma
   if (!is.null(countries)) call$countries <- countries
   if (!is.null(cluster)) call$cluster <- cluster
 
@@ -263,6 +272,18 @@ estimate_hidden_pop <- function(data,
     gamma_start <- gamma_start_val
   }
 
+  # ---- Validate cov_gamma ----
+  if (!is.null(cov_gamma)) {
+    if (!estimate_gamma) {
+      stop("'cov_gamma' requires gamma = 'estimate'. Cannot use cov_gamma with ",
+           "fixed or NULL gamma.", call. = FALSE)
+    }
+    if (!method %in% c("poisson", "nb")) {
+      stop("'cov_gamma' is only supported for method = 'poisson' and method = 'nb'.",
+           call. = FALSE)
+    }
+  }
+
   # ---- Build design matrices for alpha and beta ----
   X_alpha <- .build_model_matrix(cov_alpha, data)
   X_beta <- .build_model_matrix(cov_beta, data)
@@ -278,6 +299,19 @@ estimate_hidden_pop <- function(data,
   } else {
     colnames(X_beta) <- "beta"
   }
+
+  # Build design matrix for gamma covariates
+  X_gamma <- if (!is.null(cov_gamma)) {
+    Xg <- .build_model_matrix(cov_gamma, data)
+    colnames(Xg) <- paste0("gamma:", colnames(Xg))
+    Xg
+  } else if (estimate_gamma) {
+    matrix(1, nrow = nrow(data), ncol = 1,
+           dimnames = list(NULL, "gamma"))
+  } else {
+    NULL
+  }
+  p_gamma <- if (!is.null(X_gamma)) ncol(X_gamma) else 0L
 
   # ---- Extract cluster variable (if provided) ----
   cluster_vec <- if (!is.null(cluster)) {
@@ -313,6 +347,7 @@ estimate_hidden_pop <- function(data,
                    estimate_gamma = estimate_gamma,
                    gamma_start = gamma_start,
                    gamma_bounds = gamma_bounds,
+                   X_gamma = X_gamma,
                    weights = weights, vcov_type = vcov_type,
                    constrained = constrained)
     },
@@ -323,6 +358,7 @@ estimate_hidden_pop <- function(data,
               gamma_start = gamma_start,
               gamma_bounds = gamma_bounds,
               theta_start = theta_start,
+              X_gamma = X_gamma,
               weights = weights, vcov_type = vcov_type,
               constrained = constrained)
     },
@@ -344,8 +380,16 @@ estimate_hidden_pop <- function(data,
   names(result$alpha_coefs) <- colnames(X_alpha)
   names(result$beta_coefs) <- colnames(X_beta)
 
-  all_coefs <- c(result$alpha_coefs, result$beta_coefs)
-  rownames(result$vcov) <- colnames(result$vcov) <- names(all_coefs)
+  # Track whether cov_gamma was user-specified (vs. the implicit scalar design)
+  has_cov_gamma <- !is.null(cov_gamma)
+
+  # When cov_gamma specified, include gamma coefs in all_coefs
+  all_coefs <- if (has_cov_gamma && !is.null(result$gamma_coefs)) {
+    c(result$alpha_coefs, result$beta_coefs, result$gamma_coefs)
+  } else {
+    c(result$alpha_coefs, result$beta_coefs)
+  }
+  rownames(result$vcov) <- colnames(result$vcov) <- names(all_coefs)[seq_len(nrow(result$vcov))]
 
   # Compute alpha/beta per observation (response scale for constrained)
   alpha_values <- if (!is.null(result$alpha_values)) {
@@ -386,10 +430,16 @@ estimate_hidden_pop <- function(data,
     df.residual = result$df.residual,
     loglik = result$loglik,
     theta = result$theta,
-    gamma = if (estimate_gamma) result$gamma_estimated
+    gamma = if (has_cov_gamma) NULL  # varying gamma: no scalar slot
+            else if (estimate_gamma) result$gamma_estimated
             else if (gamma_fixed) gamma
             else NULL,
     gamma_estimated = !is.null(result$gamma_estimated),
+    gamma_coefs = result$gamma_coefs,
+    gamma_values = result$gamma_values,
+    X_gamma = X_gamma,
+    p_gamma = p_gamma,
+    has_cov_gamma = has_cov_gamma,
     constrained = constrained,
     method = method,
     vcov_type = vcov_type,
@@ -430,6 +480,23 @@ estimate_hidden_pop <- function(data,
 
   # ---- Compute vcov ----
   p_ab <- p_alpha + p_beta
+  # Number of first-class coefs (alpha+beta, or alpha+beta+gamma when cov_gamma)
+  p_coefs <- length(all_coefs)
+
+  # Helper: extract the appropriate vcov submatrix.
+  # When cov_gamma: vcov includes alpha+beta+gamma = p_coefs
+  # When scalar gamma (p_gamma <= 1): vcov includes only alpha+beta = p_ab
+  .extract_vcov <- function(V_full) {
+    n_total <- ncol(V_full)
+    if (n_total == p_coefs) {
+      list(vcov_full = V_full, vcov = V_full)
+    } else if (n_total > p_coefs) {
+      list(vcov_full = V_full,
+           vcov = V_full[seq_len(p_coefs), seq_len(p_coefs), drop = FALSE])
+    } else {
+      list(vcov_full = V_full, vcov = V_full)
+    }
+  }
 
   if (method == "nb" && !is.null(result$hessian_nll) && is.character(vcov)) {
     # NB with character vcov: dedicated sandwich path including theta
@@ -440,8 +507,9 @@ estimate_hidden_pop <- function(data,
       vcov_type   = vcov,
       cluster     = cluster_vec
     )
-    out$vcov <- V_nb_full[seq_len(p_ab), seq_len(p_ab), drop = FALSE]
-    out$vcov_full <- V_nb_full
+    vv <- .extract_vcov(V_nb_full)
+    out$vcov <- vv$vcov
+    out$vcov_full <- vv$vcov_full
     out$theta_se <- sqrt(max(0, V_nb_full[p_ab + 1, p_ab + 1]))
     out$score_full <- result$score_full
     out$hessian_nll <- result$hessian_nll
@@ -454,25 +522,17 @@ estimate_hidden_pop <- function(data,
     # User-supplied vcov function: first build object with default HC vcov
     # (so update() inside vcovFWB etc. doesn't recurse), then apply function.
     V_default <- .compute_vcov_sandwich(out, "HC3", cluster_vec)
-    has_gamma_col <- ncol(result$model_matrix_full) > p_ab
-    if (has_gamma_col) {
-      out$vcov_full <- V_default
-      out$vcov <- V_default[seq_len(p_ab), seq_len(p_ab), drop = FALSE]
-    } else {
-      out$vcov_full <- V_default
-      out$vcov <- V_default
-    }
+    vv <- .extract_vcov(V_default)
+    out$vcov_full <- vv$vcov_full
+    out$vcov <- vv$vcov
     # Replace vcov in the stored call so update() doesn't re-invoke the function
     out$vcov_spec <- "HC3"
     out$call[["vcov"]] <- "HC3"
     # Now apply the user function on the fully constructed object
     V_user <- vcov(out)
-    if (ncol(V_user) > p_ab) {
-      out$vcov_full <- V_user
-      out$vcov <- V_user[seq_len(p_ab), seq_len(p_ab), drop = FALSE]
-    } else {
-      out$vcov <- V_user
-    }
+    vv <- .extract_vcov(V_user)
+    out$vcov_full <- vv$vcov_full
+    out$vcov <- vv$vcov
     # Restore the original vcov function for printing and update()
     out$vcov_spec <- vcov
     out$call[["vcov"]] <- vcov
@@ -484,14 +544,9 @@ estimate_hidden_pop <- function(data,
   } else {
     # Character vcov type: use sandwich package directly
     V_full <- .compute_vcov_sandwich(out, vcov, cluster_vec)
-    has_gamma_col <- ncol(result$model_matrix_full) > p_ab
-    if (has_gamma_col) {
-      out$vcov_full <- V_full
-      out$vcov <- V_full[seq_len(p_ab), seq_len(p_ab), drop = FALSE]
-    } else {
-      out$vcov_full <- V_full
-      out$vcov <- V_full
-    }
+    vv <- .extract_vcov(V_full)
+    out$vcov_full <- vv$vcov_full
+    out$vcov <- vv$vcov
     # Store NB ingredients
     if (method == "nb" && !is.null(result$hessian_nll)) {
       out$score_full <- result$score_full
@@ -517,7 +572,11 @@ print.uncounted <- function(x, ...) {
   }
   cat("Method:", toupper(x$method), "| vcov:", vcov_label, "\n")
   cat("N obs:", x$n_obs, "\n")
-  if (!is.null(x$gamma)) {
+  if (!is.null(x$gamma_values) && length(x$gamma_values) > 0 && isTRUE(x$has_cov_gamma)) {
+    cat("Gamma: covariate-varying (response scale), range [",
+        round(min(x$gamma_values), 6), ", ",
+        round(max(x$gamma_values), 6), "]\n", sep = "")
+  } else if (!is.null(x$gamma)) {
     cat("Gamma:", round(x$gamma, 6),
         if (x$gamma_estimated) "(estimated)" else "(fixed)", "\n")
   }
@@ -604,7 +663,12 @@ summary.uncounted <- function(object, total = FALSE, ...) {
   }
   cat("Method:", toupper(object$method), "| vcov:", vcov_label, "\n")
   cat("N obs:", object$n_obs, "\n")
-  if (!is.null(object$gamma)) {
+  if (!is.null(object$gamma_values) && length(object$gamma_values) > 0 &&
+      !is.null(object$p_gamma) && isTRUE(object$has_cov_gamma)) {
+    cat("Gamma: covariate-varying (response scale), range [",
+        round(min(object$gamma_values), 6), ", ",
+        round(max(object$gamma_values), 6), "]\n", sep = "")
+  } else if (!is.null(object$gamma)) {
     cat("Gamma:", round(object$gamma, 6),
         if (object$gamma_estimated) "(estimated)" else "(fixed)", "\n")
   }
@@ -635,6 +699,13 @@ summary.uncounted <- function(object, total = FALSE, ...) {
   if (isTRUE(object$constrained)) {
     cat("\nResponse-scale parameters (alpha in (0,1), beta > 0):\n")
     .print_response_summary(object)
+  }
+
+  # Response-scale gamma summary for cov_gamma models
+  if (!is.null(object$p_gamma) && isTRUE(object$has_cov_gamma) &&
+      !is.null(object$gamma_coefs) && !is.null(object$X_gamma)) {
+    cat("\nGamma (response scale):\n")
+    .print_gamma_response(object)
   }
 
   # Population size table
@@ -768,6 +839,53 @@ update.uncounted <- function(object, ..., evaluate = TRUE) {
   rownames(beta_tab) <- NULL
   cat("  Beta (response scale):\n")
   print(round(beta_tab[, c("beta", "SE(beta)"), drop = FALSE], 4))
+}
+
+#' Print response-scale gamma values per unique covariate group
+#' @noRd
+.print_gamma_response <- function(x) {
+  X_gamma <- x$X_gamma
+  gamma_coefs <- x$gamma_coefs
+  p_gamma <- x$p_gamma
+
+  # Get the gamma block of vcov_full (gamma coefs are on log scale)
+  # For Poisson: gamma cols are at positions p_ab+1 : p_ab+p_gamma in vcov_full
+  # For NB: gamma cols are at p_ab+1+1 : p_ab+1+p_gamma (theta at p_ab+1)
+  V_gamma <- NULL
+  if (!is.null(x$vcov_full)) {
+    nms <- colnames(x$vcov_full)
+    gamma_idx <- grep("^gamma", nms)
+    if (length(gamma_idx) == p_gamma) {
+      V_gamma <- x$vcov_full[gamma_idx, gamma_idx, drop = FALSE]
+    }
+  }
+
+  # Unique gamma groups
+  X_gamma_key <- apply(X_gamma, 1, paste, collapse = "|")
+  unique_keys <- unique(X_gamma_key)
+
+  gamma_rows <- lapply(unique_keys, function(key) {
+    idx <- which(X_gamma_key == key)[1]
+    z_row <- X_gamma[idx, , drop = FALSE]
+    log_gamma <- as.numeric(z_row %*% gamma_coefs)
+    gamma_resp <- exp(log_gamma)
+    # Delta method: SE(gamma) = gamma * SE(log_gamma)
+    se_log_gamma <- if (!is.null(V_gamma)) {
+      sqrt(max(0, as.numeric(z_row %*% V_gamma %*% t(z_row))))
+    } else {
+      NA_real_
+    }
+    se_gamma <- gamma_resp * se_log_gamma
+    data.frame(
+      gamma = gamma_resp,
+      `SE(gamma)` = se_gamma,
+      check.names = FALSE,
+      stringsAsFactors = FALSE
+    )
+  })
+  gamma_tab <- do.call(rbind, gamma_rows)
+  rownames(gamma_tab) <- unique_keys
+  print(round(gamma_tab, 6))
 }
 
 #' Format population size table for printing

@@ -13,6 +13,7 @@ estimate_hidden_pop(
   cov_alpha = NULL,
   cov_beta = NULL,
   gamma = "estimate",
+  cov_gamma = NULL,
   gamma_bounds = c(1e-10, 0.5),
   theta_start = 1,
   vcov = "HC3",
@@ -46,6 +47,14 @@ Default \code{NULL} means a single beta (intercept only).}
 \item A numeric value: fixed gamma, uses \eqn{\log(\gamma + n_i / N_i)}.
 \item \code{NULL}: no gamma, uses \eqn{\log(n_i / N_i)} (requires \eqn{n_i > 0}).
 }}
+
+\item{cov_gamma}{Optional formula for covariates in gamma (e.g.,
+\code{~ sex} or \code{~ year}). When specified, gamma varies across
+observations via \eqn{\gamma_i = \exp(\mathbf{X}_{\gamma,i}' \boldsymbol{\delta})}{gamma_i = exp(X_gamma_i' delta)},
+where \eqn{\boldsymbol{\delta}}{delta} are estimated coefficients on the
+log scale. Requires \code{gamma = "estimate"} and
+\code{method} \code{"poisson"} or \code{"nb"}.
+Default \code{NULL} means a single scalar gamma (intercept only).}
 
 \item{gamma_bounds}{Numeric vector of length 2: lower and upper bounds for
 the estimated gamma parameter. Default \code{c(1e-10, 0.5)}.}

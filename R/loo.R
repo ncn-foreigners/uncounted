@@ -133,6 +133,7 @@ loo.uncounted <- function(object, by = c("obs", "country"),
   reference_pop <- eval(cl$reference_pop)
   cov_alpha <- if (!is.null(cl$cov_alpha)) eval(cl$cov_alpha) else NULL
   cov_beta <- if (!is.null(cl$cov_beta)) eval(cl$cov_beta) else NULL
+  cov_gamma <- if (!is.null(cl$cov_gamma)) eval(cl$cov_gamma) else NULL
   gamma_arg <- if (object$gamma_estimated) "estimate"
                else if (!is.null(object$gamma)) object$gamma
                else NULL
@@ -169,6 +170,10 @@ loo.uncounted <- function(object, by = c("obs", "country"),
       X_i <- model.matrix(cov_beta, data = data_i)
       if (qr(X_i)$rank < ncol(X_i)) rank_ok <- FALSE
     }
+    if (rank_ok && !is.null(cov_gamma)) {
+      X_i <- model.matrix(cov_gamma, data = data_i)
+      if (qr(X_i)$rank < ncol(X_i)) rank_ok <- FALSE
+    }
     if (!rank_ok) {
       if (!warned_rank) {
         warning("LOO: dropping '", drop_labels[i],
@@ -192,6 +197,7 @@ loo.uncounted <- function(object, by = c("obs", "country"),
         cov_alpha = cov_alpha,
         cov_beta = cov_beta,
         gamma = gamma_arg,
+        cov_gamma = cov_gamma,
         gamma_bounds = gamma_bounds,
         theta_start = theta_start,
         vcov = vcov_type,

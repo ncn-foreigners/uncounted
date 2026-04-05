@@ -367,6 +367,11 @@ profile_gamma <- function(object, gamma_grid = seq(1e-4, 0.5, length.out = 20),
   if (!object$method %in% c("poisson", "nb")) {
     stop("profile_gamma() is only available for Poisson and NB models.")
   }
+  if (isTRUE(object$has_cov_gamma)) {
+    stop("profile_gamma() is not available for models with covariate-varying ",
+         "gamma (cov_gamma). Profiling a scalar gamma grid does not apply when ",
+         "gamma varies by covariates.", call. = FALSE)
+  }
 
   # Extract call arguments for refitting
   cl <- object$call
