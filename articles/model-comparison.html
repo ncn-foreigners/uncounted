@@ -20,7 +20,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">uncounted</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.3</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -314,26 +314,26 @@ methods compatible with the <strong>modelsummary</strong> package:</p>
 <p>Individual coefficient tables:</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://generics.r-lib.org/reference/tidy.html" class="external-link">tidy</a></span><span class="op">(</span><span class="va">fit_po</span>, conf.int <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
-<span><span class="co">#&gt;                term    estimate  std.error statistic      p.value     conf.low</span></span>
-<span><span class="co">#&gt; 1 alpha:(Intercept)  0.77178226 0.05038723 15.317021 5.885391e-53  0.673025102</span></span>
-<span><span class="co">#&gt; 2    alpha:year2020 -0.06192406 0.02186837 -2.831672 4.630527e-03 -0.104785282</span></span>
-<span><span class="co">#&gt; 3    alpha:year2021 -0.09301570 0.02299452 -4.045125 5.229521e-05 -0.138084129</span></span>
-<span><span class="co">#&gt; 4    alpha:year2022 -0.12230316 0.02471916 -4.947707 7.509273e-07 -0.170751826</span></span>
-<span><span class="co">#&gt; 5    alpha:year2023 -0.09657813 0.04587434 -2.105276 3.526732e-02 -0.186490175</span></span>
-<span><span class="co">#&gt; 6    alpha:year2024 -0.05981455 0.05793392 -1.032462 3.018559e-01 -0.173362945</span></span>
-<span><span class="co">#&gt; 7     alpha:sexMale  0.04179193 0.03766337  1.109617 2.671640e-01 -0.032026925</span></span>
-<span><span class="co">#&gt; 8              beta  0.61326700 0.12228095  5.015229 5.297029e-07  0.373600737</span></span>
-<span><span class="co">#&gt; 9             gamma  0.00608424 0.00510125  1.192696 2.329885e-01 -0.003914027</span></span>
+<span><span class="co">#&gt;                term    estimate   std.error statistic      p.value     conf.low</span></span>
+<span><span class="co">#&gt; 1 alpha:(Intercept)  0.77178227 0.050387227 15.317022 5.885272e-53  0.673025123</span></span>
+<span><span class="co">#&gt; 2    alpha:year2020 -0.06192409 0.021868389 -2.831671 4.630544e-03 -0.104785341</span></span>
+<span><span class="co">#&gt; 3    alpha:year2021 -0.09301571 0.022994523 -4.045124 5.229535e-05 -0.138084143</span></span>
+<span><span class="co">#&gt; 4    alpha:year2022 -0.12230318 0.024719168 -4.947706 7.509323e-07 -0.170751855</span></span>
+<span><span class="co">#&gt; 5    alpha:year2023 -0.09657813 0.045874342 -2.105276 3.526732e-02 -0.186490193</span></span>
+<span><span class="co">#&gt; 6    alpha:year2024 -0.05981457 0.057933917 -1.032462 3.018557e-01 -0.173362962</span></span>
+<span><span class="co">#&gt; 7     alpha:sexMale  0.04179194 0.037663367  1.109618 2.671638e-01 -0.032026900</span></span>
+<span><span class="co">#&gt; 8              beta  0.61326713 0.122280967  5.015230 5.297016e-07  0.373600839</span></span>
+<span><span class="co">#&gt; 9             gamma  0.00608425 0.005101258        NA           NA  0.001176328</span></span>
 <span><span class="co">#&gt;      conf.high</span></span>
-<span><span class="co">#&gt; 1  0.870539417</span></span>
-<span><span class="co">#&gt; 2 -0.019062843</span></span>
-<span><span class="co">#&gt; 3 -0.047947274</span></span>
-<span><span class="co">#&gt; 4 -0.073854502</span></span>
-<span><span class="co">#&gt; 5 -0.006666076</span></span>
-<span><span class="co">#&gt; 6  0.053733853</span></span>
-<span><span class="co">#&gt; 7  0.115610781</span></span>
-<span><span class="co">#&gt; 8  0.852933262</span></span>
-<span><span class="co">#&gt; 9  0.016082507</span></span>
+<span><span class="co">#&gt; 1  0.870539424</span></span>
+<span><span class="co">#&gt; 2 -0.019062831</span></span>
+<span><span class="co">#&gt; 3 -0.047947269</span></span>
+<span><span class="co">#&gt; 4 -0.073854496</span></span>
+<span><span class="co">#&gt; 5 -0.006666075</span></span>
+<span><span class="co">#&gt; 6  0.053733821</span></span>
+<span><span class="co">#&gt; 7  0.115610785</span></span>
+<span><span class="co">#&gt; 8  0.852933422</span></span>
+<span><span class="co">#&gt; 9  0.031469196</span></span>
 <span><span class="fu"><a href="https://generics.r-lib.org/reference/glance.html" class="external-link">glance</a></span><span class="op">(</span><span class="va">fit_po</span><span class="op">)</span></span>
 <span><span class="co">#&gt;    method nobs    logLik      AIC      BIC deviance df.residual</span></span>
 <span><span class="co">#&gt; 1 POISSON 1382 -8775.519 17569.04 17616.12 14948.24        1373</span></span></code></pre></div>
@@ -368,24 +368,24 @@ estimates:</p>
 <span><span class="co">#&gt; Population size comparison: Poisson vs NB vs iOLS </span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt;      model group  estimate estimate_bc      lower     upper</span></span>
-<span><span class="co">#&gt; 1  Poisson  2019  67536.82    67504.27  29387.545 155059.79</span></span>
-<span><span class="co">#&gt; 2  Poisson  2020  38787.40    38766.50  18790.590  79978.42</span></span>
-<span><span class="co">#&gt; 3  Poisson  2021  33243.00    33224.94  16150.794  68349.37</span></span>
-<span><span class="co">#&gt; 4  Poisson  2022  29249.60    29233.11  13739.448  62198.62</span></span>
-<span><span class="co">#&gt; 5  Poisson  2023  40825.91    40804.83  11715.865 142117.87</span></span>
-<span><span class="co">#&gt; 6  Poisson  2024  62218.64    62188.79  11951.532 323594.12</span></span>
-<span><span class="co">#&gt; 7       NB  2019 156232.34   152016.51  94807.736 243746.13</span></span>
-<span><span class="co">#&gt; 8       NB  2020  51813.98    50505.28  33151.812  76942.49</span></span>
-<span><span class="co">#&gt; 9       NB  2021  42132.32    41172.70  25999.199  65201.68</span></span>
-<span><span class="co">#&gt; 10      NB  2022  63811.34    62276.23  39962.895  97048.25</span></span>
-<span><span class="co">#&gt; 11      NB  2023 116535.47   113818.22  71444.423 181324.00</span></span>
-<span><span class="co">#&gt; 12      NB  2024 305601.39   298352.93 182612.483 487450.09</span></span>
-<span><span class="co">#&gt; 13    iOLS  2019  65745.60    64612.46  22417.079 186231.69</span></span>
-<span><span class="co">#&gt; 14    iOLS  2020  21998.77    21671.80   8247.430  56947.07</span></span>
-<span><span class="co">#&gt; 15    iOLS  2021  15444.43    15246.52   5642.189  41199.70</span></span>
-<span><span class="co">#&gt; 16    iOLS  2022  23655.47    23334.47   8887.968  61262.29</span></span>
-<span><span class="co">#&gt; 17    iOLS  2023  41622.38    41061.37  15118.862 111518.70</span></span>
-<span><span class="co">#&gt; 18    iOLS  2024 104625.28   103172.12  37066.202 287175.00</span></span>
+<span><span class="co">#&gt; 1  Poisson  2019  67536.84    67504.29  29387.550 155059.84</span></span>
+<span><span class="co">#&gt; 2  Poisson  2020  38787.40    38766.50  18790.590  79978.43</span></span>
+<span><span class="co">#&gt; 3  Poisson  2021  33243.01    33224.95  16150.801  68349.37</span></span>
+<span><span class="co">#&gt; 4  Poisson  2022  29249.61    29233.11  13739.451  62198.63</span></span>
+<span><span class="co">#&gt; 5  Poisson  2023  40825.92    40804.83  11715.868 142117.88</span></span>
+<span><span class="co">#&gt; 6  Poisson  2024  62218.64    62188.79  11951.536 323594.02</span></span>
+<span><span class="co">#&gt; 7       NB  2019 156232.49   152016.66  94807.822 243746.39</span></span>
+<span><span class="co">#&gt; 8       NB  2020  51814.02    50505.32  33151.839  76942.56</span></span>
+<span><span class="co">#&gt; 9       NB  2021  42132.35    41172.74  25999.219  65201.73</span></span>
+<span><span class="co">#&gt; 10      NB  2022  63811.40    62276.29  39962.929  97048.35</span></span>
+<span><span class="co">#&gt; 11      NB  2023 116535.58   113818.33  71444.483 181324.17</span></span>
+<span><span class="co">#&gt; 12      NB  2024 305601.66   298353.19 182612.635 487450.53</span></span>
+<span><span class="co">#&gt; 13    iOLS  2019  65745.65    64612.51  22417.088 186231.87</span></span>
+<span><span class="co">#&gt; 14    iOLS  2020  21998.78    21671.81   8247.433  56947.12</span></span>
+<span><span class="co">#&gt; 15    iOLS  2021  15444.44    15246.53   5642.191  41199.73</span></span>
+<span><span class="co">#&gt; 16    iOLS  2022  23655.49    23334.48   8887.972  61262.34</span></span>
+<span><span class="co">#&gt; 17    iOLS  2023  41622.40    41061.39  15118.868 111518.80</span></span>
+<span><span class="co">#&gt; 18    iOLS  2024 104625.35   103172.19  37066.217 287175.24</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">comp</span><span class="op">)</span></span></code></pre></div>
 <p><img src="model-comparison_files/figure-html/compare-popsize-1.png" class="r-plt" alt="" width="672"></p>
 </div>
@@ -396,17 +396,17 @@ estimates:</p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Fitted values</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">fit_po</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1]  3.2837235  0.3538451  2.3653570  2.2142437 21.0701288  0.8119223</span></span>
+<span><span class="co">#&gt; [1]  3.2837249  0.3538453  2.3653566  2.2142433 21.0701264  0.8119227</span></span>
 <span></span>
 <span><span class="co"># Log-scale (linear predictor)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">fit_po</span>, type <span class="op">=</span> <span class="st">"link"</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1]  1.1889780 -1.0388959  0.8609290  0.7949109  3.0478563 -0.2083506</span></span>
+<span><span class="co">#&gt; [1]  1.1889784 -1.0388955  0.8609288  0.7949107  3.0478562 -0.2083502</span></span>
 <span></span>
 <span><span class="co"># Predictions for new data</span></span>
 <span><span class="va">new_d</span> <span class="op">&lt;-</span> <span class="va">d</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="fl">10</span>, <span class="op">]</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">fit_po</span>, newdata <span class="op">=</span> <span class="va">new_d</span><span class="op">)</span></span>
-<span><span class="co">#&gt;  [1]  3.2837235  0.3538451  2.3653570  2.2142437 21.0701288  0.8119223</span></span>
-<span><span class="co">#&gt;  [7]  3.9496910  2.1480208  0.4921350 84.9170390</span></span></code></pre></div>
+<span><span class="co">#&gt;  [1]  3.2837249  0.3538453  2.3653566  2.2142433 21.0701264  0.8119227</span></span>
+<span><span class="co">#&gt;  [7]  3.9496912  2.1480204  0.4921352 84.9170469</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="model-selection-guidance">Model selection guidance<a class="anchor" aria-label="anchor" href="#model-selection-guidance"></a>

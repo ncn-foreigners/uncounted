@@ -41,26 +41,26 @@ summary(fit_po)
 #> Unauthorized population estimation
 #> Method: POISSON | vcov: HC3 
 #> N obs: 1382 
-#> Gamma: 0.00726 (estimated) 
+#> Gamma: 0.007255 (estimated) 
 #> Log-likelihood: -8217.25 
 #> AIC: 16462.49  BIC: 16535.73 
 #> Deviance: 13831.69 
 #> 
 #> Coefficients:
 #>                          Estimate Std. Error z value  Pr(>|z|)    
-#> alpha:(Intercept)       0.7888971  0.0905354  8.7137 < 2.2e-16 ***
-#> alpha:factor(year)2020  0.0011183  0.0960691  0.0116 0.9907121    
-#> alpha:factor(year)2021 -0.0175125  0.0874476 -0.2003 0.8412748    
-#> alpha:factor(year)2022 -0.0936906  0.1094198 -0.8562 0.3918604    
-#> alpha:factor(year)2023 -0.1135591  0.1774715 -0.6399 0.5222557    
-#> alpha:factor(year)2024 -0.1691469  0.1613513 -1.0483 0.2944937    
-#> alpha:sexMale           0.0420166  0.0458791  0.9158 0.3597657    
-#> beta:(Intercept)        0.6754914  0.1953200  3.4584 0.0005434 ***
-#> beta:factor(year)2020   0.1885106  0.2275888  0.8283 0.4075035    
-#> beta:factor(year)2021   0.2330038  0.2128225  1.0948 0.2735925    
-#> beta:factor(year)2022   0.0887057  0.2490143  0.3562 0.7216702    
-#> beta:factor(year)2023  -0.0519702  0.3787582 -0.1372 0.8908632    
-#> beta:factor(year)2024  -0.3225896  0.3187799 -1.0120 0.3115616    
+#> alpha:(Intercept)       0.7889384  0.0904971  8.7178 < 2.2e-16 ***
+#> alpha:factor(year)2020  0.0013183  0.0961281  0.0137 0.9890579    
+#> alpha:factor(year)2021 -0.0173547  0.0874282 -0.1985 0.8426521    
+#> alpha:factor(year)2022 -0.0936745  0.1093813 -0.8564 0.3917748    
+#> alpha:factor(year)2023 -0.1136248  0.1774180 -0.6404 0.5218896    
+#> alpha:factor(year)2024 -0.1692210  0.1612687 -1.0493 0.2940349    
+#> alpha:sexMale           0.0419896  0.0458891  0.9150 0.3601795    
+#> beta:(Intercept)        0.6755335  0.1951985  3.4608 0.0005387 ***
+#> beta:factor(year)2020   0.1890802  0.2277589  0.8302 0.4064387    
+#> beta:factor(year)2021   0.2334479  0.2128471  1.0968 0.2727346    
+#> beta:factor(year)2022   0.0887221  0.2489532  0.3564 0.7215557    
+#> beta:factor(year)2023  -0.0522207  0.3786238 -0.1379 0.8903018    
+#> beta:factor(year)2024  -0.3228057  0.3185915 -1.0132 0.3109513    
 #> ---
 #> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 #> 
@@ -68,43 +68,43 @@ summary(fit_po)
 #> Population size estimation results:
 #>   (BC = bias-corrected using model-based variance)
 #>                       Observed Estimate Estimate (BC) CI lower CI upper
-#> year=2019, sex=Female    1,535   21,115        21,084    3,390  131,113
-#> year=2019, sex=Male      5,069   60,042        59,959   10,174  353,337
-#> year=2020, sex=Female      698   23,598        23,533    6,029   91,857
-#> year=2020, sex=Male      2,700   66,629        66,439   22,985  192,042
-#> year=2021, sex=Female      483   22,736        22,671    7,262   70,775
-#> year=2021, sex=Male      2,622   65,001        64,808   32,342  129,863
-#> year=2022, sex=Female      317   14,110        14,074    2,476   79,997
-#> year=2022, sex=Male      2,632   32,902        32,825    7,365  146,304
-#> year=2023, sex=Female      523   12,077        12,056      533  272,610
-#> year=2023, sex=Male      3,839   28,872        28,828    1,219  681,886
-#> year=2024, sex=Female      956    7,109         7,103      576   87,558
-#> year=2024, sex=Male      5,731   17,473        17,459    1,176  259,155
+#> year=2019, sex=Female    1,535   21,124        21,093    3,394  131,073
+#> year=2019, sex=Male      5,069   60,051        59,968   10,189  352,946
+#> year=2020, sex=Female      698   23,658        23,593    6,025   92,387
+#> year=2020, sex=Male      2,700   66,785        66,594   22,935  193,363
+#> year=2021, sex=Female      483   22,783        22,718    7,267   71,020
+#> year=2021, sex=Male      2,622   65,124        64,929   32,335  130,378
+#> year=2022, sex=Female      317   14,118        14,082    2,477   80,072
+#> year=2022, sex=Male      2,632   32,913        32,836    7,366  146,377
+#> year=2023, sex=Female      523   12,074        12,053      533  272,376
+#> year=2023, sex=Male      3,839   28,857        28,813    1,219  681,051
+#> year=2024, sex=Female      956    7,107         7,101      577   87,449
+#> year=2024, sex=Male      5,731   17,462        17,448    1,177  258,669
 summary(fit_nb)
 #> Unauthorized population estimation
 #> Method: NB | vcov: HC1 
 #> N obs: 1382 
-#> Gamma: 0.020901 (estimated) 
-#> Theta (NB dispersion): 1.3552 
+#> Gamma: 0.020902 (estimated) 
+#> Theta (NB dispersion): 1.3553 
 #> Log-likelihood: -2621.12 
 #> AIC: 5272.23  BIC: 5350.7 
-#> Deviance: 1275.94 
+#> Deviance: 1275.97 
 #> 
 #> Coefficients:
 #>                         Estimate Std. Error z value  Pr(>|z|)    
-#> alpha:(Intercept)       0.815763   0.034303 23.7813 < 2.2e-16 ***
-#> alpha:factor(year)2020 -0.041935   0.057013 -0.7355 0.4620172    
-#> alpha:factor(year)2021  0.075384   0.059612  1.2646 0.2060253    
-#> alpha:factor(year)2022 -0.030016   0.073386 -0.4090 0.6825273    
-#> alpha:factor(year)2023  0.015622   0.055914  0.2794 0.7799363    
-#> alpha:factor(year)2024  0.069686   0.047747  1.4595 0.1444258    
-#> alpha:sexMale           0.044307   0.013135  3.3732 0.0007431 ***
-#> beta:(Intercept)        0.873278   0.092193  9.4723 < 2.2e-16 ***
-#> beta:factor(year)2020   0.140450   0.116659  1.2039 0.2286151    
-#> beta:factor(year)2021   0.468045   0.121517  3.8517 0.0001173 ***
-#> beta:factor(year)2022   0.185007   0.151468  1.2214 0.2219238    
-#> beta:factor(year)2023   0.183906   0.110409  1.6657 0.0957766 .  
-#> beta:factor(year)2024   0.132760   0.092741  1.4315 0.1522851    
+#> alpha:(Intercept)       0.815797   0.034293 23.7889 < 2.2e-16 ***
+#> alpha:factor(year)2020 -0.041875   0.057015 -0.7344 0.4626758    
+#> alpha:factor(year)2021  0.075429   0.059616  1.2653 0.2057804    
+#> alpha:factor(year)2022 -0.029911   0.073397 -0.4075 0.6836246    
+#> alpha:factor(year)2023  0.015692   0.055918  0.2806 0.7789985    
+#> alpha:factor(year)2024  0.069563   0.047739  1.4572 0.1450728    
+#> alpha:sexMale           0.044291   0.013134  3.3721 0.0007459 ***
+#> beta:(Intercept)        0.873222   0.092126  9.4786 < 2.2e-16 ***
+#> beta:factor(year)2020   0.140642   0.116669  1.2055 0.2280191    
+#> beta:factor(year)2021   0.468272   0.121552  3.8524 0.0001170 ***
+#> beta:factor(year)2022   0.185329   0.151494  1.2233 0.2212012    
+#> beta:factor(year)2023   0.184161   0.110429  1.6677 0.0953779 .  
+#> beta:factor(year)2024   0.132660   0.092733  1.4306 0.1525565    
 #> ---
 #> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 #> 
@@ -112,18 +112,18 @@ summary(fit_nb)
 #> Population size estimation results:
 #>   (BC = bias-corrected using model-based variance)
 #>                       Observed Estimate Estimate (BC) CI lower CI upper
-#> year=2019, sex=Female    1,535   27,910        25,594   12,662   51,735
-#> year=2019, sex=Male      5,069   82,523        75,288   35,587  159,278
-#> year=2020, sex=Female      698   19,951        18,057    6,723   48,499
-#> year=2020, sex=Male      2,700   57,293        51,526   18,764  141,486
-#> year=2021, sex=Female      483   82,783        72,663   24,232  217,886
-#> year=2021, sex=Male      2,622  256,883       223,824   71,849  697,253
-#> year=2022, sex=Female      317   38,056        34,467    7,926  149,878
-#> year=2022, sex=Male      2,632   89,735        81,933   20,872  321,625
-#> year=2023, sex=Female      523   66,645        60,721   20,279  181,814
-#> year=2023, sex=Male      3,839  159,095       146,352   52,735  406,164
-#> year=2024, sex=Female      956  120,782       111,059   46,510  265,191
-#> year=2024, sex=Male      5,731  302,685       280,401  121,058  649,479
+#> year=2019, sex=Female    1,535   27,920        25,603   12,669   51,744
+#> year=2019, sex=Male      5,069   82,539        75,303   35,607  159,254
+#> year=2020, sex=Female      698   19,970        18,074    6,728   48,554
+#> year=2020, sex=Male      2,700   57,341        51,568   18,777  141,623
+#> year=2021, sex=Female      483   82,856        72,726   24,247  218,134
+#> year=2021, sex=Male      2,622  257,069       223,983   71,877  697,978
+#> year=2022, sex=Female      317   38,116        34,521    7,934  150,206
+#> year=2022, sex=Male      2,632   89,857        82,042   20,886  322,269
+#> year=2023, sex=Female      523   66,725        60,793   20,297  182,084
+#> year=2023, sex=Male      3,839  159,251       146,494   52,769  406,687
+#> year=2024, sex=Female      956  120,658       110,946   46,472  264,872
+#> year=2024, sex=Male      5,731  302,323       280,070  120,941  648,573
 ```
 
 ## 2. Model comparison
@@ -156,11 +156,11 @@ comp
 #> Model comparison
 #> ------------------------------------------------------------ 
 #>    Model  Method Constrained n_par   logLik      AIC      BIC Deviance
-#>       NB      NB       FALSE    15 -2621.12  5272.23  5350.70  1275.94
+#>       NB      NB       FALSE    15 -2621.12  5272.23  5350.70  1275.97
 #>  Poisson POISSON       FALSE    14 -8217.25 16462.49 16535.73 13831.69
 #>  Pearson_X2   RMSE R2_cor    R2_D  R2_CW
-#>     3089.52 206.06 0.4054 -0.0029 0.9526
-#>    17496.68  52.53 0.8280  0.3139 0.9827
+#>     3090.80 205.92 0.4058 -0.0030 0.9526
+#>    17500.68  52.53 0.8280  0.3139 0.9827
 ```
 
 Lower AIC and BIC values indicate a better trade-off between fit and
@@ -215,10 +215,10 @@ r_ansc <- residuals(fit_nb, type = "anscombe")
 
 summary(r_pear)
 #>     Min.  1st Qu.   Median     Mean  3rd Qu.     Max. 
-#> -1.15133 -0.59480 -0.28881  0.03623  0.11110 22.90671
+#> -1.15137 -0.59480 -0.28872  0.03626  0.11100 22.91547
 summary(r_ansc)
 #>     Min.  1st Qu.   Median     Mean  3rd Qu.     Max. 
-#> -24.1696  -1.0757  -0.4677  -0.3348   0.1766   9.4208
+#> -24.1591  -1.0757  -0.4677  -0.3349   0.1768   9.4208
 ```
 
 ### Four-panel diagnostic plot
@@ -465,12 +465,12 @@ The profiling results are returned invisibly as a data frame:
 prof <- profile_gamma(fit_nb, plot = FALSE)
 head(prof)
 #>        gamma        xi    loglik
-#> 1 0.00010000  105426.3 -2719.707
-#> 2 0.02641053 1421561.4 -2621.493
-#> 3 0.05272105 1742750.9 -2626.657
-#> 4 0.07903158 1893924.1 -2631.701
-#> 5 0.10534211 1982411.8 -2635.659
-#> 6 0.13165263 2037040.2 -2638.698
+#> 1 0.00010000  105416.4 -2719.707
+#> 2 0.02641053 1422974.1 -2621.493
+#> 3 0.05272105 1742457.8 -2626.657
+#> 4 0.07903158 1892342.5 -2631.701
+#> 5 0.10534211 1984163.6 -2635.659
+#> 6 0.13165263 2035597.4 -2638.698
 ```
 
 ## References

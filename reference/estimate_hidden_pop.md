@@ -18,6 +18,7 @@ estimate_hidden_pop(
   cov_alpha = NULL,
   cov_beta = NULL,
   gamma = "estimate",
+  cov_gamma = NULL,
   gamma_bounds = c(1e-10, 0.5),
   theta_start = 1,
   vcov = "HC3",
@@ -70,6 +71,15 @@ estimate_hidden_pop(
   - A numeric value: fixed gamma, uses \\\log(\gamma + n_i / N_i)\\.
 
   - `NULL`: no gamma, uses \\\log(n_i / N_i)\\ (requires \\n_i \> 0\\).
+
+- cov_gamma:
+
+  Optional formula for covariates in gamma (e.g., `~ sex` or `~ year`).
+  When specified, gamma varies across observations via \\\gamma_i =
+  \exp(\mathbf{X}\_{\gamma,i}' \boldsymbol{\delta})\\, where
+  \\\boldsymbol{\delta}\\ are estimated coefficients on the log scale.
+  Requires `gamma = "estimate"` and `method` `"poisson"` or `"nb"`.
+  Default `NULL` means a single scalar gamma (intercept only).
 
 - gamma_bounds:
 
@@ -309,7 +319,7 @@ summary(fit_pois)
 #> Coefficients:
 #>         Estimate Std. Error z value Pr(>|z|)    
 #> alpha   0.559800   0.066707  8.3919   <2e-16 ***
-#> beta    3.113112 221.225025  0.0141   0.9888    
+#> beta    3.113112 221.225021  0.0141   0.9888    
 #> ---
 #> Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
 #> 
@@ -362,20 +372,20 @@ summary(fit_constr)
 #> 
 #> Coefficients (link scale: logit for alpha, log for beta):
 #>        Estimate Std. Error z value Pr(>|z|)
-#> alpha  0.229319   0.261549  0.8768   0.3806
-#> beta  -0.025916   0.779612 -0.0332   0.9735
+#> alpha  0.229427   0.263416  0.8710   0.3838
+#> beta  -0.025829   0.230379 -0.1121   0.9107
 #> 
 #> Response-scale parameters (alpha in (0,1), beta > 0):
 #>   Alpha (response scale):
 #>        alpha SE(alpha)
-#> (all) 0.5571    0.0645
+#> (all) 0.5571     0.065
 #>   Beta (response scale):
 #>     beta SE(beta)
-#> 1 0.9744   0.7597
+#> 1 0.9745   0.2245
 #> 
 #> -----------------------
 #> Population size estimation results:
 #>   (BC = bias-corrected using model-based variance)
 #>       Observed Estimate Estimate (BC) CI lower CI upper
-#> (all)      777   14,443        11,512    3,128   42,375
+#> (all)      777   14,447        11,858    3,192   44,055
 ```
