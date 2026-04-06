@@ -210,7 +210,7 @@ loo.uncounted <- function(object, by = c("obs", "country"),
 
     if (!is.null(fit_i)) {
       coef_mat[i, ] <- fit_i$coefficients
-      ps_list[[i]] <- popsize(fit_i)
+      ps_list[[i]] <- tryCatch(popsize(fit_i), error = function(e) NULL)
       converged[i] <- TRUE
     } else {
       converged[i] <- FALSE

@@ -207,7 +207,7 @@ popsize.uncounted <- function(object, by = NULL, level = 0.95,
     se_xi <- sqrt(max(var_xi, 0))
 
     # Log-normal CI for positivity
-    if (se_xi > 0 && est > 0) {
+    if (isTRUE(se_xi > 0) && isTRUE(est > 0)) {
       log_se <- se_xi / est
       ci_lower <- est * exp(-z_crit * log_se)
       ci_upper <- est * exp(z_crit * log_se)
@@ -235,7 +235,7 @@ popsize.uncounted <- function(object, by = NULL, level = 0.95,
         est_bc <- est - bias
         # Clamp only to positive (bias can go either direction for constrained)
         if (est_bc <= 0) est_bc <- est
-        if (!is.na(ci_lower) && est > 0 && est_bc > 0) {
+        if (!is.na(ci_lower) && isTRUE(est > 0) && isTRUE(est_bc > 0)) {
           bc_ratio <- est_bc / est
           ci_lower_bc <- ci_lower * bc_ratio
           ci_upper_bc <- ci_upper * bc_ratio
@@ -247,7 +247,7 @@ popsize.uncounted <- function(object, by = NULL, level = 0.95,
         # Always positive. More accurate than subtractive Taylor approx.
         correction <- exp(-0.5 * log_N2 * xVx)
         est_bc <- sum(N_g^alpha_g * correction)
-        if (!is.na(ci_lower) && est > 0) {
+        if (!is.na(ci_lower) && isTRUE(est > 0)) {
           bc_ratio <- est_bc / est
           ci_lower_bc <- ci_lower * bc_ratio
           ci_upper_bc <- ci_upper * bc_ratio
@@ -285,7 +285,7 @@ popsize.uncounted <- function(object, by = NULL, level = 0.95,
     var_xi_total <- as.numeric(t(g_total) %*% V_alpha %*% g_total)
     se_xi_total <- sqrt(max(var_xi_total, 0))
 
-    if (se_xi_total > 0 && xi_total > 0) {
+    if (isTRUE(se_xi_total > 0) && isTRUE(xi_total > 0)) {
       log_se <- se_xi_total / xi_total
       total_lower <- xi_total * exp(-z_crit * log_se)
       total_upper <- xi_total * exp(z_crit * log_se)
