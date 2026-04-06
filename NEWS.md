@@ -1,3 +1,62 @@
+# uncounted 1.0.0
+
+## New features
+
+* **Covariate-varying gamma** (`cov_gamma`): The gamma offset parameter can now
+  vary across observations via a formula interface, analogous to `cov_alpha` and
+  `cov_beta`. The parameterization is
+  $\gamma_i = \exp(\mathbf{X}_{\gamma,i}' \boldsymbol{\delta})$, ensuring
+  positivity. Available for `method = "poisson"` and `method = "nb"`.
+
+    ```r
+    fit <- estimate_hidden_pop(
+      data, observed = ~ m, auxiliary = ~ n, reference_pop = ~ N,
+      method = "poisson", gamma = "estimate",
+      cov_gamma = ~ sex
+    )
+    ```
+
+  Gamma coefficients are estimated on the log scale jointly with alpha, beta,
+  and theta. `summary()` displays response-scale gamma values with delta-method
+  standard errors per covariate group. `predict()`, `tidy()`, `loo()`, and
+  `bootstrap_popsize()` all support the new parameter.
+
+## Bug fixes
+
+* **`popsize()` NA crash in `loo()`**: When LOO drops an observation that makes
+  the refitted model unstable (e.g., rank-deficient design matrix), `popsize()`
+  could receive NA coefficients. Bare `> 0` comparisons now use `isTRUE()` to
+  handle NA values safely. The `loo()` loop also wraps `popsize()` in
+  `tryCatch()` so individual failed iterations are skipped rather than killing
+  the entire analysis.
+
+* **`tidy()` gamma standard error**: The scalar gamma row now reports the
+  correct response-scale SE via the delta method
+  (`SE(gamma) = gamma * SE(log gamma)`). The Wald statistic and p-value are
+  set to `NA` because there is no natural null hypothesis for a positive
+  nuisance parameter. Confidence intervals use the log-scale transformation
+  (`gamma * exp(+/- z * SE_log)`) ensuring positivity.
+
+* **`lrtest()` gamma nesting**: Now validates gamma submodel nesting via
+  column-space inclusion when both models use `cov_gamma`. Also correctly
+  detects that a fixed-gamma model is not nested in a `cov_gamma` design
+  without an intercept (e.g., `~ 0 + z`).
+
+* **`profile_gamma()` on `cov_gamma` fits**: Now stops with a clear error
+  instead of silently profiling a scalar gamma grid on a varying-gamma model.
+  The Shiny diagnostics tab also handles this case gracefully.
+
+## Internal
+
+* Version bump to 1.0.0 reflecting the new `cov_gamma` feature and stabilized
+  API.
+
+* 52 new tests for `cov_gamma` including simulation-based coefficient recovery,
+  one-column formula edge cases, `lrtest()` nesting validation, and
+  `profile_gamma()` error handling. 650 tests total.
+
+* `.count_params()` updated to count multi-parameter gamma for correct AIC/BIC.
+
 # uncounted 0.7.3
 
 ## Bug fixes
