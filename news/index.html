@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">uncounted</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -40,6 +40,35 @@
       <small>Source: <a href="https://github.com/ncn-foreigners/uncounted/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.0.0" id="uncounted-100">uncounted 1.0.0<a class="anchor" aria-label="anchor" href="#uncounted-100"></a></h2>
+<div class="section level3">
+<h3 id="new-features-1-0-0">New features<a class="anchor" aria-label="anchor" href="#new-features-1-0-0"></a></h3>
+<ul><li>
+<p><strong>Covariate-varying gamma</strong> (<code>cov_gamma</code>): The gamma offset parameter can now vary across observations via a formula interface, analogous to <code>cov_alpha</code> and <code>cov_beta</code>. The parameterization is <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>γ</mi><mi>i</mi></msub><mo>=</mo><mo>exp</mo><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>𝐗</mi><mrow><mi>γ</mi><mo>,</mo><mi>i</mi></mrow></msub><mi>′</mi><mi>𝛅</mi><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\gamma_i = \exp(\mathbf{X}_{\gamma,i}' \boldsymbol{\delta})</annotation></semantics></math>, ensuring positivity. Available for <code>method = "poisson"</code> and <code>method = "nb"</code>.</p>
+<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/estimate_hidden_pop.html">estimate_hidden_pop</a></span><span class="op">(</span></span>
+<span>  <span class="va">data</span>, observed <span class="op">=</span> <span class="op">~</span> <span class="va">m</span>, auxiliary <span class="op">=</span> <span class="op">~</span> <span class="va">n</span>, reference_pop <span class="op">=</span> <span class="op">~</span> <span class="va">N</span>,</span>
+<span>  method <span class="op">=</span> <span class="st">"poisson"</span>, gamma <span class="op">=</span> <span class="st">"estimate"</span>,</span>
+<span>  cov_gamma <span class="op">=</span> <span class="op">~</span> <span class="va">sex</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<p>Gamma coefficients are estimated on the log scale jointly with alpha, beta, and theta. <code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code> displays response-scale gamma values with delta-method standard errors per covariate group. <code><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict()</a></code>, <code><a href="https://generics.r-lib.org/reference/tidy.html" class="external-link">tidy()</a></code>, <code><a href="../reference/loo.html">loo()</a></code>, and <code><a href="../reference/bootstrap_popsize.html">bootstrap_popsize()</a></code> all support the new parameter.</p>
+</li>
+</ul></div>
+<div class="section level3">
+<h3 id="bug-fixes-1-0-0">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-1-0-0"></a></h3>
+<ul><li><p><strong><code><a href="../reference/popsize.html">popsize()</a></code> NA crash in <code><a href="../reference/loo.html">loo()</a></code></strong>: When LOO drops an observation that makes the refitted model unstable (e.g., rank-deficient design matrix), <code><a href="../reference/popsize.html">popsize()</a></code> could receive NA coefficients. Bare <code>&gt; 0</code> comparisons now use <code><a href="https://rdrr.io/r/base/Logic.html" class="external-link">isTRUE()</a></code> to handle NA values safely. The <code><a href="../reference/loo.html">loo()</a></code> loop also wraps <code><a href="../reference/popsize.html">popsize()</a></code> in <code><a href="https://rdrr.io/r/base/conditions.html" class="external-link">tryCatch()</a></code> so individual failed iterations are skipped rather than killing the entire analysis.</p></li>
+<li><p><strong><code><a href="https://generics.r-lib.org/reference/tidy.html" class="external-link">tidy()</a></code> gamma standard error</strong>: The scalar gamma row now reports the correct response-scale SE via the delta method (<code>SE(gamma) = gamma * SE(log gamma)</code>). The Wald statistic and p-value are set to <code>NA</code> because there is no natural null hypothesis for a positive nuisance parameter. Confidence intervals use the log-scale transformation (<code>gamma * exp(+/- z * SE_log)</code>) ensuring positivity.</p></li>
+<li><p><strong><code><a href="../reference/lrtest.html">lrtest()</a></code> gamma nesting</strong>: Now validates gamma submodel nesting via column-space inclusion when both models use <code>cov_gamma</code>. Also correctly detects that a fixed-gamma model is not nested in a <code>cov_gamma</code> design without an intercept (e.g., <code>~ 0 + z</code>).</p></li>
+<li><p><strong><code><a href="../reference/profile_gamma.html">profile_gamma()</a></code> on <code>cov_gamma</code> fits</strong>: Now stops with a clear error instead of silently profiling a scalar gamma grid on a varying-gamma model. The Shiny diagnostics tab also handles this case gracefully.</p></li>
+</ul></div>
+<div class="section level3">
+<h3 id="internal-1-0-0">Internal<a class="anchor" aria-label="anchor" href="#internal-1-0-0"></a></h3>
+<ul><li><p>Version bump to 1.0.0 reflecting the new <code>cov_gamma</code> feature and stabilized API.</p></li>
+<li><p>52 new tests for <code>cov_gamma</code> including simulation-based coefficient recovery, one-column formula edge cases, <code><a href="../reference/lrtest.html">lrtest()</a></code> nesting validation, and <code><a href="../reference/profile_gamma.html">profile_gamma()</a></code> error handling. 650 tests total.</p></li>
+<li><p><code>.count_params()</code> updated to count multi-parameter gamma for correct AIC/BIC.</p></li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.7.3" id="uncounted-073">uncounted 0.7.3<a class="anchor" aria-label="anchor" href="#uncounted-073"></a></h2>
 <div class="section level3">
@@ -102,7 +131,7 @@
 <h3 id="enhancements-0-6-0">Enhancements<a class="anchor" aria-label="anchor" href="#enhancements-0-6-0"></a></h3>
 <ul><li><p><strong>NB sandwich with theta</strong>: The Negative Binomial estimator now includes theta (dispersion) in the sandwich variance-covariance computation via a dedicated NB covariance path using the full per-observation score vector and the observed Hessian from <code>optim(hessian = TRUE)</code>. This properly accounts for theta estimation uncertainty in coefficient standard errors. The fitted object now includes <code>theta_se</code>, <code>score_full</code>, and <code>hessian_nll</code>. Supports HC0, HC1, and cluster-robust variance; HC2+ falls back to HC1 with a message.</p></li>
 <li><p><strong>CI workflows</strong>: Added GitHub Actions for R-CMD-check (5 platforms), CRAN-like check, test coverage (Codecov), and pkgdown site deployment.</p></li>
-<li><p><strong>Unit test redesign</strong>: 340+ tests using a shared 200-row simulated fixture, split into CRAN (fast) and extended (GitHub-only) suites. Includes base R oracle tests against <code><a href="https://rdrr.io/r/stats/glm.html" class="external-link">glm()</a></code>, <code><a href="https://rdrr.io/r/stats/lm.html" class="external-link">lm()</a></code>, <code><a href="https://rdrr.io/pkg/sandwich/man/vcovHC.html" class="external-link">sandwich::vcovHC()</a></code>, and <code><a href="https://rdrr.io/pkg/MASS/man/glm.nb.html" class="external-link">MASS::glm.nb()</a></code>.</p></li>
+<li><p><strong>Unit test redesign</strong>: 340+ tests using a shared 200-row simulated fixture, split into CRAN (fast) and extended (GitHub-only) suites. Includes base R oracle tests against <code><a href="https://rdrr.io/r/stats/glm.html" class="external-link">glm()</a></code>, <code><a href="https://rdrr.io/r/stats/lm.html" class="external-link">lm()</a></code>, <code><a href="https://sandwich.R-Forge.R-project.org/reference/vcovHC.html" class="external-link">sandwich::vcovHC()</a></code>, and <code><a href="https://rdrr.io/pkg/MASS/man/glm.nb.html" class="external-link">MASS::glm.nb()</a></code>.</p></li>
 </ul></div>
 <div class="section level3">
 <h3 id="documentation-0-6-0">Documentation<a class="anchor" aria-label="anchor" href="#documentation-0-6-0"></a></h3>
@@ -122,23 +151,23 @@
 <h2 class="pkg-version" data-toc-text="0.5.0" id="uncounted-050">uncounted 0.5.0<a class="anchor" aria-label="anchor" href="#uncounted-050"></a></h2>
 <div class="section level3">
 <h3 id="breaking-changes-0-5-0">Breaking changes<a class="anchor" aria-label="anchor" href="#breaking-changes-0-5-0"></a></h3>
-<ul><li><p>The <code>vcov_type</code> parameter in <code><a href="../reference/estimate_hidden_pop.html">estimate_hidden_pop()</a></code> has been renamed to <code>vcov</code>. It now accepts either a character string (<code>"HC0"</code> through <code>"HC5"</code>) or a <strong>function</strong> that takes the fitted object and returns a variance-covariance matrix (e.g., <code><a href="https://rdrr.io/pkg/sandwich/man/vcovHC.html" class="external-link">sandwich::vcovHC</a></code> or a custom wrapper around <code><a href="https://rdrr.io/pkg/sandwich/man/vcovCL.html" class="external-link">sandwich::vcovCL()</a></code>).</p></li>
+<ul><li><p>The <code>vcov_type</code> parameter in <code><a href="../reference/estimate_hidden_pop.html">estimate_hidden_pop()</a></code> has been renamed to <code>vcov</code>. It now accepts either a character string (<code>"HC0"</code> through <code>"HC5"</code>) or a <strong>function</strong> that takes the fitted object and returns a variance-covariance matrix (e.g., <code><a href="https://sandwich.R-Forge.R-project.org/reference/vcovHC.html" class="external-link">sandwich::vcovHC</a></code> or a custom wrapper around <code><a href="https://sandwich.R-Forge.R-project.org/reference/vcovCL.html" class="external-link">sandwich::vcovCL()</a></code>).</p></li>
 <li><p>The <code>countries</code> parameter no longer triggers cluster-robust standard errors. It is now used <strong>only</strong> for grouping in <code><a href="../reference/popsize.html">popsize()</a></code> and <code><a href="../reference/loo.html">loo()</a></code>. Use the new <code>cluster</code> parameter for cluster-robust variance estimation.</p></li>
 </ul></div>
 <div class="section level3">
 <h3 id="new-features-0-5-0">New features<a class="anchor" aria-label="anchor" href="#new-features-0-5-0"></a></h3>
-<ul><li><p>New <code>cluster</code> parameter in <code><a href="../reference/estimate_hidden_pop.html">estimate_hidden_pop()</a></code> accepts a one-sided formula (e.g., <code>~ country_code</code>) to request cluster-robust variance estimation via <code><a href="https://rdrr.io/pkg/sandwich/man/vcovCL.html" class="external-link">sandwich::vcovCL()</a></code>.</p></li>
-<li><p>Full compatibility with the <strong>sandwich</strong> package through new S3 methods: <code>bread()</code>, <code>estfun()</code>, <code><a href="https://rdrr.io/r/stats/influence.measures.html" class="external-link">hatvalues()</a></code>, and <code><a href="https://rdrr.io/r/stats/model.matrix.html" class="external-link">model.matrix()</a></code>. This allows direct use of <code><a href="https://rdrr.io/pkg/sandwich/man/vcovHC.html" class="external-link">sandwich::vcovHC()</a></code>, <code><a href="https://rdrr.io/pkg/sandwich/man/vcovCL.html" class="external-link">sandwich::vcovCL()</a></code>, and <code><a href="https://rdrr.io/pkg/sandwich/man/sandwich.html" class="external-link">sandwich::sandwich()</a></code> on <code>uncounted</code> objects.</p></li>
+<ul><li><p>New <code>cluster</code> parameter in <code><a href="../reference/estimate_hidden_pop.html">estimate_hidden_pop()</a></code> accepts a one-sided formula (e.g., <code>~ country_code</code>) to request cluster-robust variance estimation via <code><a href="https://sandwich.R-Forge.R-project.org/reference/vcovCL.html" class="external-link">sandwich::vcovCL()</a></code>.</p></li>
+<li><p>Full compatibility with the <strong>sandwich</strong> package through new S3 methods: <code>bread()</code>, <code>estfun()</code>, <code><a href="https://rdrr.io/r/stats/influence.measures.html" class="external-link">hatvalues()</a></code>, and <code><a href="https://rdrr.io/r/stats/model.matrix.html" class="external-link">model.matrix()</a></code>. This allows direct use of <code><a href="https://sandwich.R-Forge.R-project.org/reference/vcovHC.html" class="external-link">sandwich::vcovHC()</a></code>, <code><a href="https://sandwich.R-Forge.R-project.org/reference/vcovCL.html" class="external-link">sandwich::vcovCL()</a></code>, and <code><a href="https://sandwich.R-Forge.R-project.org/reference/sandwich.html" class="external-link">sandwich::sandwich()</a></code> on <code>uncounted</code> objects.</p></li>
 <li><p>New <code>type = "working"</code> option in <code><a href="https://rdrr.io/r/stats/residuals.html" class="external-link">residuals()</a></code> returns the score residuals used internally for sandwich variance computation.</p></li>
 <li><p>New <code><a href="../reference/update.uncounted.html">update.uncounted()</a></code> method enables re-fitting with modified arguments (e.g., different weights or vcov). Supports <code>evaluate = FALSE</code> to return the unevaluated call.</p></li>
 <li><p>New <code>weights.uncounted()</code> method returns observation weights from the fit.</p></li>
 <li><p>Compatibility with <code><a href="https://ngreifer.github.io/fwb/reference/vcovFWB.html" class="external-link">fwb::vcovFWB()</a></code> for fractional weighted bootstrap variance estimation, thanks to <code><a href="https://rdrr.io/r/stats/update.html" class="external-link">update()</a></code> and <code><a href="https://rdrr.io/r/stats/weights.html" class="external-link">weights()</a></code> methods.</p></li>
 <li>
 <p>The <code>vcov</code> parameter accepts a function, enabling custom variance estimators:</p>
-<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Cluster-robust via function</span></span>
 <span><span class="va">fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/estimate_hidden_pop.html">estimate_hidden_pop</a></span><span class="op">(</span><span class="va">...</span>,</span>
-<span>  vcov <span class="op">=</span> <span class="kw">function</span><span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="fu">sandwich</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/sandwich/man/vcovCL.html" class="external-link">vcovCL</a></span><span class="op">(</span><span class="va">x</span>, cluster <span class="op">=</span> <span class="va">data</span><span class="op">$</span><span class="va">country</span><span class="op">)</span><span class="op">)</span></span>
+<span>  vcov <span class="op">=</span> <span class="kw">function</span><span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="fu">sandwich</span><span class="fu">::</span><span class="fu"><a href="https://sandwich.R-Forge.R-project.org/reference/vcovCL.html" class="external-link">vcovCL</a></span><span class="op">(</span><span class="va">x</span>, cluster <span class="op">=</span> <span class="va">data</span><span class="op">$</span><span class="va">country</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Observation-level via string (default)</span></span>
 <span><span class="va">fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/estimate_hidden_pop.html">estimate_hidden_pop</a></span><span class="op">(</span><span class="va">...</span>, vcov <span class="op">=</span> <span class="st">"HC3"</span><span class="op">)</span></span>
@@ -150,7 +179,7 @@
 <div class="section level3">
 <h3 id="bug-fixes-0-5-0">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-0-5-0"></a></h3>
 <ul><li><p>Fixed a bug where <code>HC0</code> and <code>HC3</code> (and all other HC types) produced <strong>identical</strong> standard errors when clustering was active. The old implementation ignored <code>vcov_type</code> entirely in the cluster branch of the internal sandwich computation. Variance estimation is now delegated to the <strong>sandwich</strong> package, which correctly handles all HC types for both observation-level and cluster-robust cases.</p></li>
-<li><p>Fixed a bug in the cluster-robust meat matrix computation where an extra <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msqrt><msub><mi>μ</mi><mi>i</mi></msub></msqrt><annotation encoding="application/x-tex">\sqrt{\mu_i}</annotation></semantics></math> factor was incorrectly included in the Poisson and NB score contributions. This is now resolved by using <code><a href="https://rdrr.io/pkg/sandwich/man/vcovCL.html" class="external-link">sandwich::vcovCL()</a></code>.</p></li>
+<li><p>Fixed a bug in the cluster-robust meat matrix computation where an extra <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msqrt><msub><mi>μ</mi><mi>i</mi></msub></msqrt><annotation encoding="application/x-tex">\sqrt{\mu_i}</annotation></semantics></math> factor was incorrectly included in the Poisson and NB score contributions. This is now resolved by using <code><a href="https://sandwich.R-Forge.R-project.org/reference/vcovCL.html" class="external-link">sandwich::vcovCL()</a></code>.</p></li>
 </ul></div>
 <div class="section level3">
 <h3 id="internal-0-5-0">Internal<a class="anchor" aria-label="anchor" href="#internal-0-5-0"></a></h3>

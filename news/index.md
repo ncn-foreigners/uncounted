@@ -1,5 +1,87 @@
 # Changelog
 
+## uncounted 1.0.0
+
+### New features
+
+- **Covariate-varying gamma** (`cov_gamma`): The gamma offset parameter
+  can now vary across observations via a formula interface, analogous to
+  `cov_alpha` and `cov_beta`. The parameterization is
+  $\gamma_{i} = \exp\left( \mathbf{X}_{\gamma,i}\prime{\mathbf{δ}} \right)$,
+  ensuring positivity. Available for `method = "poisson"` and
+  `method = "nb"`.
+
+  ``` r
+  fit <- estimate_hidden_pop(
+    data, observed = ~ m, auxiliary = ~ n, reference_pop = ~ N,
+    method = "poisson", gamma = "estimate",
+    cov_gamma = ~ sex
+  )
+  ```
+
+  Gamma coefficients are estimated on the log scale jointly with alpha,
+  beta, and theta. [`summary()`](https://rdrr.io/r/base/summary.html)
+  displays response-scale gamma values with delta-method standard errors
+  per covariate group.
+  [`predict()`](https://rdrr.io/r/stats/predict.html),
+  [`tidy()`](https://generics.r-lib.org/reference/tidy.html),
+  [`loo()`](https://ncn-foreigners.github.io/uncounted/reference/loo.md),
+  and
+  [`bootstrap_popsize()`](https://ncn-foreigners.github.io/uncounted/reference/bootstrap_popsize.md)
+  all support the new parameter.
+
+### Bug fixes
+
+- **[`popsize()`](https://ncn-foreigners.github.io/uncounted/reference/popsize.md)
+  NA crash in
+  [`loo()`](https://ncn-foreigners.github.io/uncounted/reference/loo.md)**:
+  When LOO drops an observation that makes the refitted model unstable
+  (e.g., rank-deficient design matrix),
+  [`popsize()`](https://ncn-foreigners.github.io/uncounted/reference/popsize.md)
+  could receive NA coefficients. Bare `> 0` comparisons now use
+  [`isTRUE()`](https://rdrr.io/r/base/Logic.html) to handle NA values
+  safely. The
+  [`loo()`](https://ncn-foreigners.github.io/uncounted/reference/loo.md)
+  loop also wraps
+  [`popsize()`](https://ncn-foreigners.github.io/uncounted/reference/popsize.md)
+  in [`tryCatch()`](https://rdrr.io/r/base/conditions.html) so
+  individual failed iterations are skipped rather than killing the
+  entire analysis.
+
+- **[`tidy()`](https://generics.r-lib.org/reference/tidy.html) gamma
+  standard error**: The scalar gamma row now reports the correct
+  response-scale SE via the delta method
+  (`SE(gamma) = gamma * SE(log gamma)`). The Wald statistic and p-value
+  are set to `NA` because there is no natural null hypothesis for a
+  positive nuisance parameter. Confidence intervals use the log-scale
+  transformation (`gamma * exp(+/- z * SE_log)`) ensuring positivity.
+
+- **[`lrtest()`](https://ncn-foreigners.github.io/uncounted/reference/lrtest.md)
+  gamma nesting**: Now validates gamma submodel nesting via column-space
+  inclusion when both models use `cov_gamma`. Also correctly detects
+  that a fixed-gamma model is not nested in a `cov_gamma` design without
+  an intercept (e.g., `~ 0 + z`).
+
+- **[`profile_gamma()`](https://ncn-foreigners.github.io/uncounted/reference/profile_gamma.md)
+  on `cov_gamma` fits**: Now stops with a clear error instead of
+  silently profiling a scalar gamma grid on a varying-gamma model. The
+  Shiny diagnostics tab also handles this case gracefully.
+
+### Internal
+
+- Version bump to 1.0.0 reflecting the new `cov_gamma` feature and
+  stabilized API.
+
+- 52 new tests for `cov_gamma` including simulation-based coefficient
+  recovery, one-column formula edge cases,
+  [`lrtest()`](https://ncn-foreigners.github.io/uncounted/reference/lrtest.md)
+  nesting validation, and
+  [`profile_gamma()`](https://ncn-foreigners.github.io/uncounted/reference/profile_gamma.md)
+  error handling. 650 tests total.
+
+- `.count_params()` updated to count multi-parameter gamma for correct
+  AIC/BIC.
+
 ## uncounted 0.7.3
 
 ### Bug fixes
@@ -148,7 +230,7 @@
   Includes base R oracle tests against
   [`glm()`](https://rdrr.io/r/stats/glm.html),
   [`lm()`](https://rdrr.io/r/stats/lm.html),
-  [`sandwich::vcovHC()`](https://rdrr.io/pkg/sandwich/man/vcovHC.html),
+  [`sandwich::vcovHC()`](https://sandwich.R-Forge.R-project.org/reference/vcovHC.html),
   and [`MASS::glm.nb()`](https://rdrr.io/pkg/MASS/man/glm.nb.html).
 
 ### Documentation
@@ -189,9 +271,9 @@
   has been renamed to `vcov`. It now accepts either a character string
   (`"HC0"` through `"HC5"`) or a **function** that takes the fitted
   object and returns a variance-covariance matrix (e.g.,
-  [`sandwich::vcovHC`](https://rdrr.io/pkg/sandwich/man/vcovHC.html) or
-  a custom wrapper around
-  [`sandwich::vcovCL()`](https://rdrr.io/pkg/sandwich/man/vcovCL.html)).
+  [`sandwich::vcovHC`](https://sandwich.R-Forge.R-project.org/reference/vcovHC.html)
+  or a custom wrapper around
+  [`sandwich::vcovCL()`](https://sandwich.R-Forge.R-project.org/reference/vcovCL.html)).
 
 - The `countries` parameter no longer triggers cluster-robust standard
   errors. It is now used **only** for grouping in
@@ -207,17 +289,17 @@
   [`estimate_hidden_pop()`](https://ncn-foreigners.github.io/uncounted/reference/estimate_hidden_pop.md)
   accepts a one-sided formula (e.g., `~ country_code`) to request
   cluster-robust variance estimation via
-  [`sandwich::vcovCL()`](https://rdrr.io/pkg/sandwich/man/vcovCL.html).
+  [`sandwich::vcovCL()`](https://sandwich.R-Forge.R-project.org/reference/vcovCL.html).
 
 - Full compatibility with the **sandwich** package through new S3
   methods: `bread()`, `estfun()`,
   [`hatvalues()`](https://rdrr.io/r/stats/influence.measures.html), and
   [`model.matrix()`](https://rdrr.io/r/stats/model.matrix.html). This
   allows direct use of
-  [`sandwich::vcovHC()`](https://rdrr.io/pkg/sandwich/man/vcovHC.html),
-  [`sandwich::vcovCL()`](https://rdrr.io/pkg/sandwich/man/vcovCL.html),
+  [`sandwich::vcovHC()`](https://sandwich.R-Forge.R-project.org/reference/vcovHC.html),
+  [`sandwich::vcovCL()`](https://sandwich.R-Forge.R-project.org/reference/vcovCL.html),
   and
-  [`sandwich::sandwich()`](https://rdrr.io/pkg/sandwich/man/sandwich.html)
+  [`sandwich::sandwich()`](https://sandwich.R-Forge.R-project.org/reference/sandwich.html)
   on `uncounted` objects.
 
 - New `type = "working"` option in
@@ -266,7 +348,7 @@
 - Fixed a bug in the cluster-robust meat matrix computation where an
   extra $\sqrt{\mu_{i}}$ factor was incorrectly included in the Poisson
   and NB score contributions. This is now resolved by using
-  [`sandwich::vcovCL()`](https://rdrr.io/pkg/sandwich/man/vcovCL.html).
+  [`sandwich::vcovCL()`](https://sandwich.R-Forge.R-project.org/reference/vcovCL.html).
 
 ### Internal
 

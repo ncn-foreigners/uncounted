@@ -13,7 +13,7 @@ supports covariate-varying parameters through interaction formulas."><meta prope
 
     <a class="navbar-brand me-2" href="../index.html">uncounted</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -141,10 +141,10 @@ only when <code>method = "nb"</code>). Default 1.</p></dd>
 <dt id="arg-vcov">vcov<a class="anchor" aria-label="anchor" href="#arg-vcov"></a></dt>
 <dd><p>Controls the variance-covariance estimator. Can be:</p><ul><li><p>A character string specifying the HC type: <code>"HC0"</code> through
 <code>"HC5"</code>, or <code>"HC4m"</code>. Default <code>"HC3"</code>. When <code>cluster</code>
-is also provided, this type is passed to <code><a href="https://rdrr.io/pkg/sandwich/man/vcovCL.html" class="external-link">sandwich::vcovCL()</a></code>.</p></li>
+is also provided, this type is passed to <code><a href="https://sandwich.R-Forge.R-project.org/reference/vcovCL.html" class="external-link">sandwich::vcovCL()</a></code>.</p></li>
 <li><p>A function that takes the fitted <code>uncounted</code> object and returns
 a variance-covariance matrix. For example,
-<code><a href="https://rdrr.io/pkg/sandwich/man/vcovHC.html" class="external-link">sandwich::vcovHC</a></code> or
+<code><a href="https://sandwich.R-Forge.R-project.org/reference/vcovHC.html" class="external-link">sandwich::vcovHC</a></code> or
 <code>function(x) sandwich::vcovCL(x, cluster = data$country_code)</code>.</p></li>
 </ul></dd>
 
@@ -171,9 +171,9 @@ for that.</p></dd>
 <dd><p>Optional one-sided formula identifying a cluster variable
 for cluster-robust variance estimation (e.g., <code>~ country_code</code>).
 When provided and <code>vcov</code> is a character string, the variance is
-computed using <code><a href="https://rdrr.io/pkg/sandwich/man/vcovCL.html" class="external-link">sandwich::vcovCL()</a></code> with the specified HC type.
+computed using <code><a href="https://sandwich.R-Forge.R-project.org/reference/vcovCL.html" class="external-link">sandwich::vcovCL()</a></code> with the specified HC type.
 Note: clustered HC2 and HC3 are only applicable to standard linear and
-generalized linear models; <code><a href="https://rdrr.io/pkg/sandwich/man/vcovCL.html" class="external-link">sandwich::vcovCL()</a></code> will emit a warning
+generalized linear models; <code><a href="https://sandwich.R-Forge.R-project.org/reference/vcovCL.html" class="external-link">sandwich::vcovCL()</a></code> will emit a warning
 for non-GLM objects. Use <code>"HC0"</code> or <code>"HC1"</code> with clustering
 to avoid this. Ignored when <code>vcov</code> is a function.</p></dd>
 

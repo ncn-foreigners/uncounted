@@ -11,7 +11,7 @@ Specifically: \(B = n (Z' W Z)^{-1}\) where Z is the model matrix and
 
     <a class="navbar-brand me-2" href="../index.html">uncounted</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -74,7 +74,7 @@ Specifically: \(B = n (Z' W Z)^{-1}\) where Z is the model matrix and
     <p>For NB models, these methods operate on the mean-model parameters
 (alpha, beta, and optionally gamma) only, excluding theta. The stored
 <code><a href="https://rdrr.io/r/stats/vcov.html" class="external-link">vcov()</a></code> on NB objects uses a dedicated theta-aware path instead.
-Calling <code><a href="https://rdrr.io/pkg/sandwich/man/vcovHC.html" class="external-link">sandwich::vcovHC()</a></code> directly on an NB object gives
+Calling <code><a href="https://sandwich.R-Forge.R-project.org/reference/vcovHC.html" class="external-link">sandwich::vcovHC()</a></code> directly on an NB object gives
 theta-conditional standard errors, which differ from <code><a href="https://rdrr.io/r/stats/vcov.html" class="external-link">vcov()</a></code>.</p>
     </div>
 

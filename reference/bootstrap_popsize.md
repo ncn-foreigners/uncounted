@@ -209,7 +209,7 @@ boot <- bootstrap_popsize(fit, R = 99, cluster = ~country, seed = 123)
 #> Warning: Some alpha values < 0 (min = -0.469). Consider using constrained = TRUE.
 #>   |++                                                | 2 % ~01s          
 #> Warning: Some alpha values < 0 (min = -0.468). Consider using constrained = TRUE.
-#>   |++                                                | 3 % ~01s          
+#>   |++                                                | 3 % ~00s          
 #> Warning: Some alpha values < 0 (min = -0.517). Consider using constrained = TRUE.
 #>   |+++                                               | 4 % ~04s          
 #> Warning: Some alpha values < 0 (min = -0.467). Consider using constrained = TRUE.
@@ -227,7 +227,7 @@ boot <- bootstrap_popsize(fit, R = 99, cluster = ~country, seed = 123)
 #> Warning: Some alpha values < 0 (min = -0.076). Consider using constrained = TRUE.
 #>   |++++++                                            | 11% ~02s          
 #> Warning: Some alpha values < 0 (min = -0.467). Consider using constrained = TRUE.
-#>   |+++++++                                           | 12% ~02s          
+#>   |+++++++                                           | 12% ~01s          
 #> Warning: Some alpha values < 0 (min = -0.467). Consider using constrained = TRUE.
 #>   |+++++++                                           | 13% ~01s          
 #> Warning: Some alpha values < 0 (min = -0.466). Consider using constrained = TRUE.
@@ -301,9 +301,9 @@ boot <- bootstrap_popsize(fit, R = 99, cluster = ~country, seed = 123)
 #> Warning: Some alpha values < 0 (min = -0.465). Consider using constrained = TRUE.
 #>   |+++++++++++++++++++++++++                         | 48% ~01s          
 #> Warning: Some alpha values < 0 (min = -0.466). Consider using constrained = TRUE.
-#>   |+++++++++++++++++++++++++                         | 49% ~01s          
+#>   |+++++++++++++++++++++++++                         | 49% ~00s          
 #> Warning: Some alpha values < 0 (min = -0.467). Consider using constrained = TRUE.
-#>   |++++++++++++++++++++++++++                        | 51% ~01s          
+#>   |++++++++++++++++++++++++++                        | 51% ~00s          
 #> Warning: Some alpha values < 0 (min = -0.467). Consider using constrained = TRUE.
 #>   |++++++++++++++++++++++++++                        | 52% ~00s          
 #> Warning: Some alpha values < 0 (min = -0.467). Consider using constrained = TRUE.
@@ -317,9 +317,9 @@ boot <- bootstrap_popsize(fit, R = 99, cluster = ~country, seed = 123)
 #> Warning: Some alpha values < 0 (min = -0.529). Consider using constrained = TRUE.
 #>   |+++++++++++++++++++++++++++++                     | 57% ~00s          
 #> Warning: Some alpha values < 0 (min = -0.122). Consider using constrained = TRUE.
-#>   |+++++++++++++++++++++++++++++                     | 58% ~01s          
+#>   |+++++++++++++++++++++++++++++                     | 58% ~00s          
 #> Warning: Some alpha values < 0 (min = -0.47). Consider using constrained = TRUE.
-#>   |++++++++++++++++++++++++++++++                    | 59% ~01s          
+#>   |++++++++++++++++++++++++++++++                    | 59% ~00s          
 #> Warning: Some alpha values < 0 (min = -0.078). Consider using constrained = TRUE.
 #>   |++++++++++++++++++++++++++++++                    | 60% ~00s          
 #> Warning: Some alpha values < 0 (min = -0.467). Consider using constrained = TRUE.
@@ -424,7 +424,7 @@ boot_bc <- bootstrap_popsize(fit, R = 99, ci_type = "bc", seed = 123)
 #> Warning: Some alpha values < 0 (min = -0.467). Consider using constrained = TRUE.
 #>   |                                                  | 0 % ~calculating  
 #> Warning: Some alpha values < 0 (min = -0.11). Consider using constrained = TRUE.
-#>   |+                                                 | 1 % ~11s          
+#>   |+                                                 | 1 % ~10s          
 #> Warning: Some alpha values < 0 (min = -0.467). Consider using constrained = TRUE.
 #>   |++                                                | 2 % ~05s          
 #> Warning: Some alpha values < 0 (min = -0.47). Consider using constrained = TRUE.
@@ -436,17 +436,17 @@ boot_bc <- bootstrap_popsize(fit, R = 99, ci_type = "bc", seed = 123)
 #> Warning: Some alpha values < 0 (min = -0.469). Consider using constrained = TRUE.
 #>   |++++                                              | 6 % ~04s          
 #> Warning: Some alpha values < 0 (min = -0.078). Consider using constrained = TRUE.
-#>   |++++                                              | 7 % ~04s          
+#>   |++++                                              | 7 % ~03s          
 #> Warning: Some alpha values < 0 (min = -0.463). Consider using constrained = TRUE.
 #>   |+++++                                             | 8 % ~03s          
 #> Warning: Some alpha values < 0 (min = -0.469). Consider using constrained = TRUE.
 #>   |+++++                                             | 9 % ~03s          
 #> Warning: Some alpha values < 0 (min = -0.467). Consider using constrained = TRUE.
-#>   |++++++                                            | 10% ~03s          
+#>   |++++++                                            | 10% ~02s          
 #> Warning: Some alpha values < 0 (min = -1.007). Consider using constrained = TRUE.
 #>   |++++++                                            | 11% ~03s          
 #> Warning: Some alpha values < 0 (min = -0.467). Consider using constrained = TRUE.
-#>   |+++++++                                           | 12% ~03s          
+#>   |+++++++                                           | 12% ~02s          
 #> Warning: Some alpha values < 0 (min = -0.469). Consider using constrained = TRUE.
 #>   |+++++++                                           | 13% ~02s          
 #> Warning: Some alpha values < 0 (min = -0.467). Consider using constrained = TRUE.
@@ -476,23 +476,23 @@ boot_bc <- bootstrap_popsize(fit, R = 99, ci_type = "bc", seed = 123)
 #> Warning: Some alpha values < 0 (min = -0.467). Consider using constrained = TRUE.
 #>   |++++++++++++++                                    | 26% ~02s          
 #> Warning: Some alpha values < 0 (min = -0.466). Consider using constrained = TRUE.
-#>   |++++++++++++++                                    | 27% ~02s          
+#>   |++++++++++++++                                    | 27% ~01s          
 #> Warning: Some alpha values < 0 (min = -1.08). Consider using constrained = TRUE.
 #>   |+++++++++++++++                                   | 28% ~02s          
 #> Warning: Some alpha values < 0 (min = -0.463). Consider using constrained = TRUE.
 #>   |+++++++++++++++                                   | 29% ~02s          
 #> Warning: Some alpha values < 0 (min = -0.469). Consider using constrained = TRUE.
-#>   |++++++++++++++++                                  | 30% ~02s          
+#>   |++++++++++++++++                                  | 30% ~01s          
 #> Warning: Some alpha values < 0 (min = -0.466). Consider using constrained = TRUE.
 #>   |++++++++++++++++                                  | 31% ~01s          
 #> Warning: Some alpha values < 0 (min = -0.24). Consider using constrained = TRUE.
-#>   |+++++++++++++++++                                 | 32% ~02s          
+#>   |+++++++++++++++++                                 | 32% ~01s          
 #> Warning: Some alpha values < 0 (min = -0.469). Consider using constrained = TRUE.
 #>   |+++++++++++++++++                                 | 33% ~01s          
 #> Warning: Some alpha values < 0 (min = -0.47). Consider using constrained = TRUE.
 #>   |++++++++++++++++++                                | 34% ~01s          
 #> Warning: Some alpha values < 0 (min = -0.382). Consider using constrained = TRUE.
-#>   |++++++++++++++++++                                | 35% ~02s          
+#>   |++++++++++++++++++                                | 35% ~01s          
 #> Warning: Some alpha values < 0 (min = -0.464). Consider using constrained = TRUE.
 #>   |+++++++++++++++++++                               | 36% ~01s          
 #> Warning: Some alpha values < 0 (min = -0.079). Consider using constrained = TRUE.
@@ -566,9 +566,9 @@ boot_bc <- bootstrap_popsize(fit, R = 99, ci_type = "bc", seed = 123)
 #> Warning: Some alpha values < 0 (min = -0.467). Consider using constrained = TRUE.
 #>   |++++++++++++++++++++++++++++++++++++              | 72% ~01s          
 #> Warning: Some alpha values < 0 (min = -0.467). Consider using constrained = TRUE.
-#>   |+++++++++++++++++++++++++++++++++++++             | 73% ~01s          
+#>   |+++++++++++++++++++++++++++++++++++++             | 73% ~00s          
 #> Warning: Some alpha values < 0 (min = -0.124). Consider using constrained = TRUE.
-#>   |+++++++++++++++++++++++++++++++++++++             | 74% ~01s          
+#>   |+++++++++++++++++++++++++++++++++++++             | 74% ~00s          
 #> Warning: Some alpha values < 0 (min = -0.469). Consider using constrained = TRUE.
 #>   |++++++++++++++++++++++++++++++++++++++            | 75% ~00s          
 #> Warning: Some alpha values < 0 (min = -0.465). Consider using constrained = TRUE.

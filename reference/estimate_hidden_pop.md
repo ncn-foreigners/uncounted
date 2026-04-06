@@ -98,11 +98,11 @@ estimate_hidden_pop(
   - A character string specifying the HC type: `"HC0"` through `"HC5"`,
     or `"HC4m"`. Default `"HC3"`. When `cluster` is also provided, this
     type is passed to
-    [`sandwich::vcovCL()`](https://rdrr.io/pkg/sandwich/man/vcovCL.html).
+    [`sandwich::vcovCL()`](https://sandwich.R-Forge.R-project.org/reference/vcovCL.html).
 
   - A function that takes the fitted `uncounted` object and returns a
     variance-covariance matrix. For example,
-    [`sandwich::vcovHC`](https://rdrr.io/pkg/sandwich/man/vcovHC.html)
+    [`sandwich::vcovHC`](https://sandwich.R-Forge.R-project.org/reference/vcovHC.html)
     or `function(x) sandwich::vcovCL(x, cluster = data$country_code)`.
 
 - weights:
@@ -128,10 +128,10 @@ estimate_hidden_pop(
   cluster-robust variance estimation (e.g., `~ country_code`). When
   provided and `vcov` is a character string, the variance is computed
   using
-  [`sandwich::vcovCL()`](https://rdrr.io/pkg/sandwich/man/vcovCL.html)
+  [`sandwich::vcovCL()`](https://sandwich.R-Forge.R-project.org/reference/vcovCL.html)
   with the specified HC type. Note: clustered HC2 and HC3 are only
   applicable to standard linear and generalized linear models;
-  [`sandwich::vcovCL()`](https://rdrr.io/pkg/sandwich/man/vcovCL.html)
+  [`sandwich::vcovCL()`](https://sandwich.R-Forge.R-project.org/reference/vcovCL.html)
   will emit a warning for non-GLM objects. Use `"HC0"` or `"HC1"` with
   clustering to avoid this. Ignored when `vcov` is a function.
 
