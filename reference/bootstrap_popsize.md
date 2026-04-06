@@ -217,7 +217,7 @@ boot <- bootstrap_popsize(fit, R = 99, cluster = ~country, seed = 123)
 #> Warning: Some alpha values < 0 (min = -0.077). Consider using constrained = TRUE.
 #>   |++++                                              | 6 % ~03s          
 #> Warning: Some alpha values < 0 (min = -0.467). Consider using constrained = TRUE.
-#>   |++++                                              | 7 % ~03s          
+#>   |++++                                              | 7 % ~02s          
 #> Warning: Some alpha values < 0 (min = -0.466). Consider using constrained = TRUE.
 #>   |+++++                                             | 8 % ~02s          
 #> Warning: Some alpha values < 0 (min = -0.471). Consider using constrained = TRUE.

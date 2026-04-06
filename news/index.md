@@ -148,7 +148,7 @@
   Includes base R oracle tests against
   [`glm()`](https://rdrr.io/r/stats/glm.html),
   [`lm()`](https://rdrr.io/r/stats/lm.html),
-  [`sandwich::vcovHC()`](https://sandwich.R-Forge.R-project.org/reference/vcovHC.html),
+  [`sandwich::vcovHC()`](https://rdrr.io/pkg/sandwich/man/vcovHC.html),
   and [`MASS::glm.nb()`](https://rdrr.io/pkg/MASS/man/glm.nb.html).
 
 ### Documentation
@@ -189,9 +189,9 @@
   has been renamed to `vcov`. It now accepts either a character string
   (`"HC0"` through `"HC5"`) or a **function** that takes the fitted
   object and returns a variance-covariance matrix (e.g.,
-  [`sandwich::vcovHC`](https://sandwich.R-Forge.R-project.org/reference/vcovHC.html)
-  or a custom wrapper around
-  [`sandwich::vcovCL()`](https://sandwich.R-Forge.R-project.org/reference/vcovCL.html)).
+  [`sandwich::vcovHC`](https://rdrr.io/pkg/sandwich/man/vcovHC.html) or
+  a custom wrapper around
+  [`sandwich::vcovCL()`](https://rdrr.io/pkg/sandwich/man/vcovCL.html)).
 
 - The `countries` parameter no longer triggers cluster-robust standard
   errors. It is now used **only** for grouping in
@@ -207,17 +207,17 @@
   [`estimate_hidden_pop()`](https://ncn-foreigners.github.io/uncounted/reference/estimate_hidden_pop.md)
   accepts a one-sided formula (e.g., `~ country_code`) to request
   cluster-robust variance estimation via
-  [`sandwich::vcovCL()`](https://sandwich.R-Forge.R-project.org/reference/vcovCL.html).
+  [`sandwich::vcovCL()`](https://rdrr.io/pkg/sandwich/man/vcovCL.html).
 
 - Full compatibility with the **sandwich** package through new S3
   methods: `bread()`, `estfun()`,
   [`hatvalues()`](https://rdrr.io/r/stats/influence.measures.html), and
   [`model.matrix()`](https://rdrr.io/r/stats/model.matrix.html). This
   allows direct use of
-  [`sandwich::vcovHC()`](https://sandwich.R-Forge.R-project.org/reference/vcovHC.html),
-  [`sandwich::vcovCL()`](https://sandwich.R-Forge.R-project.org/reference/vcovCL.html),
+  [`sandwich::vcovHC()`](https://rdrr.io/pkg/sandwich/man/vcovHC.html),
+  [`sandwich::vcovCL()`](https://rdrr.io/pkg/sandwich/man/vcovCL.html),
   and
-  [`sandwich::sandwich()`](https://sandwich.R-Forge.R-project.org/reference/sandwich.html)
+  [`sandwich::sandwich()`](https://rdrr.io/pkg/sandwich/man/sandwich.html)
   on `uncounted` objects.
 
 - New `type = "working"` option in
@@ -266,7 +266,7 @@
 - Fixed a bug in the cluster-robust meat matrix computation where an
   extra $\sqrt{\mu_{i}}$ factor was incorrectly included in the Poisson
   and NB score contributions. This is now resolved by using
-  [`sandwich::vcovCL()`](https://sandwich.R-Forge.R-project.org/reference/vcovCL.html).
+  [`sandwich::vcovCL()`](https://rdrr.io/pkg/sandwich/man/vcovCL.html).
 
 ### Internal
 
