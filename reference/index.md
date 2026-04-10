@@ -58,6 +58,12 @@
   : Print LOO Sensitivity Results
 - [`print(`*`<uncounted_loo_compare>`*`)`](https://ncn-foreigners.github.io/uncounted/reference/print.uncounted_loo_compare.md)
   : Print LOO Comparison Results
+- [`profile(`*`<uncounted>`*`)`](https://ncn-foreigners.github.io/uncounted/reference/profile.uncounted.md)
+  : Profile Likelihood for Uncounted Models
+- [`profile_alpha()`](https://ncn-foreigners.github.io/uncounted/reference/profile_alpha.md)
+  : Profile Likelihood for Alpha Coefficients
+- [`profile_beta()`](https://ncn-foreigners.github.io/uncounted/reference/profile_beta.md)
+  : Profile Likelihood for Beta Coefficients
 - [`profile_gamma()`](https://ncn-foreigners.github.io/uncounted/reference/profile_gamma.md)
   : Gamma Profile: Population Size as a Function of Gamma
 - [`residuals(`*`<uncounted>`*`)`](https://ncn-foreigners.github.io/uncounted/reference/residuals.uncounted.md)

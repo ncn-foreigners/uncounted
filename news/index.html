@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">uncounted</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.1.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -40,6 +40,20 @@
       <small>Source: <a href="https://github.com/ncn-foreigners/uncounted/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.1.0" id="uncounted-110">uncounted 1.1.0<a class="anchor" aria-label="anchor" href="#uncounted-110"></a></h2>
+<div class="section level3">
+<h3 id="new-features-1-1-0">New features<a class="anchor" aria-label="anchor" href="#new-features-1-1-0"></a></h3>
+<ul><li><p><strong><code><a href="../reference/profile_alpha.html">profile_alpha()</a></code> and <code><a href="../reference/profile_beta.html">profile_beta()</a></code></strong>: Profile likelihood functions analogous to <code><a href="../reference/profile_gamma.html">profile_gamma()</a></code>. Evaluate log-likelihood and population size over a grid of values for a chosen alpha or beta coefficient. <code>reoptimize = FALSE</code> (default) holds other parameters at their MLE (concentrated profile); <code>reoptimize = TRUE</code> re-optimizes all nuisance parameters at each grid point (true profile). Both produce two-panel diagnostic plots.</p></li>
+<li><p><strong><code><a href="../reference/profile.uncounted.html">profile.uncounted()</a></code> S3 method</strong>: Dispatches <code><a href="https://rdrr.io/r/stats/profile.html" class="external-link">stats::profile()</a></code> to <code><a href="../reference/profile_gamma.html">profile_gamma()</a></code>, <code><a href="../reference/profile_alpha.html">profile_alpha()</a></code>, or <code><a href="../reference/profile_beta.html">profile_beta()</a></code> via the <code>param</code> argument. Usage: <code>profile(fit, param = "alpha")</code>.</p></li>
+<li><p><strong><code><a href="../reference/bootstrap_popsize.html">bootstrap_popsize()</a></code> per-replicate parameters</strong>: New <code>$boot_params</code> field in the output — an R x n_params matrix storing coefficient estimates (plus gamma and theta when applicable) from each bootstrap replicate. Enables post-hoc analysis of parameter correlations and bootstrap distributions without writing manual FWB loops.</p></li>
+</ul></div>
+<div class="section level3">
+<h3 id="bug-fixes-1-1-0">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-1-1-0"></a></h3>
+<ul><li>
+<strong><code>bootstrap_popsize(..., total = TRUE)</code></strong>: The Total row now appears in <code>$popsize</code> and <code>$popsize_full</code> data frames (previously only in the separate <code>$total</code> list). The bias-corrected total now uses the correct full-gradient delta-method computation from <code>popsize(total = TRUE)</code> instead of naively summing independent per-group bias corrections.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.0.0" id="uncounted-100">uncounted 1.0.0<a class="anchor" aria-label="anchor" href="#uncounted-100"></a></h2>
 <div class="section level3">

@@ -714,6 +714,12 @@ summary(boot_pois)
 #> Bootstrap distribution summary:
 #>         mean     sd q025.2.5% q50.50% q975.97.5%
 #> (all) 388859 219713    166247  313360    1004604
+#> 
+#> Parameter bootstrap summary:
+#>           mean       sd q025.2.5%  q50.50% q975.97.5%
+#> alpha 0.750484 0.045538  0.681888 0.740070   0.851456
+#> beta  0.612625 0.124395  0.427185 0.598194   0.847812
+#> gamma 0.002943 0.003415  0.000276 0.001936   0.012459
 ```
 
 ### Comparing bootstrap and analytical CIs

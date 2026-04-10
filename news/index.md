@@ -1,5 +1,44 @@
 # Changelog
 
+## uncounted 1.1.0
+
+### New features
+
+- **[`profile_alpha()`](https://ncn-foreigners.github.io/uncounted/reference/profile_alpha.md)
+  and
+  [`profile_beta()`](https://ncn-foreigners.github.io/uncounted/reference/profile_beta.md)**:
+  Profile likelihood functions analogous to
+  [`profile_gamma()`](https://ncn-foreigners.github.io/uncounted/reference/profile_gamma.md).
+  Evaluate log-likelihood and population size over a grid of values for
+  a chosen alpha or beta coefficient. `reoptimize = FALSE` (default)
+  holds other parameters at their MLE (concentrated profile);
+  `reoptimize = TRUE` re-optimizes all nuisance parameters at each grid
+  point (true profile). Both produce two-panel diagnostic plots.
+
+- **[`profile.uncounted()`](https://ncn-foreigners.github.io/uncounted/reference/profile.uncounted.md)
+  S3 method**: Dispatches
+  [`stats::profile()`](https://rdrr.io/r/stats/profile.html) to
+  [`profile_gamma()`](https://ncn-foreigners.github.io/uncounted/reference/profile_gamma.md),
+  [`profile_alpha()`](https://ncn-foreigners.github.io/uncounted/reference/profile_alpha.md),
+  or
+  [`profile_beta()`](https://ncn-foreigners.github.io/uncounted/reference/profile_beta.md)
+  via the `param` argument. Usage: `profile(fit, param = "alpha")`.
+
+- **[`bootstrap_popsize()`](https://ncn-foreigners.github.io/uncounted/reference/bootstrap_popsize.md)
+  per-replicate parameters**: New `$boot_params` field in the output —
+  an R x n_params matrix storing coefficient estimates (plus gamma and
+  theta when applicable) from each bootstrap replicate. Enables post-hoc
+  analysis of parameter correlations and bootstrap distributions without
+  writing manual FWB loops.
+
+### Bug fixes
+
+- **`bootstrap_popsize(..., total = TRUE)`**: The Total row now appears
+  in `$popsize` and `$popsize_full` data frames (previously only in the
+  separate `$total` list). The bias-corrected total now uses the correct
+  full-gradient delta-method computation from `popsize(total = TRUE)`
+  instead of naively summing independent per-group bias corrections.
+
 ## uncounted 1.0.0
 
 ### New features
