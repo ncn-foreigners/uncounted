@@ -1,3 +1,33 @@
+# uncounted 1.1.0
+
+## New features
+
+* **`profile_alpha()` and `profile_beta()`**: Profile likelihood functions
+  analogous to `profile_gamma()`. Evaluate log-likelihood and population size
+  over a grid of values for a chosen alpha or beta coefficient.
+  `reoptimize = FALSE` (default) holds other parameters at their MLE
+  (concentrated profile); `reoptimize = TRUE` re-optimizes all nuisance
+  parameters at each grid point (true profile). Both produce two-panel
+  diagnostic plots.
+
+* **`profile.uncounted()` S3 method**: Dispatches `stats::profile()` to
+  `profile_gamma()`, `profile_alpha()`, or `profile_beta()` via the `param`
+  argument. Usage: `profile(fit, param = "alpha")`.
+
+* **`bootstrap_popsize()` per-replicate parameters**: New `$boot_params` field
+  in the output — an R x n_params matrix storing coefficient estimates (plus
+  gamma and theta when applicable) from each bootstrap replicate. Enables
+  post-hoc analysis of parameter correlations and bootstrap distributions
+  without writing manual FWB loops.
+
+## Bug fixes
+
+* **`bootstrap_popsize(..., total = TRUE)`**: The Total row now appears in
+  `$popsize` and `$popsize_full` data frames (previously only in the separate
+  `$total` list). The bias-corrected total now uses the correct full-gradient
+  delta-method computation from `popsize(total = TRUE)` instead of naively
+  summing independent per-group bias corrections.
+
 # uncounted 1.0.0
 
 ## New features

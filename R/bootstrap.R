@@ -166,7 +166,7 @@ bootstrap_popsize <- function(object, R = 199, cluster = NULL,
   countries <- if (!is.null(cl$countries)) eval(cl$countries) else NULL
 
   # Point estimates from original fit (using by if provided)
-  ps0 <- popsize(object, by = by, bias_correction = TRUE)
+  ps0 <- popsize(object, by = by, bias_correction = TRUE, total = total)
   t0 <- ps0$estimate
   t0_bc <- ps0$estimate_bc
 
@@ -183,6 +183,19 @@ bootstrap_popsize <- function(object, R = 199, cluster = NULL,
   if (!is.null(cluster)) {
     cluster_var <- eval(cluster[[2]], data)
   }
+
+  # Pre-allocate storage for per-replicate parameters
+  param_names <- names(coef(object))
+  if (object$gamma_estimated && !isTRUE(object$has_cov_gamma)) {
+    param_names <- c(param_names, "gamma")
+  }
+  if (!is.null(object$theta)) {
+    param_names <- c(param_names, "theta")
+  }
+  bp_env <- new.env(parent = emptyenv())
+  bp_env$mat <- matrix(NA_real_, nrow = R, ncol = length(param_names),
+                       dimnames = list(NULL, param_names))
+  bp_env$idx <- 0L
 
   # Statistic function for fwb
   stat_fn <- function(data, w) {
@@ -207,8 +220,21 @@ bootstrap_popsize <- function(object, R = 199, cluster = NULL,
       error = function(e) NULL
     )
 
+    bp_env$idx <- bp_env$idx + 1L
     if (is.null(fit_w) || !isTRUE(fit_w$convergence == 0)) {
       return(rep(NA_real_, length(t0)))
+    }
+
+    # Capture per-replicate parameters (guard against extra fwb calls)
+    if (bp_env$idx <= R) {
+      row_i <- coef(fit_w)
+      if (fit_w$gamma_estimated && !isTRUE(fit_w$has_cov_gamma)) {
+        row_i <- c(row_i, gamma = fit_w$gamma)
+      }
+      if (!is.null(fit_w$theta)) {
+        row_i <- c(row_i, theta = fit_w$theta)
+      }
+      bp_env$mat[bp_env$idx, ] <- row_i
     }
 
     ps_w <- uncounted::popsize(fit_w, by = by, bias_correction = FALSE)
@@ -309,13 +335,40 @@ bootstrap_popsize <- function(object, R = 199, cluster = NULL,
         total_lower <- quantile(boot_total, pnorm(2 * z0 + za))
         total_upper <- quantile(boot_total, pnorm(2 * z0 - za))
       }
+      # Use correct full-gradient BC total from popsize(total=TRUE)
+      total_bc <- if (!is.null(attr(ps0, "total"))) {
+        attr(ps0, "total")$estimate_bc
+      } else {
+        sum(t0_bc)
+      }
       total_boot <- list(
-        plugin = sum(t0), plugin_bc = sum(t0_bc),
+        plugin = sum(t0), plugin_bc = total_bc,
         median = total_median, mean = total_mean,
         lower = as.numeric(total_lower),
         upper = as.numeric(total_upper)
       )
     }
+  }
+
+  # Append Total row to popsize and popsize_full when total=TRUE
+  if (!is.null(total_boot)) {
+    total_est_selected <- switch(point_estimate,
+      median = total_boot$median,
+      plugin = total_boot$plugin,
+      mean = total_boot$mean
+    )
+    ps_boot <- rbind(ps_boot, data.frame(
+      group = "Total", estimate = total_est_selected,
+      lower = total_boot$lower, upper = total_boot$upper,
+      stringsAsFactors = FALSE
+    ))
+    ps_full <- rbind(ps_full, data.frame(
+      group = "Total", plugin = total_boot$plugin,
+      plugin_bc = total_boot$plugin_bc,
+      boot_median = total_boot$median, boot_mean = total_boot$mean,
+      lower = total_boot$lower, upper = total_boot$upper,
+      stringsAsFactors = FALSE
+    ))
   }
 
   out <- list(
@@ -329,6 +382,7 @@ bootstrap_popsize <- function(object, R = 199, cluster = NULL,
     ci_type = ci_type,
     point_estimate = point_estimate,
     level = level,
+    boot_params = bp_env$mat,
     n_converged = sum(apply(boot_t, 1, function(x) all(is.finite(x)))),
     cluster = !is.null(cluster)
   )
@@ -395,8 +449,22 @@ summary.uncounted_boot <- function(object, ...) {
       q50 = quantile(col, 0.5),
       q975 = quantile(col, 0.975))
   })
-  colnames(boot_summary) <- object$popsize$group
+  group_names <- object$popsize$group[object$popsize$group != "Total"]
+  colnames(boot_summary) <- group_names
   print(round(t(boot_summary)))
+
+  if (!is.null(object$boot_params)) {
+    cat("\nParameter bootstrap summary:\n")
+    param_summary <- apply(object$boot_params, 2, function(col) {
+      col <- col[is.finite(col)]
+      if (length(col) == 0) return(rep(NA_real_, 5))
+      c(mean = mean(col), sd = sd(col),
+        q025 = quantile(col, 0.025),
+        q50 = quantile(col, 0.5),
+        q975 = quantile(col, 0.975))
+    })
+    print(round(t(param_summary), 6))
+  }
 
   invisible(object)
 }
@@ -427,7 +495,12 @@ summary.uncounted_boot <- function(object, ...) {
   )
   rownames(tab) <- ps_full$group
 
-  if (!is.null(total)) {
+  # Total row: already present in ps_full when total=TRUE was used,
+
+  # otherwise fall back to manual summing for display
+  if ("Total" %in% ps_full$group) {
+    # Already in ps_full — no extra action needed (it's in tab already)
+  } else if (!is.null(total)) {
     tab <- rbind(tab, data.frame(
       `Plugin` = fmt(total$plugin),
       `Plugin (BC)` = fmt(total$plugin_bc),
@@ -439,7 +512,6 @@ summary.uncounted_boot <- function(object, ...) {
       row.names = "Total"
     ))
   } else if (show_total && nrow(ps_full) > 1) {
-    # Fallback: sum (correct for plugin/mean, approximate for median/CI)
     tab <- rbind(tab, data.frame(
       `Plugin` = fmt(sum(ps_full$plugin)),
       `Plugin (BC)` = fmt(sum(ps_full$plugin_bc)),

@@ -108,6 +108,52 @@ test_that("bootstrap with total=TRUE includes total", {
   expect_true(!is.null(boot$total))
   expect_true(boot$total$plugin > 0)
   expect_true(boot$total$lower < boot$total$upper)
+  # Total row should appear in popsize and popsize_full data frames
+  expect_true("Total" %in% boot$popsize$group)
+  expect_true("Total" %in% boot$popsize_full$group)
+})
+
+test_that("bootstrap total=TRUE uses correct full-gradient BC", {
+  skip_on_cran()
+  skip_if_not_installed("fwb")
+  fit <- quick_fit(testdata, gamma = 0.005, cov_alpha = ~sex)
+  boot <- bootstrap_popsize(fit, R = 49, seed = 42, verbose = FALSE,
+                            total = TRUE)
+  # Compare to popsize(total=TRUE) for correct BC
+  ps0 <- popsize(fit, bias_correction = TRUE, total = TRUE)
+  expect_equal(boot$total$plugin_bc, attr(ps0, "total")$estimate_bc)
+})
+
+# ---- Bootstrap: boot_params ----
+
+test_that("bootstrap exposes boot_params matrix", {
+  skip_on_cran()
+  skip_if_not_installed("fwb")
+  fit <- quick_fit(testdata, gamma = 0.005)
+  boot <- bootstrap_popsize(fit, R = 29, seed = 42, verbose = FALSE)
+  expect_true(!is.null(boot$boot_params))
+  expect_true(is.matrix(boot$boot_params))
+  expect_equal(nrow(boot$boot_params), 29)
+  expect_true("alpha" %in% colnames(boot$boot_params))
+  expect_true("beta" %in% colnames(boot$boot_params))
+})
+
+test_that("bootstrap boot_params includes gamma for estimated gamma", {
+  skip_on_cran()
+  skip_if_not_installed("fwb")
+  d <- positive_data()
+  fit <- estimate_hidden_pop(d, ~m, ~n, ~N, method = "poisson",
+                             gamma = "estimate")
+  boot <- bootstrap_popsize(fit, R = 29, seed = 42, verbose = FALSE)
+  expect_true("gamma" %in% colnames(boot$boot_params))
+})
+
+test_that("bootstrap boot_params includes theta for NB", {
+  skip_on_cran()
+  skip_if_not_installed("fwb")
+  fit <- quick_fit(testdata, method = "nb", gamma = 0.005)
+  boot <- bootstrap_popsize(fit, R = 29, seed = 42, verbose = FALSE)
+  expect_true("theta" %in% colnames(boot$boot_params))
 })
 
 # ---- Bootstrap coverage: by parameter ----

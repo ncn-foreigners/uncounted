@@ -433,3 +433,246 @@ profile_gamma <- function(object, gamma_grid = seq(1e-4, 0.5, length.out = 20),
 
   invisible(results)
 }
+
+
+# ---- NLL helper for profiling ----
+
+#' Build a negative log-likelihood closure from a fitted uncounted object.
+#' @param object An uncounted object.
+#' @return A list with nll (function), par0 (MLE vector), compute_xi (function).
+#' @noRd
+.build_nll_from_object <- function(object) {
+  m <- object$m
+  N <- object$N
+  n_aux <- object$n_aux
+  ratio <- n_aux / N
+  log_N <- log(N)
+  n_obs <- object$n_obs
+  X_alpha <- object$X_alpha
+  X_beta <- object$X_beta
+  p_alpha <- object$p_alpha
+  p_beta <- object$p_beta
+  weights <- if (!is.null(object$obs_weights)) object$obs_weights else rep(1, n_obs)
+  is_constr <- isTRUE(object$constrained)
+  method <- object$method
+  theta_mle <- object$theta
+
+  .alpha_fn <- if (is_constr) .inv_logit else identity
+  .beta_fn  <- if (is_constr) function(x) exp(x) else identity
+
+  # Use fitted gamma (scalar or vector)
+  if (!is.null(object$gamma_values) && isTRUE(object$has_cov_gamma)) {
+    log_rate <- log(object$gamma_values + ratio)
+  } else if (!is.null(object$gamma)) {
+    log_rate <- log(object$gamma + ratio)
+  } else {
+    log_rate <- log(ratio)
+  }
+
+  par0 <- c(object$alpha_coefs, object$beta_coefs)
+
+  nll_fn <- function(par) {
+    a <- par[seq_len(p_alpha)]
+    b <- par[p_alpha + seq_len(p_beta)]
+    alpha_lin <- .alpha_fn(as.numeric(X_alpha %*% a))
+    beta_lin <- .beta_fn(as.numeric(X_beta %*% b))
+    log_mu <- pmin(alpha_lin * log_N + beta_lin * log_rate, 20)
+    mu <- pmax(exp(log_mu), 1e-300)
+
+    if (method == "nb") {
+      val <- -sum(weights * dnbinom(m, size = theta_mle, mu = mu, log = TRUE))
+    } else if (method == "poisson") {
+      val <- -sum(weights * dpois(m, mu, log = TRUE))
+    } else {
+      has_zeros <- any(m == 0)
+      log_m <- if (has_zeros) log(m + 1) else log(m)
+      resid_log <- log_m - log_mu
+      sigma2 <- sum(resid_log^2) / n_obs
+      val <- n_obs / 2 * (log(2 * pi * sigma2) + 1)
+    }
+    if (!is.finite(val)) return(1e20)
+    val
+  }
+
+  xi_fn <- function(par) {
+    a <- par[seq_len(p_alpha)]
+    alpha_lin <- .alpha_fn(as.numeric(X_alpha %*% a))
+    sum(N^alpha_lin)
+  }
+
+  list(nll = nll_fn, par0 = par0, compute_xi = xi_fn)
+}
+
+
+# ---- Profile alpha / beta ----
+
+#' Shared implementation for profiling alpha or beta coefficients.
+#' @noRd
+.profile_coef <- function(object, coef_index, block = c("alpha", "beta"),
+                          grid = NULL, reoptimize = FALSE, plot = TRUE, ...) {
+  block <- match.arg(block)
+  p_alpha <- object$p_alpha
+  p_beta <- object$p_beta
+
+  if (block == "alpha") {
+    if (coef_index < 1 || coef_index > p_alpha)
+      stop("coef_index must be between 1 and ", p_alpha, " for alpha.", call. = FALSE)
+    full_idx <- coef_index
+    coef_name <- names(object$alpha_coefs)[coef_index]
+  } else {
+    if (coef_index < 1 || coef_index > p_beta)
+      stop("coef_index must be between 1 and ", p_beta, " for beta.", call. = FALSE)
+    full_idx <- p_alpha + coef_index
+    coef_name <- names(object$beta_coefs)[coef_index]
+  }
+
+  nll_info <- .build_nll_from_object(object)
+  par0 <- nll_info$par0
+  nll <- nll_info$nll
+  xi_fn <- nll_info$compute_xi
+  mle_val <- par0[full_idx]
+
+  se_val <- tryCatch(
+    sqrt(max(0, object$vcov[full_idx, full_idx])),
+    error = function(e) abs(mle_val) * 0.1 + 0.01
+  )
+  if (!is.finite(se_val) || se_val <= 0) se_val <- abs(mle_val) * 0.1 + 0.01
+
+  if (is.null(grid)) {
+    grid <- seq(mle_val - 3 * se_val, mle_val + 3 * se_val, length.out = 30)
+  }
+
+  results <- data.frame(value = grid, xi = NA_real_, loglik = NA_real_)
+
+  if (!reoptimize) {
+    for (i in seq_along(grid)) {
+      par_i <- par0
+      par_i[full_idx] <- grid[i]
+      results$loglik[i] <- -nll(par_i)
+      results$xi[i] <- xi_fn(par_i)
+    }
+  } else {
+    free_idx <- setdiff(seq_along(par0), full_idx)
+    for (i in seq_along(grid)) {
+      fixed_val <- grid[i]
+      obj_reduced <- function(par_free) {
+        par_full <- par0
+        par_full[free_idx] <- par_free
+        par_full[full_idx] <- fixed_val
+        nll(par_full)
+      }
+      opt_i <- tryCatch(
+        optim(par0[free_idx], obj_reduced, method = "L-BFGS-B",
+              control = list(maxit = 500)),
+        error = function(e) NULL
+      )
+      if (!is.null(opt_i)) {
+        par_full <- par0
+        par_full[free_idx] <- opt_i$par
+        par_full[full_idx] <- fixed_val
+        results$loglik[i] <- -nll(par_full)
+        results$xi[i] <- xi_fn(par_full)
+      }
+    }
+  }
+
+  if (plot) {
+    op <- par(mfrow = c(1, 2), mar = c(4, 4, 3, 1))
+    on.exit(par(op))
+
+    plot(results$value, results$xi, type = "b", pch = 19, cex = 0.6,
+         xlab = coef_name, ylab = expression(hat(xi)),
+         main = bquote("Population size" ~ hat(xi)(.(coef_name))),
+         ...)
+    abline(v = mle_val, lty = 2, col = "red")
+
+    valid_ll <- is.finite(results$loglik)
+    if (any(valid_ll)) {
+      plot(results$value[valid_ll], results$loglik[valid_ll],
+           type = "b", pch = 19, cex = 0.6,
+           xlab = coef_name, ylab = "Log-likelihood",
+           main = bquote("Log-likelihood"(.(coef_name))))
+      abline(v = mle_val, lty = 2, col = "red")
+    }
+  }
+
+  invisible(results)
+}
+
+
+#' Profile Likelihood for Alpha Coefficients
+#'
+#' Evaluates the log-likelihood and population size over a grid of values
+#' for a chosen alpha coefficient, holding other parameters at their MLE
+#' (concentrated profile) or re-optimizing them (true profile).
+#'
+#' @param object An \code{"uncounted"} object.
+#' @param coef_index Integer: which alpha coefficient to profile (1 = intercept).
+#' @param grid Numeric vector of values to evaluate. If \code{NULL} (default),
+#'   auto-generates 30 points spanning \eqn{\pm 3} SE around the MLE.
+#' @param reoptimize Logical. If \code{TRUE}, optimize all other parameters at
+#'   each grid point (true profile likelihood). If \code{FALSE} (default), hold
+#'   everything else at the MLE (concentrated profile, faster).
+#' @param plot Logical; produce the plot? Default \code{TRUE}.
+#' @param ... Additional arguments passed to \code{plot()}.
+#'
+#' @return Invisibly, a data frame with columns: \code{value}, \code{xi},
+#'   \code{loglik}.
+#'
+#' @seealso \code{\link{profile_beta}}, \code{\link{profile_gamma}},
+#'   \code{\link{profile.uncounted}}
+#'
+#' @export
+profile_alpha <- function(object, coef_index = 1, grid = NULL,
+                          reoptimize = FALSE, plot = TRUE, ...) {
+  .profile_coef(object, coef_index = coef_index, block = "alpha",
+                grid = grid, reoptimize = reoptimize, plot = plot, ...)
+}
+
+
+#' Profile Likelihood for Beta Coefficients
+#'
+#' Evaluates the log-likelihood and population size over a grid of values
+#' for a chosen beta coefficient. When \code{reoptimize = FALSE}, the
+#' population size \eqn{\hat\xi} is constant because beta does not enter
+#' \eqn{\xi = \sum N^{\alpha}} directly.
+#'
+#' @inheritParams profile_alpha
+#'
+#' @return Invisibly, a data frame with columns: \code{value}, \code{xi},
+#'   \code{loglik}.
+#'
+#' @seealso \code{\link{profile_alpha}}, \code{\link{profile_gamma}},
+#'   \code{\link{profile.uncounted}}
+#'
+#' @export
+profile_beta <- function(object, coef_index = 1, grid = NULL,
+                         reoptimize = FALSE, plot = TRUE, ...) {
+  .profile_coef(object, coef_index = coef_index, block = "beta",
+                grid = grid, reoptimize = reoptimize, plot = plot, ...)
+}
+
+
+#' Profile Likelihood for Uncounted Models
+#'
+#' S3 method for \code{\link[stats]{profile}} that dispatches to
+#' \code{\link{profile_gamma}}, \code{\link{profile_alpha}}, or
+#' \code{\link{profile_beta}} depending on \code{param}.
+#'
+#' @param fitted An \code{"uncounted"} object.
+#' @param param Character: which parameter to profile. One of
+#'   \code{"gamma"}, \code{"alpha"}, or \code{"beta"}.
+#' @param ... Additional arguments passed to the specific profile function.
+#'
+#' @return Invisibly, a data frame from the dispatched function.
+#'
+#' @importFrom stats profile
+#' @export
+profile.uncounted <- function(fitted, param = c("gamma", "alpha", "beta"), ...) {
+  param <- match.arg(param)
+  switch(param,
+    gamma = profile_gamma(fitted, ...),
+    alpha = profile_alpha(fitted, ...),
+    beta  = profile_beta(fitted, ...)
+  )
+}
