@@ -9,7 +9,8 @@ Authors@R: c(
 Description: Estimates the size of unauthorized migrant populations using
     a power-law model that relates observed counts to reference populations
     and auxiliary detection data. Supports OLS, NLS, Poisson, and Negative
-    Binomial estimation with optional gamma offset parameter.
+    Binomial estimation, alternative bounded detection links, optional gamma
+    offsets, and moment-based count estimators via the 'momentfit' package.
 License: MIT + file LICENSE
 URL: https://ncn-foreigners.github.io/uncounted/,
     https://github.com/ncn-foreigners/uncounted
@@ -21,7 +22,8 @@ Imports:
     stats,
     MASS,
     sandwich,
-    generics
+    generics,
+    momentfit
 LazyData: true
 Suggests:
     testthat (>= 3.0.0),

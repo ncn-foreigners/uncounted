@@ -100,6 +100,8 @@ run_app <- function(...) {
           shiny::textInput("model_name", "Model name:", value = "Model 1"),
           shiny::selectInput("method", "Method:",
             choices = c("poisson", "nb", "ols", "nls")),
+          shiny::uiOutput("link_rho_ui"),
+          shiny::uiOutput("estimator_ui"),
           shiny::textInput("cov_alpha", "cov_alpha formula:", value = "~ 1",
             placeholder = "~ year + sex"),
           shiny::textInput("cov_beta", "cov_beta formula:", value = "~ 1",
@@ -288,6 +290,38 @@ run_app <- function(...) {
                         min = 0, step = 0.001)
   })
 
+  output$link_rho_ui <- shiny::renderUI({
+    method_val <- if (is.null(input$method)) "poisson" else input$method
+    choices <- if (method_val %in% c("poisson", "nb", "nls")) {
+      c("power", "cloglog", "logistic")
+    } else {
+      c("power")
+    }
+    selected <- if (!is.null(input$link_rho) && input$link_rho %in% choices) {
+      input$link_rho
+    } else {
+      "power"
+    }
+    shiny::selectInput("link_rho", "Detection link:", choices = choices,
+                       selected = selected)
+  })
+
+  output$estimator_ui <- shiny::renderUI({
+    method_val <- if (is.null(input$method)) "poisson" else input$method
+    choices <- if (method_val %in% c("poisson", "nb")) {
+      c("mle", "gmm", "el")
+    } else {
+      c("mle")
+    }
+    selected <- if (!is.null(input$estimator) && input$estimator %in% choices) {
+      input$estimator
+    } else {
+      "mle"
+    }
+    shiny::selectInput("estimator", "Estimator:", choices = choices,
+                       selected = selected)
+  })
+
   output$var_countries_fit <- shiny::renderUI({
     ## Countries variable for grouping (popsize, LOO)
     exclude <- c(input$col_m, input$col_n, input$col_N)
@@ -372,6 +406,8 @@ run_app <- function(...) {
     alpha_f <- if (input$cov_alpha == "~ 1") NULL else cov_a
     beta_f  <- if (input$cov_beta == "~ 1") NULL else cov_b
     method_val <- input$method
+    link_rho_val <- input$link_rho
+    estimator_val <- input$estimator
     vcov_val <- input$vcov_type
     constr_val <- isTRUE(input$constrained)
     dat <- rv$data
@@ -389,7 +425,8 @@ run_app <- function(...) {
           data = dat, observed = obs_f, auxiliary = aux_f,
           reference_pop = ref_f, method = method_val,
           cov_alpha = alpha_f, cov_beta = beta_f,
-          gamma = gamma_arg, vcov = vcov_val,
+          gamma = gamma_arg, link_rho = link_rho_val,
+          estimator = estimator_val, vcov = vcov_val,
           constrained = constr_val, countries = countries_arg,
           cluster = cluster_arg
         ),
@@ -399,7 +436,8 @@ run_app <- function(...) {
             data = dat, observed = obs_f, auxiliary = aux_f,
             reference_pop = ref_f, method = method_val,
             cov_alpha = alpha_f, cov_beta = beta_f,
-            gamma = gamma_arg, vcov = vcov_val,
+            gamma = gamma_arg, link_rho = link_rho_val,
+            estimator = estimator_val, vcov = vcov_val,
             constrained = constr_val, countries = countries_arg,
             cluster = cluster_arg
           ))

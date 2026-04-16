@@ -142,6 +142,8 @@ glance.uncounted <- function(x, ...) {
   ll <- logLik(x)
   data.frame(
     method = toupper(x$method),
+    estimator = toupper(x$estimator),
+    link_rho = x$link_rho,
     nobs = x$n_obs,
     logLik = as.numeric(ll),
     AIC = AIC(x),

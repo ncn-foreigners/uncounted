@@ -164,6 +164,8 @@ bootstrap_popsize <- function(object, R = 199, cluster = NULL,
   theta_start <- if (!is.null(object$theta)) object$theta else 1
   constrained_arg <- isTRUE(object$constrained)
   countries <- if (!is.null(cl$countries)) eval(cl$countries) else NULL
+  estimator_arg <- object$estimator
+  link_rho_arg <- object$link_rho
 
   # Point estimates from original fit (using by if provided)
   ps0 <- popsize(object, by = by, bias_correction = TRUE, total = total)
@@ -212,6 +214,8 @@ bootstrap_popsize <- function(object, R = 199, cluster = NULL,
         cov_gamma = cov_gamma,
         gamma_bounds = gamma_bounds,
         theta_start = theta_start,
+        link_rho = link_rho_arg,
+        estimator = estimator_arg,
         vcov = "HC0",
         weights = w,
         constrained = constrained_arg,

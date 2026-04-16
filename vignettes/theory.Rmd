@@ -55,21 +55,39 @@ $\times$ year $\times$ sex cells).  Denote
 The conditional mean of $m_i$ is modelled as
 
 $$
-E[m_i \mid N_i, n_i] \;=\; N_i^{\alpha}\,
-  \left(\frac{n_i + \gamma}{N_i}\right)^{\!\beta},
+E[m_i \mid N_i, n_i] \;=\; \xi_i \rho_i,
+  \qquad \xi_i = N_i^{\alpha},
 $$
 
 where $\alpha$, $\beta$, and $\gamma \geq 0$ are parameters to be
-estimated.  On the log scale, this becomes a linear model:
+estimated. Define
 
 $$
-\log E[m_i] \;=\;
-  \alpha \,\log N_i \;+\;
-  \beta \,\log\!\left(\frac{n_i + \gamma}{N_i}\right).
+\eta_i = \beta \log\!\left(\gamma + \frac{n_i}{N_i}\right).
 $$
 
-Note that the argument of the second logarithm can be rewritten as
-$\gamma + n_i / N_i$ when the ratio form is used inside the code.
+The package supports three links for $\rho_i = h(\eta_i)$:
+
+- `link_rho = "power"`: $\rho_i = \exp(\eta_i)$,
+- `link_rho = "cloglog"`: $\rho_i = 1 - \exp(-\exp(\eta_i))$,
+- `link_rho = "logistic"`: $\rho_i = (1 + \exp(-\eta_i))^{-1}$.
+
+On the log scale, this becomes
+
+$$
+\log E[m_i] \;=\; \alpha \,\log N_i \;+\; \log \rho_i.
+$$
+
+Under every supported detection link,
+
+$$
+\xi_i = \frac{E[m_i]}{\rho_i} = N_i^\alpha.
+$$
+
+This is why the public population-size estimator remains
+$\hat\xi = \sum_i N_i^{\hat\alpha_i}$ even when a bounded detection link is
+used. The choice of `link_rho` affects $\hat\xi$ only indirectly through the
+fitted value of $\hat\alpha$.
 
 ### Parameter interpretation
 
@@ -241,6 +259,12 @@ for the parameters of the conditional mean $E[m_i \mid N_i, n_i]$ even if
 the true distribution is not Poisson, provided the mean is correctly
 specified.  This makes PPML robust to heteroscedasticity and is the
 recommended default in `uncounted`.
+
+For the Poisson and Negative Binomial count models, the package can also use
+`estimator = "gmm"` or `estimator = "el"`. In those cases the same
+per-observation score equations are treated as moment conditions and fitted
+with `momentfit`. The model for $\mu_i$ is unchanged; only the estimating
+criterion differs.
 
 ### Negative Binomial ML
 

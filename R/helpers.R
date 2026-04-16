@@ -2,7 +2,7 @@
 
 #' Inverse logit (logistic function): R -> (0, 1)
 #' @noRd
-.inv_logit <- function(x) 1 / (1 + exp(-x))
+.inv_logit <- function(x) stats::plogis(x)
 
 #' Derivative of inverse logit
 #' @noRd
@@ -13,7 +13,107 @@
 
 #' Logit: (0, 1) -> R
 #' @noRd
-.logit <- function(p) log(p / (1 - p))
+.logit <- function(p) stats::qlogis(p)
+
+# ---- Detection-rate link helpers ----
+
+#' Stable log(1 - exp(-x)) for x > 0
+#' @noRd
+.log1mexp_neg <- function(x) {
+  ifelse(x <= log(2), log(-expm1(-x)), log1p(-exp(-x)))
+}
+
+#' Normalize detection-link name
+#' @noRd
+.normalize_link_rho <- function(link_rho) {
+  if (is.null(link_rho)) return("power")
+  match.arg(link_rho, c("power", "cloglog", "logistic"))
+}
+
+#' Compute rate term gamma + n/N
+#' @noRd
+.rate_from_gamma <- function(ratio, gamma_values = NULL) {
+  if (is.null(gamma_values)) ratio else gamma_values + ratio
+}
+
+#' Compute log-rate term log(gamma + n/N)
+#' @noRd
+.log_rate_from_gamma <- function(ratio, gamma_values = NULL) {
+  log(.rate_from_gamma(ratio, gamma_values))
+}
+
+#' Compute eta = beta * log(gamma + n/N)
+#' @noRd
+.eta_from_rate <- function(beta_values, rate_values) {
+  beta_values * log(rate_values)
+}
+
+#' Compute rho from eta
+#' @noRd
+.rho_from_eta <- function(eta, link_rho = "power") {
+  link_rho <- .normalize_link_rho(link_rho)
+  switch(link_rho,
+    power = exp(eta),
+    cloglog = -expm1(-exp(eta)),
+    logistic = .inv_logit(eta)
+  )
+}
+
+#' Compute log(rho) from eta
+#' @noRd
+.log_rho_from_eta <- function(eta, link_rho = "power") {
+  link_rho <- .normalize_link_rho(link_rho)
+  switch(link_rho,
+    power = eta,
+    cloglog = .log1mexp_neg(exp(eta)),
+    logistic = stats::plogis(eta, log.p = TRUE)
+  )
+}
+
+#' Compute d log(rho) / d eta
+#' @noRd
+.dlog_rho_deta <- function(eta, link_rho = "power") {
+  link_rho <- .normalize_link_rho(link_rho)
+  switch(link_rho,
+    power = rep(1, length(eta)),
+    cloglog = {
+      exp_eta <- exp(eta)
+      out <- exp_eta / expm1(exp_eta)
+      out[!is.finite(out) & eta > 0] <- 0
+      out
+    },
+    logistic = .inv_logit(-eta)
+  )
+}
+
+#' Compute log(mu) from alpha, beta, rate, and link choice
+#' @noRd
+.compute_log_mu <- function(alpha_values, log_N, beta_values, rate_values,
+                            link_rho = "power") {
+  eta_values <- .eta_from_rate(beta_values, rate_values)
+  alpha_values * log_N + .log_rho_from_eta(eta_values, link_rho = link_rho)
+}
+
+#' Normalize requested covariance type for moment estimators
+#' @noRd
+.normalize_moment_vcov_type <- function(vcov_type) {
+  if (vcov_type %in% c("HC0", "HC1")) return(vcov_type)
+  if (vcov_type %in% c("HC2", "HC3", "HC4", "HC4m", "HC5")) {
+    warning("For estimator = 'gmm' and estimator = 'el', HC2+ types are not ",
+            "supported. Falling back to HC1.", call. = FALSE)
+    return("HC1")
+  }
+  vcov_type
+}
+
+#' Normalize requested covariance type for a fitted object
+#' @noRd
+.normalize_object_vcov_type <- function(object, vcov_type) {
+  if (inherits(object, "uncounted") && identical(object$estimator %in% c("gmm", "el"), TRUE)) {
+    return(.normalize_moment_vcov_type(vcov_type))
+  }
+  vcov_type
+}
 
 # ---- Design matrix helpers ----
 
@@ -238,11 +338,7 @@
 #' @return log(gamma + ratio) vector
 #' @noRd
 .log_rate <- function(ratio, gamma_values = NULL) {
-  if (is.null(gamma_values)) {
-    log(ratio)
-  } else {
-    log(gamma_values + ratio)
-  }
+  .log_rate_from_gamma(ratio, gamma_values = gamma_values)
 }
 
 #' Expand gamma from group-level to observation-level
@@ -271,6 +367,8 @@
     V <- vcov(object)
     return(V)
   }
+
+  vcov <- .normalize_object_vcov_type(object, vcov)
 
   ## Character string: use sandwich package
   if (!requireNamespace("sandwich", quietly = TRUE)) {

@@ -16,6 +16,8 @@ estimate_hidden_pop(
   cov_gamma = NULL,
   gamma_bounds = c(1e-10, 0.5),
   theta_start = 1,
+  link_rho = c("power", "cloglog", "logistic"),
+  estimator = c("mle", "gmm", "el"),
   vcov = "HC3",
   weights = NULL,
   constrained = FALSE,
@@ -62,6 +64,19 @@ the estimated gamma parameter. Default \code{c(1e-10, 0.5)}.}
 \item{theta_start}{Starting value for the NB dispersion parameter (used
 only when \code{method = "nb"}). Default 1.}
 
+\item{link_rho}{Link for the detection component
+\eqn{\rho_i = h(\beta_i \log(\gamma_i + n_i / N_i))}. Supported values are
+\code{"power"} (default, \eqn{\rho_i = \exp(\eta_i)}),
+\code{"cloglog"} (\eqn{\rho_i = 1 - \exp(-\exp(\eta_i))}), and
+\code{"logistic"} (\eqn{\rho_i = 1 / (1 + \exp(-\eta_i))}).
+Bounded links are currently available for \code{method = "poisson"},
+\code{"nb"}, and \code{"nls"}.}
+
+\item{estimator}{Estimation criterion for count models:
+\code{"mle"} (default), \code{"gmm"}, or \code{"el"}.
+Non-MLE estimators are currently available only for
+\code{method = "poisson"} and \code{method = "nb"}.}
+
 \item{vcov}{Controls the variance-covariance estimator. Can be:
 \itemize{
 \item A character string specifying the HC type: \code{"HC0"} through
@@ -106,12 +121,16 @@ constrained).}
 \item{\code{vcov}}{HC-robust variance-covariance matrix.}
 \item{\code{vcov_model}}{Model-based (homoscedastic) variance-covariance
 matrix, used for bias correction.}
+\item{\code{rho_values}}{Per-observation fitted detection component
+\eqn{\hat\rho_i}{rho_hat_i}.}
 \item{\code{fitted.values}}{Fitted values \eqn{\hat{m}_i}{m_hat_i}.}
 \item{\code{residuals}}{Raw residuals \eqn{m_i - \hat{m}_i}{m_i - m_hat_i}.}
 \item{\code{gamma}}{Estimated or fixed gamma value (or \code{NULL}).}
 \item{\code{theta}}{NB dispersion parameter (only for \code{method = "nb"}).}
-\item{\code{loglik}}{Log-likelihood (for Poisson and NB methods).}
-\item{\code{method}}{The estimation method used.}
+\item{\code{loglik}}{Log-likelihood (for MLE count fits only).}
+\item{\code{method}}{The model family used.}
+\item{\code{estimator}}{The estimation criterion used.}
+\item{\code{link_rho}}{The detection-link transformation used.}
 }
 }
 \description{
@@ -124,14 +143,23 @@ supports covariate-varying parameters through interaction formulas.
 \strong{Model specification.}
 For observation \eqn{i}, the expected observed count \eqn{m_i} is modelled as:
 
-\deqn{E(m_i) = N_i^{\alpha_i} \cdot (\gamma + n_i / N_i)^{\beta_i}}{E(m_i) = N_i^alpha_i * (gamma + n_i / N_i)^beta_i}
+\deqn{E(m_i) = \xi_i \rho_i,\qquad \xi_i = N_i^{\alpha_i}}{E(m_i) = xi_i rho_i, xi_i = N_i^alpha_i}
 
 where \eqn{N_i} is the reference (total registered) population,
 \eqn{n_i} is an auxiliary count (e.g., new registrations),
-and \eqn{\gamma \ge 0}{gamma >= 0} is an intercept-like offset.
-On the log scale, the model is linear:
+and \eqn{\gamma \ge 0}{gamma >= 0} is an intercept-like offset. Define
+\eqn{\eta_i = \beta_i \log(\gamma_i + n_i / N_i)}{eta_i = beta_i log(gamma_i + n_i / N_i)}.
+Then \eqn{\rho_i}{rho_i} is linked to \eqn{\eta_i}{eta_i} by one of:
+\describe{
+\item{\code{"power"}}{\eqn{\rho_i = \exp(\eta_i)}{rho_i = exp(eta_i)}}
+\item{\code{"cloglog"}}{\eqn{\rho_i = 1 - \exp(-\exp(\eta_i))}{rho_i = 1 - exp(-exp(eta_i))}}
+\item{\code{"logistic"}}{\eqn{\rho_i = 1 / (1 + \exp(-\eta_i))}{rho_i = 1 / (1 + exp(-eta_i))}}
+}
+On the log scale,
 
-\deqn{\log E(m_i) = \alpha_i \log N_i + \beta_i \log(\gamma + n_i / N_i)}{log E(m_i) = alpha_i * log(N_i) + beta_i * log(gamma + n_i / N_i)}
+\deqn{\log E(m_i) = \alpha_i \log N_i + \log(\rho_i)}{log E(m_i) = alpha_i * log(N_i) + log(rho_i)}
+
+so for every supported \code{link_rho}, \eqn{\xi_i = E(m_i) / \rho_i = N_i^{\alpha_i}}{xi_i = E(m_i) / rho_i = N_i^alpha_i}.
 
 \strong{Parameter interpretation.}
 \describe{
@@ -174,7 +202,10 @@ default.}
 allows. Standard errors for the regression coefficients are computed
 conditional on \eqn{\hat{\theta}}, consistent with the approach used
 in \code{MASS::glm.nb}. This means coefficient SEs do not account for
-uncertainty in \eqn{\theta} estimation.}
+uncertainty in \eqn{\theta} estimation. For \code{method = "poisson"}
+and \code{method = "nb"}, the same moment conditions can also be fit
+with \code{estimator = "gmm"} or \code{estimator = "el"} using
+\pkg{momentfit}.}
 }
 
 \strong{Constrained vs. unconstrained estimation.}
