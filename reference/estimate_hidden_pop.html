@@ -68,6 +68,8 @@ supports covariate-varying parameters through interaction formulas.</p>
 <span>  cov_gamma <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  gamma_bounds <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1e-10</span>, <span class="fl">0.5</span><span class="op">)</span>,</span>
 <span>  theta_start <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>  link_rho <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"power"</span>, <span class="st">"cloglog"</span>, <span class="st">"logistic"</span><span class="op">)</span>,</span>
+<span>  estimator <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"mle"</span>, <span class="st">"gmm"</span>, <span class="st">"el"</span><span class="op">)</span>,</span>
 <span>  vcov <span class="op">=</span> <span class="st">"HC3"</span>,</span>
 <span>  weights <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  constrained <span class="op">=</span> <span class="cn">FALSE</span>,</span>
@@ -138,10 +140,30 @@ the estimated gamma parameter. Default <code>c(1e-10, 0.5)</code>.</p></dd>
 only when <code>method = "nb"</code>). Default 1.</p></dd>
 
 
+<dt id="arg-link-rho">link_rho<a class="anchor" aria-label="anchor" href="#arg-link-rho"></a></dt>
+<dd><p>Link for the detection component
+\(\rho_i = h(\beta_i \log(\gamma_i + n_i / N_i))\). Supported values are
+<code>"power"</code> (default, \(\rho_i = \exp(\eta_i)\)),
+<code>"cloglog"</code> (\(\rho_i = 1 - \exp(-\exp(\eta_i))\)), and
+<code>"logistic"</code> (\(\rho_i = 1 / (1 + \exp(-\eta_i))\)).
+Bounded links are currently available for <code>method = "poisson"</code>,
+<code>"nb"</code>, and <code>"nls"</code>.</p></dd>
+
+
+<dt id="arg-estimator">estimator<a class="anchor" aria-label="anchor" href="#arg-estimator"></a></dt>
+<dd><p>Estimation criterion for count models:
+<code>"mle"</code> (default), <code>"gmm"</code>, or <code>"el"</code>.
+Non-MLE estimators are currently available only for
+<code>method = "poisson"</code> and <code>method = "nb"</code>.</p></dd>
+
+
 <dt id="arg-vcov">vcov<a class="anchor" aria-label="anchor" href="#arg-vcov"></a></dt>
 <dd><p>Controls the variance-covariance estimator. Can be:</p><ul><li><p>A character string specifying the HC type: <code>"HC0"</code> through
 <code>"HC5"</code>, or <code>"HC4m"</code>. Default <code>"HC3"</code>. When <code>cluster</code>
-is also provided, this type is passed to <code><a href="https://sandwich.R-Forge.R-project.org/reference/vcovCL.html" class="external-link">sandwich::vcovCL()</a></code>.</p></li>
+is also provided, this type is passed to <code><a href="https://sandwich.R-Forge.R-project.org/reference/vcovCL.html" class="external-link">sandwich::vcovCL()</a></code>.
+For count models fitted with <code>estimator = "gmm"</code> or
+<code>estimator = "el"</code>, the default robust covariance is
+<code>"HC1"</code> and HC2+ requests are downgraded to <code>"HC1"</code>.</p></li>
 <li><p>A function that takes the fitted <code>uncounted</code> object and returns
 a variance-covariance matrix. For example,
 <code><a href="https://sandwich.R-Forge.R-project.org/reference/vcovHC.html" class="external-link">sandwich::vcovHC</a></code> or
@@ -197,7 +219,14 @@ constrained).</p></dd>
 
 <dt><code>vcov_model</code></dt>
 <dd><p>Model-based (homoscedastic) variance-covariance
-matrix, used for bias correction.</p></dd>
+matrix, used for bias correction. For Poisson and NB count models,
+this is the Fisher-style inverse information for the mean-model
+parameters, evaluated at the fitted coefficients even when
+<code>estimator = "gmm"</code> or <code>estimator = "el"</code>.</p></dd>
+
+<dt><code>rho_values</code></dt>
+<dd><p>Per-observation fitted detection component
+\(\hat\rho_i\).</p></dd>
 
 <dt><code>fitted.values</code></dt>
 <dd><p>Fitted values \(\hat{m}_i\).</p></dd>
@@ -212,10 +241,16 @@ matrix, used for bias correction.</p></dd>
 <dd><p>NB dispersion parameter (only for <code>method = "nb"</code>).</p></dd>
 
 <dt><code>loglik</code></dt>
-<dd><p>Log-likelihood (for Poisson and NB methods).</p></dd>
+<dd><p>Log-likelihood (for MLE count fits only).</p></dd>
 
 <dt><code>method</code></dt>
-<dd><p>The estimation method used.</p></dd>
+<dd><p>The model family used.</p></dd>
+
+<dt><code>estimator</code></dt>
+<dd><p>The estimation criterion used.</p></dd>
+
+<dt><code>link_rho</code></dt>
+<dd><p>The detection-link transformation used.</p></dd>
 
 
 </dl></div>
@@ -223,12 +258,24 @@ matrix, used for bias correction.</p></dd>
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p><strong>Model specification.</strong>
 For observation \(i\), the expected observed count \(m_i\) is modelled as:</p>
-<p>$$E(m_i) = N_i^{\alpha_i} \cdot (\gamma + n_i / N_i)^{\beta_i}$$</p>
+<p>$$E(m_i) = \xi_i \rho_i,\qquad \xi_i = N_i^{\alpha_i}$$</p>
 <p>where \(N_i\) is the reference (total registered) population,
 \(n_i\) is an auxiliary count (e.g., new registrations),
-and \(\gamma \ge 0\) is an intercept-like offset.
-On the log scale, the model is linear:</p>
-<p>$$\log E(m_i) = \alpha_i \log N_i + \beta_i \log(\gamma + n_i / N_i)$$</p>
+and \(\gamma \ge 0\) is an intercept-like offset. Define
+\(\eta_i = \beta_i \log(\gamma_i + n_i / N_i)\).
+Then \(\rho_i\) is linked to \(\eta_i\) by one of:</p><dl><dt><code>"power"</code></dt>
+<dd><p>\(\rho_i = \exp(\eta_i)\)</p></dd>
+
+<dt><code>"cloglog"</code></dt>
+<dd><p>\(\rho_i = 1 - \exp(-\exp(\eta_i))\)</p></dd>
+
+<dt><code>"logistic"</code></dt>
+<dd><p>\(\rho_i = 1 / (1 + \exp(-\eta_i))\)</p></dd>
+
+
+</dl><p>On the log scale,</p>
+<p>$$\log E(m_i) = \alpha_i \log N_i + \log(\rho_i)$$</p>
+<p>so for every supported <code>link_rho</code>, \(\xi_i = E(m_i) / \rho_i = N_i^{\alpha_i}\).</p>
 <p><strong>Parameter interpretation.</strong></p><dl><dt>\(\alpha\)</dt>
 <dd><p>Elasticity of the observed count with respect to
 the reference population. When \(\alpha &lt; 1\), the total
@@ -278,7 +325,10 @@ default.</p></dd>
 allows. Standard errors for the regression coefficients are computed
 conditional on \(\hat{\theta}\), consistent with the approach used
 in <code><a href="https://rdrr.io/pkg/MASS/man/glm.nb.html" class="external-link">MASS::glm.nb</a></code>. This means coefficient SEs do not account for
-uncertainty in \(\theta\) estimation.</p></dd>
+uncertainty in \(\theta\) estimation. For <code>method = "poisson"</code>
+and <code>method = "nb"</code>, the same moment conditions can also be fit
+with <code>estimator = "gmm"</code> or <code>estimator = "el"</code> using
+<span class="pkg">momentfit</span>.</p></dd>
 
 
 </dl><p><strong>Constrained vs. unconstrained estimation.</strong>
@@ -330,7 +380,7 @@ irregular foreigners in Poland using non-linear count regression models.
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">fit_pois</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Unauthorized population estimation</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Method: POISSON | vcov: HC3 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Method: POISSON | estimator: MLE | link_rho: power | vcov: HC3 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> N obs: 50 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Gamma: 0.337767 (estimated) </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Log-likelihood: -134.08 </span>
@@ -358,7 +408,7 @@ irregular foreigners in Poland using non-linear count regression models.
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">fit_ols</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Unauthorized population estimation</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Method: OLS | vcov: HC3 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Method: OLS | estimator: MLE | link_rho: power | vcov: HC3 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> N obs: 50 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Gamma: 0.01 (fixed) </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Deviance: 4.13 </span>
@@ -384,7 +434,7 @@ irregular foreigners in Poland using non-linear count regression models.
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">fit_constr</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Unauthorized population estimation</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Method: POISSON | vcov: HC3 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Method: POISSON | estimator: MLE | link_rho: power | vcov: HC3 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> N obs: 50 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Gamma: 0 (estimated) </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Log-likelihood: -133.7 </span>

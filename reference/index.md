@@ -82,5 +82,9 @@
   : Tidy an uncounted model
 - [`update(`*`<uncounted>`*`)`](https://ncn-foreigners.github.io/uncounted/reference/update.uncounted.md)
   : Update and re-fit an uncounted model
+- [`vcovCL(`*`<uncounted>`*`)`](https://ncn-foreigners.github.io/uncounted/reference/vcovCL.uncounted.md)
+  : Cluster-robust covariance for uncounted models
+- [`vcovHC(`*`<uncounted>`*`)`](https://ncn-foreigners.github.io/uncounted/reference/vcovHC.uncounted.md)
+  : Heteroskedasticity-consistent covariance for uncounted models
 - [`vcov_nb()`](https://ncn-foreigners.github.io/uncounted/reference/vcov_nb.md)
   : Theta-Aware Full Variance-Covariance for NB Models

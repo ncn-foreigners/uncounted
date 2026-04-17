@@ -39,7 +39,7 @@ Quick summaries:
 ``` r
 summary(fit_po)
 #> Unauthorized population estimation
-#> Method: POISSON | vcov: HC3 
+#> Method: POISSON | estimator: MLE | link_rho: power | vcov: HC3 
 #> N obs: 1382 
 #> Gamma: 0.007255 (estimated) 
 #> Log-likelihood: -8217.25 
@@ -82,7 +82,7 @@ summary(fit_po)
 #> year=2024, sex=Male      5,731   17,462        17,448    1,177  258,669
 summary(fit_nb)
 #> Unauthorized population estimation
-#> Method: NB | vcov: HC1 
+#> Method: NB | estimator: MLE | link_rho: power | vcov: HC1 
 #> N obs: 1382 
 #> Gamma: 0.020902 (estimated) 
 #> Theta (NB dispersion): 1.3553 
@@ -155,12 +155,12 @@ comp <- compare_models(Poisson = fit_po, NB = fit_nb, sort_by = "AIC")
 comp
 #> Model comparison
 #> ------------------------------------------------------------ 
-#>    Model  Method Constrained n_par   logLik      AIC      BIC Deviance
-#>       NB      NB       FALSE    15 -2621.12  5272.23  5350.70  1275.97
-#>  Poisson POISSON       FALSE    14 -8217.25 16462.49 16535.73 13831.69
-#>  Pearson_X2   RMSE R2_cor    R2_D  R2_CW
-#>     3090.80 205.92 0.4058 -0.0030 0.9526
-#>    17500.68  52.53 0.8280  0.3139 0.9827
+#>    Model  Method Estimator  Link Constrained n_par   logLik      AIC      BIC
+#>       NB      NB       MLE power       FALSE    15 -2621.12  5272.23  5350.70
+#>  Poisson POISSON       MLE power       FALSE    14 -8217.25 16462.49 16535.73
+#>  Deviance Pearson_X2   RMSE R2_cor    R2_D  R2_CW
+#>   1275.97    3090.80 205.92 0.4058 -0.0030 0.9526
+#>  13831.69   17500.68  52.53 0.8280  0.3139 0.9827
 ```
 
 Lower AIC and BIC values indicate a better trade-off between fit and

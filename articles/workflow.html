@@ -168,7 +168,7 @@ heteroscedasticity, and gamma is estimated jointly.</p>
 <span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">fit_pois</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Unauthorized population estimation</span></span>
-<span><span class="co">#&gt; Method: POISSON | vcov: HC3 </span></span>
+<span><span class="co">#&gt; Method: POISSON | estimator: MLE | link_rho: power | vcov: HC3 </span></span>
 <span><span class="co">#&gt; N obs: 1382 </span></span>
 <span><span class="co">#&gt; Gamma: 0.001831 (estimated) </span></span>
 <span><span class="co">#&gt; Log-likelihood: -11380.65 </span></span>
@@ -222,7 +222,7 @@ reported coefficients are on the link scale.</p>
 <span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">fit_pois_c</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Unauthorized population estimation</span></span>
-<span><span class="co">#&gt; Method: POISSON | vcov: HC3 </span></span>
+<span><span class="co">#&gt; Method: POISSON | estimator: MLE | link_rho: power | vcov: HC3 </span></span>
 <span><span class="co">#&gt; N obs: 1382 </span></span>
 <span><span class="co">#&gt; Gamma: 0.001831 (estimated) </span></span>
 <span><span class="co">#&gt; Log-likelihood: -11380.65 </span></span>
@@ -270,7 +270,7 @@ overdispersion beyond what Poisson allows.</p>
 <span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">fit_nb</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Unauthorized population estimation</span></span>
-<span><span class="co">#&gt; Method: NB | vcov: HC1 </span></span>
+<span><span class="co">#&gt; Method: NB | estimator: MLE | link_rho: power | vcov: HC1 </span></span>
 <span><span class="co">#&gt; N obs: 1382 </span></span>
 <span><span class="co">#&gt; Gamma: 0.01901 (estimated) </span></span>
 <span><span class="co">#&gt; Theta (NB dispersion): 1.0616 </span></span>
@@ -312,7 +312,7 @@ simultaneously.</p>
 <span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">fit_nb2</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Unauthorized population estimation</span></span>
-<span><span class="co">#&gt; Method: NB | vcov: HC1 </span></span>
+<span><span class="co">#&gt; Method: NB | estimator: MLE | link_rho: power | vcov: HC1 </span></span>
 <span><span class="co">#&gt; N obs: 1382 </span></span>
 <span><span class="co">#&gt; Gamma: 0.001831 (fixed) </span></span>
 <span><span class="co">#&gt; Theta (NB dispersion): 0.9491 </span></span>
@@ -358,16 +358,15 @@ along with bias-corrected estimates and confidence intervals.</p>
 <strong>estimate</strong> – plug-in estimate
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mover><mi>ξ</mi><mo accent="true">̂</mo></mover><annotation encoding="application/x-tex">\hat{\xi}</annotation></semantics></math>.</li>
 <li>
-<strong>estimate_bc</strong> – bias-corrected estimate using a
-second-order Taylor expansion. Because
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>ξ</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>α</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mo>∑</mo><msubsup><mi>N</mi><mi>i</mi><mi>α</mi></msubsup></mrow><annotation encoding="application/x-tex">\xi(\alpha) = \sum N_i^\alpha</annotation></semantics></math>
-is convex, the plug-in estimator is biased upward by Jensen’s
-inequality.</li>
+<strong>estimate_bc</strong> – analytical bias-corrected estimate.
+For unconstrained fits this is the multiplicative lognormal correction;
+constrained fits use a second-order Taylor approximation.</li>
 <li>
 <strong>lower</strong>, <strong>upper</strong> – confidence interval
-bounds. The CI is constructed by a monotone transformation of the Wald
-interval on the link scale, with bias correction applied at the
-bounds.</li>
+bounds. The CI is constructed by a delta-method/log-normal approximation
+on the population-size scale. When bias correction is requested, the
+bounds are rescaled by the same <code>estimate_bc / estimate</code>
+ratio as the reported point estimate.</li>
 <li>
 <strong>share_pct</strong> – group share as a percentage of the
 total.</li>
@@ -839,16 +838,16 @@ therefore the recommended point estimate.</p>
 <span><span class="va">comp</span></span>
 <span><span class="co">#&gt; Model comparison</span></span>
 <span><span class="co">#&gt; ------------------------------------------------------------ </span></span>
-<span><span class="co">#&gt;           Model  Method Constrained n_par    logLik      AIC      BIC Deviance</span></span>
-<span><span class="co">#&gt;              NB      NB       FALSE     4  -2693.48  5394.97  5415.89  1272.20</span></span>
-<span><span class="co">#&gt;     NB_twostage      NB       FALSE     3  -2727.07  5460.14  5475.84  1267.27</span></span>
-<span><span class="co">#&gt;  Poisson_constr POISSON        TRUE     3 -11380.65 22767.30 22782.99 20158.50</span></span>
-<span><span class="co">#&gt;         Poisson POISSON       FALSE     3 -11380.65 22767.30 22782.99 20158.50</span></span>
-<span><span class="co">#&gt;  Pearson_X2   RMSE R2_cor R2_D  R2_CW</span></span>
-<span><span class="co">#&gt;     2943.93 139.85 0.5168    0 0.9432</span></span>
-<span><span class="co">#&gt;     2600.28  82.27 0.5620    0 0.9442</span></span>
-<span><span class="co">#&gt;    25366.63  81.47 0.5623    0 0.9749</span></span>
-<span><span class="co">#&gt;    25366.63  81.47 0.5623    0 0.9749</span></span></code></pre></div>
+<span><span class="co">#&gt;           Model  Method Estimator  Link Constrained n_par    logLik      AIC</span></span>
+<span><span class="co">#&gt;              NB      NB       MLE power       FALSE     4  -2693.48  5394.97</span></span>
+<span><span class="co">#&gt;     NB_twostage      NB       MLE power       FALSE     3  -2727.07  5460.14</span></span>
+<span><span class="co">#&gt;  Poisson_constr POISSON       MLE power        TRUE     3 -11380.65 22767.30</span></span>
+<span><span class="co">#&gt;         Poisson POISSON       MLE power       FALSE     3 -11380.65 22767.30</span></span>
+<span><span class="co">#&gt;       BIC Deviance Pearson_X2   RMSE R2_cor R2_D  R2_CW</span></span>
+<span><span class="co">#&gt;   5415.89  1272.20    2943.93 139.85 0.5168    0 0.9432</span></span>
+<span><span class="co">#&gt;   5475.84  1267.27    2600.28  82.27 0.5620    0 0.9442</span></span>
+<span><span class="co">#&gt;  22782.99 20158.50   25366.63  81.47 0.5623    0 0.9749</span></span>
+<span><span class="co">#&gt;  22782.99 20158.50   25366.63  81.47 0.5623    0 0.9749</span></span></code></pre></div>
 <p>The output includes three pseudo
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>R</mi><mn>2</mn></msup><annotation encoding="application/x-tex">R^2</annotation></semantics></math>
 measures: <code>R2_cor</code> (squared correlation), <code>R2_D</code>

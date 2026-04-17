@@ -105,14 +105,14 @@ fit_nb <- estimate_hidden_pop(data = df, observed = ~m, auxiliary = ~n,
 
 comp <- compare_models(Poisson = fit_po, NB = fit_nb, sort_by = "AIC")
 #> Warning: Some alpha values < 0 (min = -1.28). Consider using constrained = TRUE.
-#> Warning: Some alpha values < 0 (min = -1.244). Consider using constrained = TRUE.
+#> Warning: Some alpha values < 0 (min = -1.28). Consider using constrained = TRUE.
 comp
 #> Model comparison
 #> ------------------------------------------------------------ 
-#>    Model  Method Constrained n_par logLik    AIC    BIC Deviance Pearson_X2
-#>  Poisson POISSON       FALSE     3 -52.51 111.02 115.22    33.82      26.32
-#>       NB      NB       FALSE     4 -52.52 113.05 118.65    33.85      26.35
-#>  RMSE R2_cor R2_D  R2_CW
-#>  1.43 0.1019    0 0.1208
-#>  1.43 0.1018    0 0.1198
+#>    Model  Method Estimator  Link Constrained n_par logLik    AIC    BIC
+#>  Poisson POISSON       MLE power       FALSE     3 -52.51 111.02 115.22
+#>       NB      NB       MLE power       FALSE     4 -52.52 113.05 118.65
+#>  Deviance Pearson_X2 RMSE R2_cor   R2_D  R2_CW
+#>     33.82      26.32 1.43 0.1019  0e+00 0.1208
+#>     33.85      26.35 1.43 0.1018 -8e-04 0.1198
 ```

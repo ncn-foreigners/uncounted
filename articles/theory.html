@@ -123,25 +123,47 @@ identifications).</li>
 <p>The conditional mean of
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>m</mi><mi>i</mi></msub><annotation encoding="application/x-tex">m_i</annotation></semantics></math>
 is modelled as</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>E</mi><mrow><mo stretchy="true" form="prefix">[</mo><msub><mi>m</mi><mi>i</mi></msub><mo>∣</mo><msub><mi>N</mi><mi>i</mi></msub><mo>,</mo><msub><mi>n</mi><mi>i</mi></msub><mo stretchy="true" form="postfix">]</mo></mrow><mspace width="0.278em"></mspace><mo>=</mo><mspace width="0.278em"></mspace><msubsup><mi>N</mi><mi>i</mi><mi>α</mi></msubsup><mspace width="0.167em"></mspace><msup><mrow><mo stretchy="true" form="prefix">(</mo><mfrac><mrow><msub><mi>n</mi><mi>i</mi></msub><mo>+</mo><mi>γ</mi></mrow><msub><mi>N</mi><mi>i</mi></msub></mfrac><mo stretchy="true" form="postfix">)</mo></mrow><mrow><mspace width="-0.167em"></mspace><mi>β</mi></mrow></msup><mo>,</mo></mrow><annotation encoding="application/x-tex">
-E[m_i \mid N_i, n_i] \;=\; N_i^{\alpha}\,
-  \left(\frac{n_i + \gamma}{N_i}\right)^{\!\beta},
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>E</mi><mrow><mo stretchy="true" form="prefix">[</mo><msub><mi>m</mi><mi>i</mi></msub><mo>∣</mo><msub><mi>N</mi><mi>i</mi></msub><mo>,</mo><msub><mi>n</mi><mi>i</mi></msub><mo stretchy="true" form="postfix">]</mo></mrow><mspace width="0.278em"></mspace><mo>=</mo><mspace width="0.278em"></mspace><msub><mi>ξ</mi><mi>i</mi></msub><msub><mi>ρ</mi><mi>i</mi></msub><mo>,</mo><mspace width="2.0em"></mspace><msub><mi>ξ</mi><mi>i</mi></msub><mo>=</mo><msubsup><mi>N</mi><mi>i</mi><mi>α</mi></msubsup><mo>,</mo></mrow><annotation encoding="application/x-tex">
+E[m_i \mid N_i, n_i] \;=\; \xi_i \rho_i,
+  \qquad \xi_i = N_i^{\alpha},
 </annotation></semantics></math></p>
 <p>where
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>α</mi><annotation encoding="application/x-tex">\alpha</annotation></semantics></math>,
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>β</mi><annotation encoding="application/x-tex">\beta</annotation></semantics></math>,
 and
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>γ</mi><mo>≥</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">\gamma \geq 0</annotation></semantics></math>
-are parameters to be estimated. On the log scale, this becomes a linear
-model:</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo>log</mo><mi>E</mi><mrow><mo stretchy="true" form="prefix">[</mo><msub><mi>m</mi><mi>i</mi></msub><mo stretchy="true" form="postfix">]</mo></mrow><mspace width="0.278em"></mspace><mo>=</mo><mspace width="0.278em"></mspace><mi>α</mi><mspace width="0.167em"></mspace><mo>log</mo><msub><mi>N</mi><mi>i</mi></msub><mspace width="0.278em"></mspace><mo>+</mo><mspace width="0.278em"></mspace><mi>β</mi><mspace width="0.167em"></mspace><mo>log</mo><mspace width="-0.167em"></mspace><mrow><mo stretchy="true" form="prefix">(</mo><mfrac><mrow><msub><mi>n</mi><mi>i</mi></msub><mo>+</mo><mi>γ</mi></mrow><msub><mi>N</mi><mi>i</mi></msub></mfrac><mo stretchy="true" form="postfix">)</mo></mrow><mi>.</mi></mrow><annotation encoding="application/x-tex">
-\log E[m_i] \;=\;
-  \alpha \,\log N_i \;+\;
-  \beta \,\log\!\left(\frac{n_i + \gamma}{N_i}\right).
+are parameters to be estimated. Define</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>η</mi><mi>i</mi></msub><mo>=</mo><mi>β</mi><mo>log</mo><mspace width="-0.167em"></mspace><mrow><mo stretchy="true" form="prefix">(</mo><mi>γ</mi><mo>+</mo><mfrac><msub><mi>n</mi><mi>i</mi></msub><msub><mi>N</mi><mi>i</mi></msub></mfrac><mo stretchy="true" form="postfix">)</mo></mrow><mi>.</mi></mrow><annotation encoding="application/x-tex">
+\eta_i = \beta \log\!\left(\gamma + \frac{n_i}{N_i}\right).
 </annotation></semantics></math></p>
-<p>Note that the argument of the second logarithm can be rewritten as
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>γ</mi><mo>+</mo><msub><mi>n</mi><mi>i</mi></msub><mi>/</mi><msub><mi>N</mi><mi>i</mi></msub></mrow><annotation encoding="application/x-tex">\gamma + n_i / N_i</annotation></semantics></math>
-when the ratio form is used inside the code.</p>
+<p>The package supports three links for
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>ρ</mi><mi>i</mi></msub><mo>=</mo><mi>h</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>η</mi><mi>i</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\rho_i = h(\eta_i)</annotation></semantics></math>:</p>
+<ul>
+<li>
+<code>link_rho = "power"</code>:
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>ρ</mi><mi>i</mi></msub><mo>=</mo><mo>exp</mo><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>η</mi><mi>i</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\rho_i = \exp(\eta_i)</annotation></semantics></math>,</li>
+<li>
+<code>link_rho = "cloglog"</code>:
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>ρ</mi><mi>i</mi></msub><mo>=</mo><mn>1</mn><mo>−</mo><mo>exp</mo><mrow><mo stretchy="true" form="prefix">(</mo><mo>−</mo><mo>exp</mo><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>η</mi><mi>i</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\rho_i = 1 - \exp(-\exp(\eta_i))</annotation></semantics></math>,</li>
+<li>
+<code>link_rho = "logistic"</code>:
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>ρ</mi><mi>i</mi></msub><mo>=</mo><msup><mrow><mo stretchy="true" form="prefix">(</mo><mn>1</mn><mo>+</mo><mo>exp</mo><mrow><mo stretchy="true" form="prefix">(</mo><mo>−</mo><msub><mi>η</mi><mi>i</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo stretchy="true" form="postfix">)</mo></mrow><mrow><mo>−</mo><mn>1</mn></mrow></msup></mrow><annotation encoding="application/x-tex">\rho_i = (1 + \exp(-\eta_i))^{-1}</annotation></semantics></math>.</li>
+</ul>
+<p>On the log scale, this becomes</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo>log</mo><mi>E</mi><mrow><mo stretchy="true" form="prefix">[</mo><msub><mi>m</mi><mi>i</mi></msub><mo stretchy="true" form="postfix">]</mo></mrow><mspace width="0.278em"></mspace><mo>=</mo><mspace width="0.278em"></mspace><mi>α</mi><mspace width="0.167em"></mspace><mo>log</mo><msub><mi>N</mi><mi>i</mi></msub><mspace width="0.278em"></mspace><mo>+</mo><mspace width="0.278em"></mspace><mo>log</mo><msub><mi>ρ</mi><mi>i</mi></msub><mi>.</mi></mrow><annotation encoding="application/x-tex">
+\log E[m_i] \;=\; \alpha \,\log N_i \;+\; \log \rho_i.
+</annotation></semantics></math></p>
+<p>Under every supported detection link,</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>ξ</mi><mi>i</mi></msub><mo>=</mo><mfrac><mrow><mi>E</mi><mrow><mo stretchy="true" form="prefix">[</mo><msub><mi>m</mi><mi>i</mi></msub><mo stretchy="true" form="postfix">]</mo></mrow></mrow><msub><mi>ρ</mi><mi>i</mi></msub></mfrac><mo>=</mo><msubsup><mi>N</mi><mi>i</mi><mi>α</mi></msubsup><mi>.</mi></mrow><annotation encoding="application/x-tex">
+\xi_i = \frac{E[m_i]}{\rho_i} = N_i^\alpha.
+</annotation></semantics></math></p>
+<p>This is why the public population-size estimator remains
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mover><mi>ξ</mi><mo accent="true">̂</mo></mover><mo>=</mo><msub><mo>∑</mo><mi>i</mi></msub><msubsup><mi>N</mi><mi>i</mi><msub><mover><mi>α</mi><mo accent="true">̂</mo></mover><mi>i</mi></msub></msubsup></mrow><annotation encoding="application/x-tex">\hat\xi = \sum_i N_i^{\hat\alpha_i}</annotation></semantics></math>
+even when a bounded detection link is used. The choice of
+<code>link_rho</code> affects
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mover><mi>ξ</mi><mo accent="true">̂</mo></mover><annotation encoding="application/x-tex">\hat\xi</annotation></semantics></math>
+only indirectly through the fitted value of
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mover><mi>α</mi><mo accent="true">̂</mo></mover><annotation encoding="application/x-tex">\hat\alpha</annotation></semantics></math>.</p>
 </div>
 <div class="section level3">
 <h3 id="parameter-interpretation">Parameter interpretation<a class="anchor" aria-label="anchor" href="#parameter-interpretation"></a>
@@ -224,7 +246,7 @@ a property exploited for confidence interval construction.</p>
 <span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Unauthorized population estimation</span></span>
-<span><span class="co">#&gt; Method: POISSON | vcov: HC3 </span></span>
+<span><span class="co">#&gt; Method: POISSON | estimator: MLE | link_rho: power | vcov: HC3 </span></span>
 <span><span class="co">#&gt; N obs: 1382 </span></span>
 <span><span class="co">#&gt; Gamma: 0.001831 (estimated) </span></span>
 <span><span class="co">#&gt; Log-likelihood: -11380.65 </span></span>
@@ -315,7 +337,7 @@ then reported on the link scale; response-scale values are shown by
 <span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">fit_cov</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Unauthorized population estimation</span></span>
-<span><span class="co">#&gt; Method: POISSON | vcov: HC3 </span></span>
+<span><span class="co">#&gt; Method: POISSON | estimator: MLE | link_rho: power | vcov: HC3 </span></span>
 <span><span class="co">#&gt; N obs: 1382 </span></span>
 <span><span class="co">#&gt; Gamma: 0.004998 (estimated) </span></span>
 <span><span class="co">#&gt; Log-likelihood: -11113.89 </span></span>
@@ -350,7 +372,7 @@ then reported on the link scale; response-scale values are shown by
 <span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">fit_constr</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Unauthorized population estimation</span></span>
-<span><span class="co">#&gt; Method: POISSON | vcov: HC3 </span></span>
+<span><span class="co">#&gt; Method: POISSON | estimator: MLE | link_rho: power | vcov: HC3 </span></span>
 <span><span class="co">#&gt; N obs: 1382 </span></span>
 <span><span class="co">#&gt; Gamma: 0.005432 (estimated) </span></span>
 <span><span class="co">#&gt; Log-likelihood: -11133.17 </span></span>
@@ -439,6 +461,16 @@ is consistent for the parameters of the conditional mean
 even if the true distribution is not Poisson, provided the mean is
 correctly specified. This makes PPML robust to heteroscedasticity and is
 the recommended default in <code>uncounted</code>.</p>
+<p>For the Poisson and Negative Binomial count models, the package can
+also use <code>estimator = "gmm"</code> or
+<code>estimator = "el"</code>. In those cases the same per-observation
+score equations are treated as moment conditions and fitted with
+<code>momentfit</code>. The model for
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>μ</mi><mi>i</mi></msub><annotation encoding="application/x-tex">\mu_i</annotation></semantics></math>
+is unchanged; only the estimating criterion differs. For these
+moment-based count fits the default robust covariance is HC1 rather than
+HC3, because leverage-based HC2/HC3 adjustments are not available
+generically in that setting.</p>
 </div>
 <div class="section level3">
 <h3 id="negative-binomial-ml">Negative Binomial ML<a class="anchor" aria-label="anchor" href="#negative-binomial-ml"></a>
@@ -611,9 +643,12 @@ are adjusted residuals. The adjustment depends on the HC variant:</p>
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>h</mi><mrow><mi>i</mi><mi>i</mi></mrow></msub><annotation encoding="application/x-tex">h_{ii}</annotation></semantics></math>
 are the hat-matrix diagonal elements (leverages) and
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>δ</mi><mi>i</mi></msub><annotation encoding="application/x-tex">\delta_i</annotation></semantics></math>
-is a data-dependent exponent. HC3 (the default) is recommended for
-moderate sample sizes as it provides a good balance between
-finite-sample bias correction and stability.</p>
+is a data-dependent exponent. HC3 is the default for OLS, NLS, Poisson
+MLE, NB MLE, and iOLS, and is recommended for moderate sample sizes as
+it provides a good balance between finite-sample bias correction and
+stability. For the moment-based count estimators
+(<code>estimator = "gmm"</code> and <code>estimator = "el"</code>), the
+default robust covariance is HC1.</p>
 </div>
 <div class="section level3">
 <h3 id="delta-method-confidence-intervals-for-population-size">Delta-method confidence intervals for population size<a class="anchor" aria-label="anchor" href="#delta-method-confidence-intervals-for-population-size"></a>
@@ -622,37 +657,49 @@ finite-sample bias correction and stability.</p>
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mover><mi>ξ</mi><mo accent="true">̂</mo></mover><mo>=</mo><msub><mo>∑</mo><mi>i</mi></msub><msubsup><mi>N</mi><mi>i</mi><mover><mi>α</mi><mo accent="true">̂</mo></mover></msubsup></mrow><annotation encoding="application/x-tex">\hat\xi = \sum_i N_i^{\hat\alpha}</annotation></semantics></math>
 is a nonlinear function of
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mover><mi>α</mi><mo accent="true">̂</mo></mover><annotation encoding="application/x-tex">\hat\alpha</annotation></semantics></math>.
-Confidence intervals are constructed via a <em>monotone
-transformation</em> of the Wald interval on the link scale.</p>
-<p><strong>Step 1.</strong> Build a Wald interval for the linear
-predictor
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mover><mi>η</mi><mo accent="true">̂</mo></mover><annotation encoding="application/x-tex">\hat\eta</annotation></semantics></math>
-(which equals
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mover><mi>α</mi><mo accent="true">̂</mo></mover><annotation encoding="application/x-tex">\hat\alpha</annotation></semantics></math>
-when unconstrained, or the logit of
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mover><mi>α</mi><mo accent="true">̂</mo></mover><annotation encoding="application/x-tex">\hat\alpha</annotation></semantics></math>
-when constrained):</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mover><mi>η</mi><mo accent="true">̂</mo></mover><mspace width="0.278em"></mspace><mo>±</mo><mspace width="0.278em"></mspace><msub><mi>z</mi><mrow><mi>α</mi><mi>/</mi><mn>2</mn></mrow></msub><mo>⋅</mo><mrow><mi mathvariant="normal">s</mi><mi mathvariant="normal">e</mi></mrow><mrow><mo stretchy="true" form="prefix">(</mo><mover><mi>η</mi><mo accent="true">̂</mo></mover><mo stretchy="true" form="postfix">)</mo></mrow><mo>,</mo></mrow><annotation encoding="application/x-tex">
-\hat\eta \;\pm\; z_{\alpha/2} \cdot \mathrm{se}(\hat\eta),
+The implemented subgroup intervals are based on the delta method for
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mover><mi>ξ</mi><mo accent="true">̂</mo></mover><mi>g</mi></msub><annotation encoding="application/x-tex">\hat\xi_g</annotation></semantics></math>
+itself, followed by a log-normal approximation to preserve
+positivity.</p>
+<p>For a subgroup
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>g</mi><annotation encoding="application/x-tex">g</annotation></semantics></math>,
+let
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>𝐠</mi><mi>g</mi></msub><annotation encoding="application/x-tex">\mathbf{g}_g</annotation></semantics></math>
+denote the gradient of
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mover><mi>ξ</mi><mo accent="true">̂</mo></mover><mi>g</mi></msub><mo>=</mo><msub><mo>∑</mo><mrow><mi>i</mi><mo>∈</mo><mi>g</mi></mrow></msub><msubsup><mi>N</mi><mi>i</mi><msub><mover><mi>α</mi><mo accent="true">̂</mo></mover><mi>i</mi></msub></msubsup></mrow><annotation encoding="application/x-tex">\hat\xi_g = \sum_{i \in g} N_i^{\hat\alpha_i}</annotation></semantics></math>
+with respect to the alpha coefficients. In the unconstrained case,</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>𝐠</mi><mi>g</mi></msub><mo>=</mo><munder><mo>∑</mo><mrow><mi>i</mi><mo>∈</mo><mi>g</mi></mrow></munder><msubsup><mi>N</mi><mi>i</mi><msub><mover><mi>α</mi><mo accent="true">̂</mo></mover><mi>i</mi></msub></msubsup><mo>log</mo><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>N</mi><mi>i</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><msub><mi>𝐱</mi><mi>i</mi></msub><mi>.</mi></mrow><annotation encoding="application/x-tex">
+\mathbf{g}_g =
+  \sum_{i \in g} N_i^{\hat\alpha_i}\log(N_i)\mathbf{x}_i.
 </annotation></semantics></math></p>
-<p>where
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mi mathvariant="normal">s</mi><mi mathvariant="normal">e</mi></mrow><mrow><mo stretchy="true" form="prefix">(</mo><mover><mi>η</mi><mo accent="true">̂</mo></mover><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><msqrt><mrow><msup><mi>𝐱</mi><mi>⊤</mi></msup><mi>𝐕</mi><mi>𝐱</mi></mrow></msqrt></mrow><annotation encoding="application/x-tex">\mathrm{se}(\hat\eta) = \sqrt{\mathbf{x}^\top \mathbf{V} \mathbf{x}}</annotation></semantics></math>
-uses the HC-robust covariance
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>𝐕</mi><annotation encoding="application/x-tex">\mathbf{V}</annotation></semantics></math>.</p>
-<p><strong>Step 2.</strong> Map the interval endpoints through the
-monotone function
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>g</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>α</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><msub><mo>∑</mo><mi>i</mi></msub><msubsup><mi>N</mi><mi>i</mi><mi>α</mi></msubsup></mrow><annotation encoding="application/x-tex">g(\alpha) = \sum_i N_i^\alpha</annotation></semantics></math>:</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mover><mi>ξ</mi><mo accent="true">̂</mo></mover><mi>L</mi></msub><mo>=</mo><munder><mo>∑</mo><mi>i</mi></munder><msubsup><mi>N</mi><mi>i</mi><msub><mi>α</mi><mi>L</mi></msub></msubsup><mo>,</mo><mspace width="2.0em"></mspace><msub><mover><mi>ξ</mi><mo accent="true">̂</mo></mover><mi>U</mi></msub><mo>=</mo><munder><mo>∑</mo><mi>i</mi></munder><msubsup><mi>N</mi><mi>i</mi><msub><mi>α</mi><mi>U</mi></msub></msubsup><mi>.</mi></mrow><annotation encoding="application/x-tex">
-\hat\xi_L = \sum_i N_i^{\alpha_L}, \qquad
-\hat\xi_U = \sum_i N_i^{\alpha_U}.
+<p>When <code>constrained = TRUE</code>, the same expression is
+multiplied by the derivative of the inverse-logit map,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mover><mi>α</mi><mo accent="true">̂</mo></mover><mi>i</mi></msub><mrow><mo stretchy="true" form="prefix">(</mo><mn>1</mn><mo>−</mo><msub><mover><mi>α</mi><mo accent="true">̂</mo></mover><mi>i</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\hat\alpha_i(1-\hat\alpha_i)</annotation></semantics></math>,
+because the model is parameterized on the link scale.</p>
+<p>Using the HC-robust covariance
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>𝐕</mi><annotation encoding="application/x-tex">\mathbf{V}</annotation></semantics></math>
+for the alpha coefficients,</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mover><mrow><mi mathvariant="normal">V</mi><mi mathvariant="normal">a</mi><mi mathvariant="normal">r</mi></mrow><mo accent="true">̂</mo></mover><mrow><mo stretchy="true" form="prefix">(</mo><msub><mover><mi>ξ</mi><mo accent="true">̂</mo></mover><mi>g</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><msubsup><mi>𝐠</mi><mi>g</mi><mi>⊤</mi></msubsup><mi>𝐕</mi><msub><mi>𝐠</mi><mi>g</mi></msub><mi>.</mi></mrow><annotation encoding="application/x-tex">
+\widehat{\mathrm{Var}}(\hat\xi_g) =
+  \mathbf{g}_g^\top \mathbf{V} \mathbf{g}_g.
 </annotation></semantics></math></p>
-<p>Since
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>g</mi><annotation encoding="application/x-tex">g</annotation></semantics></math>
-is monotone increasing for
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>N</mi><mi>i</mi></msub><mo>≥</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">N_i \geq 1</annotation></semantics></math>,
-the resulting interval
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="true" form="prefix">[</mo><msub><mover><mi>ξ</mi><mo accent="true">̂</mo></mover><mi>L</mi></msub><mo>,</mo><msub><mover><mi>ξ</mi><mo accent="true">̂</mo></mover><mi>U</mi></msub><mo stretchy="true" form="postfix">]</mo></mrow><annotation encoding="application/x-tex">[\hat\xi_L, \hat\xi_U]</annotation></semantics></math>
-has the correct coverage probability (asymptotically).</p>
+<p>The subgroup standard error
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mover><mrow><mi mathvariant="normal">s</mi><mi mathvariant="normal">e</mi></mrow><mo accent="true">̂</mo></mover><mrow><mo stretchy="true" form="prefix">(</mo><msub><mover><mi>ξ</mi><mo accent="true">̂</mo></mover><mi>g</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><msqrt><mrow><mover><mrow><mi mathvariant="normal">V</mi><mi mathvariant="normal">a</mi><mi mathvariant="normal">r</mi></mrow><mo accent="true">̂</mo></mover><mrow><mo stretchy="true" form="prefix">(</mo><msub><mover><mi>ξ</mi><mo accent="true">̂</mo></mover><mi>g</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow></msqrt></mrow><annotation encoding="application/x-tex">\widehat{\mathrm{se}}(\hat\xi_g)=\sqrt{\widehat{\mathrm{Var}}(\hat\xi_g)}</annotation></semantics></math>
+is then mapped to a log-normal interval</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mo stretchy="true" form="prefix">(</mo><msub><mover><mi>ξ</mi><mo accent="true">̂</mo></mover><mi>g</mi></msub><mo>exp</mo><mspace width="-0.167em"></mspace><mrow><mo stretchy="true" form="prefix">{</mo><mo>−</mo><msub><mi>z</mi><mrow><mi>α</mi><mi>/</mi><mn>2</mn></mrow></msub><mfrac><mrow><mover><mrow><mi mathvariant="normal">s</mi><mi mathvariant="normal">e</mi></mrow><mo accent="true">̂</mo></mover><mrow><mo stretchy="true" form="prefix">(</mo><msub><mover><mi>ξ</mi><mo accent="true">̂</mo></mover><mi>g</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow><msub><mover><mi>ξ</mi><mo accent="true">̂</mo></mover><mi>g</mi></msub></mfrac><mo stretchy="true" form="postfix">}</mo></mrow><mo>,</mo><mspace width="0.278em"></mspace><msub><mover><mi>ξ</mi><mo accent="true">̂</mo></mover><mi>g</mi></msub><mo>exp</mo><mspace width="-0.167em"></mspace><mrow><mo stretchy="true" form="prefix">{</mo><msub><mi>z</mi><mrow><mi>α</mi><mi>/</mi><mn>2</mn></mrow></msub><mfrac><mrow><mover><mrow><mi mathvariant="normal">s</mi><mi mathvariant="normal">e</mi></mrow><mo accent="true">̂</mo></mover><mrow><mo stretchy="true" form="prefix">(</mo><msub><mover><mi>ξ</mi><mo accent="true">̂</mo></mover><mi>g</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow><msub><mover><mi>ξ</mi><mo accent="true">̂</mo></mover><mi>g</mi></msub></mfrac><mo stretchy="true" form="postfix">}</mo></mrow><mo stretchy="true" form="postfix">)</mo></mrow><mi>.</mi></mrow><annotation encoding="application/x-tex">
+\left(
+\hat\xi_g \exp\!\left\{-z_{\alpha/2}
+  \frac{\widehat{\mathrm{se}}(\hat\xi_g)}{\hat\xi_g}\right\},
+\;
+\hat\xi_g \exp\!\left\{z_{\alpha/2}
+  \frac{\widehat{\mathrm{se}}(\hat\xi_g)}{\hat\xi_g}\right\}
+\right).
+</annotation></semantics></math></p>
+<p>When analytical bias correction is requested, the package rescales
+both bounds by the ratio
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msubsup><mover><mi>ξ</mi><mo accent="true">̂</mo></mover><mi>g</mi><mrow><mi>B</mi><mi>C</mi></mrow></msubsup><mi>/</mi><msub><mover><mi>ξ</mi><mo accent="true">̂</mo></mover><mi>g</mi></msub></mrow><annotation encoding="application/x-tex">\hat\xi_g^{BC}/\hat\xi_g</annotation></semantics></math>
+so that the returned interval is centered on the bias-corrected
+estimate.</p>
 <p><strong>Total across groups.</strong> When the model includes
 covariates in
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>α</mi><annotation encoding="application/x-tex">\alpha</annotation></semantics></math>,
@@ -673,11 +720,33 @@ for
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>N</mi><mi>i</mi></msub><mo>&gt;</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">N_i &gt; 1</annotation></semantics></math>,
 Jensen’s inequality implies
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>E</mi><mrow><mo stretchy="true" form="prefix">[</mo><mover><mi>ξ</mi><mo accent="true">̂</mo></mover><mo stretchy="true" form="postfix">]</mo></mrow><mo>≥</mo><mi>ξ</mi></mrow><annotation encoding="application/x-tex">E[\hat\xi] \geq \xi</annotation></semantics></math>.
-A second-order Taylor expansion of
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>h</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>α</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><msub><mo>∑</mo><mi>i</mi></msub><msubsup><mi>N</mi><mi>i</mi><mi>α</mi></msubsup></mrow><annotation encoding="application/x-tex">h(\alpha) = \sum_i N_i^\alpha</annotation></semantics></math>
-around the true
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>α</mi><annotation encoding="application/x-tex">\alpha</annotation></semantics></math>
-gives the approximate bias:</p>
+Writing
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msubsup><mi>N</mi><mi>i</mi><msub><mover><mi>α</mi><mo accent="true">̂</mo></mover><mi>i</mi></msub></msubsup><mo>=</mo><mo>exp</mo><mrow><mo stretchy="true" form="prefix">(</mo><msub><mover><mi>α</mi><mo accent="true">̂</mo></mover><mi>i</mi></msub><mo>log</mo><msub><mi>N</mi><mi>i</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">N_i^{\hat\alpha_i} = \exp(\hat\alpha_i \log N_i)</annotation></semantics></math>
+and treating
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mover><mi>𝛂</mi><mo accent="true">̂</mo></mover><annotation encoding="application/x-tex">\hat{\boldsymbol{\alpha}}</annotation></semantics></math>
+as approximately normal gives</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>E</mi><mrow><mo stretchy="true" form="prefix">[</mo><msubsup><mi>N</mi><mi>i</mi><msub><mover><mi>α</mi><mo accent="true">̂</mo></mover><mi>i</mi></msub></msubsup><mo stretchy="true" form="postfix">]</mo></mrow><mo>≈</mo><msubsup><mi>N</mi><mi>i</mi><msub><mi>α</mi><mi>i</mi></msub></msubsup><mo>exp</mo><mspace width="-0.167em"></mspace><mrow><mo stretchy="true" form="prefix">{</mo><mfrac><mn>1</mn><mn>2</mn></mfrac><msup><mrow><mo stretchy="true" form="prefix">(</mo><mo>log</mo><msub><mi>N</mi><mi>i</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><mn>2</mn></msup><msubsup><mi>𝐱</mi><mi>i</mi><mi>⊤</mi></msubsup><msub><mi>𝐕</mi><mrow><mi mathvariant="normal">m</mi><mi mathvariant="normal">o</mi><mi mathvariant="normal">d</mi><mi mathvariant="normal">e</mi><mi mathvariant="normal">l</mi></mrow></msub><msub><mi>𝐱</mi><mi>i</mi></msub><mo stretchy="true" form="postfix">}</mo></mrow><mi>.</mi></mrow><annotation encoding="application/x-tex">
+E[N_i^{\hat\alpha_i}] \approx N_i^{\alpha_i}
+  \exp\!\left\{\frac{1}{2}(\log N_i)^2
+  \mathbf{x}_i^\top \mathbf{V}_{\mathrm{model}} \mathbf{x}_i\right\}.
+</annotation></semantics></math></p>
+<p>Inverting this yields the multiplicative lognormal correction used by
+the package for unconstrained models:</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msup><mover><mi>ξ</mi><mo accent="true">̂</mo></mover><mrow><mi>B</mi><mi>C</mi></mrow></msup><mo>=</mo><munderover><mo>∑</mo><mrow><mi>i</mi><mo>=</mo><mn>1</mn></mrow><mi>n</mi></munderover><msubsup><mi>N</mi><mi>i</mi><msub><mover><mi>α</mi><mo accent="true">̂</mo></mover><mi>i</mi></msub></msubsup><mo>exp</mo><mspace width="-0.167em"></mspace><mrow><mo stretchy="true" form="prefix">(</mo><mo>−</mo><mfrac><mn>1</mn><mn>2</mn></mfrac><msup><mrow><mo stretchy="true" form="prefix">(</mo><mo>log</mo><msub><mi>N</mi><mi>i</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><mn>2</mn></msup><msubsup><mi>𝐱</mi><mi>i</mi><mi>⊤</mi></msubsup><msub><mi>𝐕</mi><mrow><mi mathvariant="normal">m</mi><mi mathvariant="normal">o</mi><mi mathvariant="normal">d</mi><mi mathvariant="normal">e</mi><mi mathvariant="normal">l</mi></mrow></msub><msub><mi>𝐱</mi><mi>i</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><mi>.</mi></mrow><annotation encoding="application/x-tex">
+\hat\xi^{BC} =
+  \sum_{i=1}^{n}
+  N_i^{\hat\alpha_i}
+  \exp\!\left(
+    -\frac{1}{2}(\log N_i)^2
+    \mathbf{x}_i^\top \mathbf{V}_{\mathrm{model}} \mathbf{x}_i
+  \right).
+</annotation></semantics></math></p>
+<p>This correction is strictly positive and exact under the Gaussian
+approximation for the linear predictor. For constrained fits, where
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>α</mi><mi>i</mi></msub><mo>=</mo><msup><mo>logit</mo><mrow><mo>−</mo><mn>1</mn></mrow></msup><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>η</mi><mi>i</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\alpha_i = \operatorname{logit}^{-1}(\eta_i)</annotation></semantics></math>,
+the corresponding logistic-normal integral has no closed form, so the
+package falls back to a second-order Taylor approximation on the link
+scale:</p>
 <p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mi mathvariant="normal">B</mi><mi mathvariant="normal">i</mi><mi mathvariant="normal">a</mi><mi mathvariant="normal">s</mi></mrow><mrow><mo stretchy="true" form="prefix">(</mo><mover><mi>ξ</mi><mo accent="true">̂</mo></mover><mo stretchy="true" form="postfix">)</mo></mrow><mspace width="0.278em"></mspace><mo>≈</mo><mspace width="0.278em"></mspace><mfrac><mn>1</mn><mn>2</mn></mfrac><mspace width="0.167em"></mspace><munderover><mo>∑</mo><mrow><mi>i</mi><mo>=</mo><mn>1</mn></mrow><mi>n</mi></munderover><msubsup><mi>N</mi><mi>i</mi><mi>α</mi></msubsup><mspace width="0.167em"></mspace><msup><mrow><mo stretchy="true" form="prefix">(</mo><mo>log</mo><msub><mi>N</mi><mi>i</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><mn>2</mn></msup><mspace width="0.278em"></mspace><mo>⋅</mo><mspace width="0.278em"></mspace><msup><mi>𝐱</mi><mi>⊤</mi></msup><msub><mi>𝐕</mi><mrow><mi mathvariant="normal">m</mi><mi mathvariant="normal">o</mi><mi mathvariant="normal">d</mi><mi mathvariant="normal">e</mi><mi mathvariant="normal">l</mi></mrow></msub><mspace width="0.167em"></mspace><mi>𝐱</mi><mo>,</mo></mrow><annotation encoding="application/x-tex">
 \mathrm{Bias}(\hat\xi) \;\approx\;
   \frac{1}{2}\,\sum_{i=1}^{n} N_i^{\alpha}\,(\log N_i)^2 \;\cdot\;
@@ -685,15 +754,17 @@ gives the approximate bias:</p>
 </annotation></semantics></math></p>
 <p>where
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>𝐕</mi><mrow><mi mathvariant="normal">m</mi><mi mathvariant="normal">o</mi><mi mathvariant="normal">d</mi><mi mathvariant="normal">e</mi><mi mathvariant="normal">l</mi></mrow></msub><annotation encoding="application/x-tex">\mathbf{V}_{\mathrm{model}}</annotation></semantics></math>
-is the model-based (homoscedastic) variance–covariance matrix. The
-bias-corrected estimator is</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msup><mover><mi>ξ</mi><mo accent="true">̂</mo></mover><mrow><mi>B</mi><mi>C</mi></mrow></msup><mo>=</mo><mover><mi>ξ</mi><mo accent="true">̂</mo></mover><mo>−</mo><mover><mrow><mi mathvariant="normal">B</mi><mi mathvariant="normal">i</mi><mi mathvariant="normal">a</mi><mi mathvariant="normal">s</mi></mrow><mo accent="true">̂</mo></mover><mi>.</mi></mrow><annotation encoding="application/x-tex">
-\hat\xi^{BC} = \hat\xi - \widehat{\mathrm{Bias}}.
-</annotation></semantics></math></p>
+is the model-based (homoscedastic) variance–covariance matrix.</p>
 <p>Model-based variance is used rather than the HC-robust variance,
 because the latter can be inflated by high-leverage observations in
-skewed data, leading to overcorrection. Bias correction is also applied
-to the CI bounds, evaluated at their respective
+skewed data, leading to overcorrection. For Poisson and NB fits,
+<code>vcov_model</code> is the Fisher-style inverse information for the
+mean-model parameters. This remains true when the coefficients are
+obtained by <code>estimator = "gmm"</code> or
+<code>estimator = "el"</code>: the package evaluates the same
+Fisher-style model variance at the non-MLE estimate and reserves the
+robust HC or FWB covariance for interval estimation. Bias correction is
+also applied to the CI bounds, evaluated at their respective
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>α</mi><annotation encoding="application/x-tex">\alpha</annotation></semantics></math>
 values.</p>
 </div>

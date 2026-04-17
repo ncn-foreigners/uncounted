@@ -136,7 +136,9 @@ estimates per group. Each row is one replicate.</p></dd>
 <dd><p>Numeric vector: plug-in point estimates from original fit.</p></dd>
 
 <dt>t0_bc</dt>
-<dd><p>Numeric vector: bias-corrected point estimates (Taylor expansion).</p></dd>
+<dd><p>Numeric vector: analytical bias-corrected point estimates
+from <code><a href="popsize.html">popsize()</a></code> (multiplicative lognormal for unconstrained fits,
+Taylor approximation for constrained fits).</p></dd>
 
 <dt>popsize</dt>
 <dd><p>Data frame with columns: <code>group</code>, <code>estimate</code>,
@@ -246,17 +248,17 @@ Applications of the fractional-random-weight bootstrap.
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Some alpha values &lt; 0 (min = -0.469). Consider using constrained = TRUE.</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   |++                                                | 2 % ~00s          </span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Some alpha values &lt; 0 (min = -0.468). Consider using constrained = TRUE.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   |++                                                | 3 % ~00s          </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   |++                                                | 3 % ~01s          </span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Some alpha values &lt; 0 (min = -0.517). Consider using constrained = TRUE.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   |+++                                               | 4 % ~04s          </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   |+++                                               | 4 % ~05s          </span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Some alpha values &lt; 0 (min = -0.467). Consider using constrained = TRUE.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   |+++                                               | 5 % ~03s          </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   |+++                                               | 5 % ~04s          </span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Some alpha values &lt; 0 (min = -0.077). Consider using constrained = TRUE.</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   |++++                                              | 6 % ~03s          </span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Some alpha values &lt; 0 (min = -0.467). Consider using constrained = TRUE.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   |++++                                              | 7 % ~02s          </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   |++++                                              | 7 % ~03s          </span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Some alpha values &lt; 0 (min = -0.466). Consider using constrained = TRUE.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   |+++++                                             | 8 % ~02s          </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   |+++++                                             | 8 % ~03s          </span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Some alpha values &lt; 0 (min = -0.471). Consider using constrained = TRUE.</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   |+++++                                             | 9 % ~02s          </span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Some alpha values &lt; 0 (min = -2.087). Consider using constrained = TRUE.</span>
@@ -264,25 +266,25 @@ Applications of the fractional-random-weight bootstrap.
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Some alpha values &lt; 0 (min = -0.076). Consider using constrained = TRUE.</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   |++++++                                            | 11% ~02s          </span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Some alpha values &lt; 0 (min = -0.467). Consider using constrained = TRUE.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   |+++++++                                           | 12% ~01s          </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   |+++++++                                           | 12% ~02s          </span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Some alpha values &lt; 0 (min = -0.467). Consider using constrained = TRUE.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   |+++++++                                           | 13% ~01s          </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   |+++++++                                           | 13% ~02s          </span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Some alpha values &lt; 0 (min = -0.466). Consider using constrained = TRUE.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   |++++++++                                          | 14% ~01s          </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   |++++++++                                          | 14% ~02s          </span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Some alpha values &lt; 0 (min = -0.468). Consider using constrained = TRUE.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   |++++++++                                          | 15% ~01s          </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   |++++++++                                          | 15% ~02s          </span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Some alpha values &lt; 0 (min = -0.466). Consider using constrained = TRUE.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   |+++++++++                                         | 16% ~01s          </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   |+++++++++                                         | 16% ~02s          </span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Some alpha values &lt; 0 (min = -0.467). Consider using constrained = TRUE.</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   |+++++++++                                         | 17% ~01s          </span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Some alpha values &lt; 0 (min = -0.467). Consider using constrained = TRUE.</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   |++++++++++                                        | 18% ~01s          </span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Some alpha values &lt; 0 (min = -0.551). Consider using constrained = TRUE.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   |++++++++++                                        | 19% ~01s          </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   |++++++++++                                        | 19% ~02s          </span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Some alpha values &lt; 0 (min = -0.465). Consider using constrained = TRUE.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   |+++++++++++                                       | 20% ~01s          </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   |+++++++++++                                       | 20% ~02s          </span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Some alpha values &lt; 0 (min = -0.466). Consider using constrained = TRUE.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   |+++++++++++                                       | 21% ~01s          </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   |+++++++++++                                       | 21% ~02s          </span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Some alpha values &lt; 0 (min = -0.466). Consider using constrained = TRUE.</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   |++++++++++++                                      | 22% ~01s          </span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Some alpha values &lt; 0 (min = -0.469). Consider using constrained = TRUE.</span>
@@ -338,35 +340,35 @@ Applications of the fractional-random-weight bootstrap.
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Some alpha values &lt; 0 (min = -0.465). Consider using constrained = TRUE.</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   |+++++++++++++++++++++++++                         | 48% ~01s          </span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Some alpha values &lt; 0 (min = -0.466). Consider using constrained = TRUE.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   |+++++++++++++++++++++++++                         | 49% ~00s          </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   |+++++++++++++++++++++++++                         | 49% ~01s          </span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Some alpha values &lt; 0 (min = -0.467). Consider using constrained = TRUE.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   |++++++++++++++++++++++++++                        | 51% ~00s          </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   |++++++++++++++++++++++++++                        | 51% ~01s          </span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Some alpha values &lt; 0 (min = -0.467). Consider using constrained = TRUE.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   |++++++++++++++++++++++++++                        | 52% ~00s          </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   |++++++++++++++++++++++++++                        | 52% ~01s          </span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Some alpha values &lt; 0 (min = -0.467). Consider using constrained = TRUE.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   |+++++++++++++++++++++++++++                       | 53% ~00s          </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   |+++++++++++++++++++++++++++                       | 53% ~01s          </span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Some alpha values &lt; 0 (min = -0.468). Consider using constrained = TRUE.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   |+++++++++++++++++++++++++++                       | 54% ~00s          </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   |+++++++++++++++++++++++++++                       | 54% ~01s          </span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Some alpha values &lt; 0 (min = -0.469). Consider using constrained = TRUE.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   |++++++++++++++++++++++++++++                      | 55% ~00s          </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   |++++++++++++++++++++++++++++                      | 55% ~01s          </span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Some alpha values &lt; 0 (min = -0.467). Consider using constrained = TRUE.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   |++++++++++++++++++++++++++++                      | 56% ~00s          </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   |++++++++++++++++++++++++++++                      | 56% ~01s          </span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Some alpha values &lt; 0 (min = -0.529). Consider using constrained = TRUE.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   |+++++++++++++++++++++++++++++                     | 57% ~00s          </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   |+++++++++++++++++++++++++++++                     | 57% ~01s          </span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Some alpha values &lt; 0 (min = -0.122). Consider using constrained = TRUE.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   |+++++++++++++++++++++++++++++                     | 58% ~00s          </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   |+++++++++++++++++++++++++++++                     | 58% ~01s          </span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Some alpha values &lt; 0 (min = -0.47). Consider using constrained = TRUE.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   |++++++++++++++++++++++++++++++                    | 59% ~00s          </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   |++++++++++++++++++++++++++++++                    | 59% ~01s          </span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Some alpha values &lt; 0 (min = -0.078). Consider using constrained = TRUE.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   |++++++++++++++++++++++++++++++                    | 60% ~00s          </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   |++++++++++++++++++++++++++++++                    | 60% ~01s          </span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Some alpha values &lt; 0 (min = -0.467). Consider using constrained = TRUE.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   |+++++++++++++++++++++++++++++++                   | 61% ~00s          </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   |+++++++++++++++++++++++++++++++                   | 61% ~01s          </span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Some alpha values &lt; 0 (min = -0.465). Consider using constrained = TRUE.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   |+++++++++++++++++++++++++++++++                   | 62% ~00s          </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   |+++++++++++++++++++++++++++++++                   | 62% ~01s          </span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Some alpha values &lt; 0 (min = -0.467). Consider using constrained = TRUE.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   |++++++++++++++++++++++++++++++++                  | 63% ~00s          </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   |++++++++++++++++++++++++++++++++                  | 63% ~01s          </span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Some alpha values &lt; 0 (min = -0.464). Consider using constrained = TRUE.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   |++++++++++++++++++++++++++++++++                  | 64% ~00s          </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   |++++++++++++++++++++++++++++++++                  | 64% ~01s          </span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Some alpha values &lt; 0 (min = -0.467). Consider using constrained = TRUE.</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   |+++++++++++++++++++++++++++++++++                 | 65% ~00s          </span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Some alpha values &lt; 0 (min = -0.08). Consider using constrained = TRUE.</span>
@@ -461,41 +463,41 @@ Applications of the fractional-random-weight bootstrap.
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Some alpha values &lt; 0 (min = -0.467). Consider using constrained = TRUE.</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   |                                                  | 0 % ~calculating  </span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Some alpha values &lt; 0 (min = -0.11). Consider using constrained = TRUE.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   |+                                                 | 1 % ~10s          </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   |+                                                 | 1 % ~13s          </span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Some alpha values &lt; 0 (min = -0.467). Consider using constrained = TRUE.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   |++                                                | 2 % ~05s          </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   |++                                                | 2 % ~06s          </span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Some alpha values &lt; 0 (min = -0.47). Consider using constrained = TRUE.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   |++                                                | 3 % ~03s          </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   |++                                                | 3 % ~04s          </span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Some alpha values &lt; 0 (min = -0.193). Consider using constrained = TRUE.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   |+++                                               | 4 % ~04s          </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   |+++                                               | 4 % ~06s          </span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Some alpha values &lt; 0 (min = -0.583). Consider using constrained = TRUE.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   |+++                                               | 5 % ~04s          </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   |+++                                               | 5 % ~06s          </span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Some alpha values &lt; 0 (min = -0.469). Consider using constrained = TRUE.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   |++++                                              | 6 % ~04s          </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   |++++                                              | 6 % ~05s          </span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Some alpha values &lt; 0 (min = -0.078). Consider using constrained = TRUE.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   |++++                                              | 7 % ~03s          </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   |++++                                              | 7 % ~04s          </span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Some alpha values &lt; 0 (min = -0.463). Consider using constrained = TRUE.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   |+++++                                             | 8 % ~03s          </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   |+++++                                             | 8 % ~04s          </span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Some alpha values &lt; 0 (min = -0.469). Consider using constrained = TRUE.</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   |+++++                                             | 9 % ~03s          </span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Some alpha values &lt; 0 (min = -0.467). Consider using constrained = TRUE.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   |++++++                                            | 10% ~02s          </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   |++++++                                            | 10% ~03s          </span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Some alpha values &lt; 0 (min = -1.007). Consider using constrained = TRUE.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   |++++++                                            | 11% ~02s          </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   |++++++                                            | 11% ~03s          </span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Some alpha values &lt; 0 (min = -0.467). Consider using constrained = TRUE.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   |+++++++                                           | 12% ~02s          </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   |+++++++                                           | 12% ~03s          </span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Some alpha values &lt; 0 (min = -0.469). Consider using constrained = TRUE.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   |+++++++                                           | 13% ~02s          </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   |+++++++                                           | 13% ~03s          </span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Some alpha values &lt; 0 (min = -0.467). Consider using constrained = TRUE.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   |++++++++                                          | 14% ~02s          </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   |++++++++                                          | 14% ~03s          </span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Some alpha values &lt; 0 (min = -2.028). Consider using constrained = TRUE.</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   |++++++++                                          | 15% ~02s          </span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Some alpha values &lt; 0 (min = -0.009). Consider using constrained = TRUE.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   |+++++++++                                         | 16% ~02s          </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   |+++++++++                                         | 16% ~03s          </span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Some alpha values &lt; 0 (min = -2.355). Consider using constrained = TRUE.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   |+++++++++                                         | 17% ~02s          </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   |+++++++++                                         | 17% ~03s          </span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Some alpha values &lt; 0 (min = -2.141). Consider using constrained = TRUE.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   |++++++++++                                        | 18% ~02s          </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   |++++++++++                                        | 18% ~03s          </span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Some alpha values &lt; 0 (min = -1.789). Consider using constrained = TRUE.</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   |++++++++++                                        | 19% ~02s          </span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Some alpha values &lt; 0 (min = -0.468). Consider using constrained = TRUE.</span>
@@ -511,33 +513,33 @@ Applications of the fractional-random-weight bootstrap.
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Some alpha values &lt; 0 (min = -0.465). Consider using constrained = TRUE.</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   |+++++++++++++                                     | 25% ~02s          </span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Some alpha values &lt; 0 (min = -0.467). Consider using constrained = TRUE.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   |++++++++++++++                                    | 26% ~01s          </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   |++++++++++++++                                    | 26% ~02s          </span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Some alpha values &lt; 0 (min = -0.466). Consider using constrained = TRUE.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   |++++++++++++++                                    | 27% ~01s          </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   |++++++++++++++                                    | 27% ~02s          </span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Some alpha values &lt; 0 (min = -1.08). Consider using constrained = TRUE.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   |+++++++++++++++                                   | 28% ~01s          </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   |+++++++++++++++                                   | 28% ~02s          </span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Some alpha values &lt; 0 (min = -0.463). Consider using constrained = TRUE.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   |+++++++++++++++                                   | 29% ~01s          </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   |+++++++++++++++                                   | 29% ~02s          </span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Some alpha values &lt; 0 (min = -0.469). Consider using constrained = TRUE.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   |++++++++++++++++                                  | 30% ~01s          </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   |++++++++++++++++                                  | 30% ~02s          </span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Some alpha values &lt; 0 (min = -0.466). Consider using constrained = TRUE.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   |++++++++++++++++                                  | 31% ~01s          </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   |++++++++++++++++                                  | 31% ~02s          </span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Some alpha values &lt; 0 (min = -0.24). Consider using constrained = TRUE.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   |+++++++++++++++++                                 | 32% ~01s          </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   |+++++++++++++++++                                 | 32% ~02s          </span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Some alpha values &lt; 0 (min = -0.469). Consider using constrained = TRUE.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   |+++++++++++++++++                                 | 33% ~01s          </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   |+++++++++++++++++                                 | 33% ~02s          </span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Some alpha values &lt; 0 (min = -0.47). Consider using constrained = TRUE.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   |++++++++++++++++++                                | 34% ~01s          </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   |++++++++++++++++++                                | 34% ~02s          </span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Some alpha values &lt; 0 (min = -0.382). Consider using constrained = TRUE.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   |++++++++++++++++++                                | 35% ~01s          </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   |++++++++++++++++++                                | 35% ~02s          </span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Some alpha values &lt; 0 (min = -0.464). Consider using constrained = TRUE.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   |+++++++++++++++++++                               | 36% ~01s          </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   |+++++++++++++++++++                               | 36% ~02s          </span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Some alpha values &lt; 0 (min = -0.079). Consider using constrained = TRUE.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   |+++++++++++++++++++                               | 37% ~01s          </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   |+++++++++++++++++++                               | 37% ~02s          </span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Some alpha values &lt; 0 (min = -2.344). Consider using constrained = TRUE.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   |++++++++++++++++++++                              | 38% ~01s          </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   |++++++++++++++++++++                              | 38% ~02s          </span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Some alpha values &lt; 0 (min = -0.47). Consider using constrained = TRUE.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   |++++++++++++++++++++                              | 39% ~01s          </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   |++++++++++++++++++++                              | 39% ~02s          </span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Some alpha values &lt; 0 (min = -0.467). Consider using constrained = TRUE.</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   |+++++++++++++++++++++                             | 40% ~01s          </span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Some alpha values &lt; 0 (min = -0.467). Consider using constrained = TRUE.</span>
@@ -601,17 +603,17 @@ Applications of the fractional-random-weight bootstrap.
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Some alpha values &lt; 0 (min = -0.462). Consider using constrained = TRUE.</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   |++++++++++++++++++++++++++++++++++++              | 71% ~01s          </span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Some alpha values &lt; 0 (min = -0.467). Consider using constrained = TRUE.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   |++++++++++++++++++++++++++++++++++++              | 72% ~00s          </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   |++++++++++++++++++++++++++++++++++++              | 72% ~01s          </span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Some alpha values &lt; 0 (min = -0.467). Consider using constrained = TRUE.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   |+++++++++++++++++++++++++++++++++++++             | 73% ~00s          </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   |+++++++++++++++++++++++++++++++++++++             | 73% ~01s          </span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Some alpha values &lt; 0 (min = -0.124). Consider using constrained = TRUE.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   |+++++++++++++++++++++++++++++++++++++             | 74% ~00s          </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   |+++++++++++++++++++++++++++++++++++++             | 74% ~01s          </span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Some alpha values &lt; 0 (min = -0.469). Consider using constrained = TRUE.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   |++++++++++++++++++++++++++++++++++++++            | 75% ~00s          </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   |++++++++++++++++++++++++++++++++++++++            | 75% ~01s          </span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Some alpha values &lt; 0 (min = -0.465). Consider using constrained = TRUE.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   |++++++++++++++++++++++++++++++++++++++            | 76% ~00s          </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   |++++++++++++++++++++++++++++++++++++++            | 76% ~01s          </span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Some alpha values &lt; 0 (min = -0.465). Consider using constrained = TRUE.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   |+++++++++++++++++++++++++++++++++++++++           | 77% ~00s          </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   |+++++++++++++++++++++++++++++++++++++++           | 77% ~01s          </span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Some alpha values &lt; 0 (min = -0.468). Consider using constrained = TRUE.</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   |+++++++++++++++++++++++++++++++++++++++           | 78% ~00s          </span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Some alpha values &lt; 0 (min = -0.47). Consider using constrained = TRUE.</span>

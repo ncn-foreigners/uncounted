@@ -9,7 +9,8 @@ bootstrap confidence interval. The output columns are:
 
 - Plugin (BC):
 
-  Bias-corrected plug-in (Taylor expansion).
+  Analytical bias-corrected plug-in estimate from
+  [`popsize()`](https://ncn-foreigners.github.io/uncounted/reference/popsize.md).
 
 - Boot median:
 

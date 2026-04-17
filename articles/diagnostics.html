@@ -104,7 +104,7 @@ and sex covariates on alpha and year covariates on beta.</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">fit_po</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Unauthorized population estimation</span></span>
-<span><span class="co">#&gt; Method: POISSON | vcov: HC3 </span></span>
+<span><span class="co">#&gt; Method: POISSON | estimator: MLE | link_rho: power | vcov: HC3 </span></span>
 <span><span class="co">#&gt; N obs: 1382 </span></span>
 <span><span class="co">#&gt; Gamma: 0.007255 (estimated) </span></span>
 <span><span class="co">#&gt; Log-likelihood: -8217.25 </span></span>
@@ -147,7 +147,7 @@ and sex covariates on alpha and year covariates on beta.</p>
 <span><span class="co">#&gt; year=2024, sex=Male      5,731   17,462        17,448    1,177  258,669</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">fit_nb</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Unauthorized population estimation</span></span>
-<span><span class="co">#&gt; Method: NB | vcov: HC1 </span></span>
+<span><span class="co">#&gt; Method: NB | estimator: MLE | link_rho: power | vcov: HC1 </span></span>
 <span><span class="co">#&gt; N obs: 1382 </span></span>
 <span><span class="co">#&gt; Gamma: 0.020902 (estimated) </span></span>
 <span><span class="co">#&gt; Theta (NB dispersion): 1.3553 </span></span>
@@ -234,12 +234,12 @@ only becomes informative when covariates are present.</p>
 <span><span class="va">comp</span></span>
 <span><span class="co">#&gt; Model comparison</span></span>
 <span><span class="co">#&gt; ------------------------------------------------------------ </span></span>
-<span><span class="co">#&gt;    Model  Method Constrained n_par   logLik      AIC      BIC Deviance</span></span>
-<span><span class="co">#&gt;       NB      NB       FALSE    15 -2621.12  5272.23  5350.70  1275.97</span></span>
-<span><span class="co">#&gt;  Poisson POISSON       FALSE    14 -8217.25 16462.49 16535.73 13831.69</span></span>
-<span><span class="co">#&gt;  Pearson_X2   RMSE R2_cor    R2_D  R2_CW</span></span>
-<span><span class="co">#&gt;     3090.80 205.92 0.4058 -0.0030 0.9526</span></span>
-<span><span class="co">#&gt;    17500.68  52.53 0.8280  0.3139 0.9827</span></span></code></pre></div>
+<span><span class="co">#&gt;    Model  Method Estimator  Link Constrained n_par   logLik      AIC      BIC</span></span>
+<span><span class="co">#&gt;       NB      NB       MLE power       FALSE    15 -2621.12  5272.23  5350.70</span></span>
+<span><span class="co">#&gt;  Poisson POISSON       MLE power       FALSE    14 -8217.25 16462.49 16535.73</span></span>
+<span><span class="co">#&gt;  Deviance Pearson_X2   RMSE R2_cor    R2_D  R2_CW</span></span>
+<span><span class="co">#&gt;   1275.97    3090.80 205.92 0.4058 -0.0030 0.9526</span></span>
+<span><span class="co">#&gt;  13831.69   17500.68  52.53 0.8280  0.3139 0.9827</span></span></code></pre></div>
 <p>Lower AIC and BIC values indicate a better trade-off between fit and
 complexity. The Pearson chi-squared statistic divided by its degrees of
 freedom (approximately <code>n_obs - n_par</code>) gives a quick

@@ -40,15 +40,35 @@ $\times$ year $\times$ sex cells). Denote
 
 The conditional mean of $m_{i}$ is modelled as
 
-$$E\left\lbrack m_{i} \mid N_{i},n_{i} \right\rbrack\; = \; N_{i}^{\alpha}\,\left( \frac{n_{i} + \gamma}{N_{i}} \right)^{\!\beta},$$
+$$E\left\lbrack m_{i} \mid N_{i},n_{i} \right\rbrack\; = \;\xi_{i}\rho_{i},\qquad\xi_{i} = N_{i}^{\alpha},$$
 
 where $\alpha$, $\beta$, and $\gamma \geq 0$ are parameters to be
-estimated. On the log scale, this becomes a linear model:
+estimated. Define
 
-$$\log E\left\lbrack m_{i} \right\rbrack\; = \;\alpha\,\log N_{i}\; + \;\beta\,\log\!\left( \frac{n_{i} + \gamma}{N_{i}} \right).$$
+$$\eta_{i} = \beta\log\!\left( \gamma + \frac{n_{i}}{N_{i}} \right).$$
 
-Note that the argument of the second logarithm can be rewritten as
-$\gamma + n_{i}/N_{i}$ when the ratio form is used inside the code.
+The package supports three links for
+$\rho_{i} = h\left( \eta_{i} \right)$:
+
+- `link_rho = "power"`: $\rho_{i} = \exp\left( \eta_{i} \right)$,
+- `link_rho = "cloglog"`:
+  $\rho_{i} = 1 - \exp\left( - \exp\left( \eta_{i} \right) \right)$,
+- `link_rho = "logistic"`:
+  $\rho_{i} = \left( 1 + \exp\left( - \eta_{i} \right) \right)^{- 1}$.
+
+On the log scale, this becomes
+
+$$\log E\left\lbrack m_{i} \right\rbrack\; = \;\alpha\,\log N_{i}\; + \;\log\rho_{i}.$$
+
+Under every supported detection link,
+
+$$\xi_{i} = \frac{E\left\lbrack m_{i} \right\rbrack}{\rho_{i}} = N_{i}^{\alpha}.$$
+
+This is why the public population-size estimator remains
+$\widehat{\xi} = \sum_{i}N_{i}^{{\widehat{\alpha}}_{i}}$ even when a
+bounded detection link is used. The choice of `link_rho` affects
+$\widehat{\xi}$ only indirectly through the fitted value of
+$\widehat{\alpha}$.
 
 ### Parameter interpretation
 
@@ -104,7 +124,7 @@ fit <- estimate_hidden_pop(
 )
 summary(fit)
 #> Unauthorized population estimation
-#> Method: POISSON | vcov: HC3 
+#> Method: POISSON | estimator: MLE | link_rho: power | vcov: HC3 
 #> N obs: 1382 
 #> Gamma: 0.001831 (estimated) 
 #> Log-likelihood: -11380.65 
@@ -171,7 +191,7 @@ fit_cov <- estimate_hidden_pop(
 )
 summary(fit_cov)
 #> Unauthorized population estimation
-#> Method: POISSON | vcov: HC3 
+#> Method: POISSON | estimator: MLE | link_rho: power | vcov: HC3 
 #> N obs: 1382 
 #> Gamma: 0.004998 (estimated) 
 #> Log-likelihood: -11113.89 
@@ -206,7 +226,7 @@ fit_constr <- estimate_hidden_pop(
 )
 summary(fit_constr)
 #> Unauthorized population estimation
-#> Method: POISSON | vcov: HC3 
+#> Method: POISSON | estimator: MLE | link_rho: power | vcov: HC3 
 #> N obs: 1382 
 #> Gamma: 0.005432 (estimated) 
 #> Log-likelihood: -11133.17 
@@ -282,6 +302,14 @@ $E\left\lbrack m_{i} \mid N_{i},n_{i} \right\rbrack$ even if the true
 distribution is not Poisson, provided the mean is correctly specified.
 This makes PPML robust to heteroscedasticity and is the recommended
 default in `uncounted`.
+
+For the Poisson and Negative Binomial count models, the package can also
+use `estimator = "gmm"` or `estimator = "el"`. In those cases the same
+per-observation score equations are treated as moment conditions and
+fitted with `momentfit`. The model for $\mu_{i}$ is unchanged; only the
+estimating criterion differs. For these moment-based count fits the
+default robust covariance is HC1 rather than HC3, because leverage-based
+HC2/HC3 adjustments are not available generically in that setting.
 
 ### Negative Binomial ML
 
@@ -393,36 +421,44 @@ the HC variant:
 | HC5     | ${\widetilde{e}}_{i} = e_{i}/\left( 1 - h_{ii} \right)^{\min{(\delta_{i},h_{\max})}/2}$ |
 
 Here $h_{ii}$ are the hat-matrix diagonal elements (leverages) and
-$\delta_{i}$ is a data-dependent exponent. HC3 (the default) is
-recommended for moderate sample sizes as it provides a good balance
-between finite-sample bias correction and stability.
+$\delta_{i}$ is a data-dependent exponent. HC3 is the default for OLS,
+NLS, Poisson MLE, NB MLE, and iOLS, and is recommended for moderate
+sample sizes as it provides a good balance between finite-sample bias
+correction and stability. For the moment-based count estimators
+(`estimator = "gmm"` and `estimator = "el"`), the default robust
+covariance is HC1.
 
 ### Delta-method confidence intervals for population size
 
 The population size $\widehat{\xi} = \sum_{i}N_{i}^{\widehat{\alpha}}$
-is a nonlinear function of $\widehat{\alpha}$. Confidence intervals are
-constructed via a *monotone transformation* of the Wald interval on the
-link scale.
+is a nonlinear function of $\widehat{\alpha}$. The implemented subgroup
+intervals are based on the delta method for ${\widehat{\xi}}_{g}$
+itself, followed by a log-normal approximation to preserve positivity.
 
-**Step 1.** Build a Wald interval for the linear predictor
-$\widehat{\eta}$ (which equals $\widehat{\alpha}$ when unconstrained, or
-the logit of $\widehat{\alpha}$ when constrained):
+For a subgroup $g$, let $\mathbf{g}_{g}$ denote the gradient of
+${\widehat{\xi}}_{g} = \sum_{i \in g}N_{i}^{{\widehat{\alpha}}_{i}}$
+with respect to the alpha coefficients. In the unconstrained case,
 
-$$\widehat{\eta}\; \pm \; z_{\alpha/2} \cdot {se}\left( \widehat{\eta} \right),$$
+$$\mathbf{g}_{g} = \sum\limits_{i \in g}N_{i}^{{\widehat{\alpha}}_{i}}\log\left( N_{i} \right)\mathbf{x}_{i}.$$
 
-where
-${se}\left( \widehat{\eta} \right) = \sqrt{\mathbf{x}^{\top}\mathbf{V}\mathbf{x}}$
-uses the HC-robust covariance $\mathbf{V}$.
+When `constrained = TRUE`, the same expression is multiplied by the
+derivative of the inverse-logit map,
+${\widehat{\alpha}}_{i}\left( 1 - {\widehat{\alpha}}_{i} \right)$,
+because the model is parameterized on the link scale.
 
-**Step 2.** Map the interval endpoints through the monotone function
-$g(\alpha) = \sum_{i}N_{i}^{\alpha}$:
+Using the HC-robust covariance $\mathbf{V}$ for the alpha coefficients,
 
-$${\widehat{\xi}}_{L} = \sum\limits_{i}N_{i}^{\alpha_{L}},\qquad{\widehat{\xi}}_{U} = \sum\limits_{i}N_{i}^{\alpha_{U}}.$$
+$$\widehat{Var}\left( {\widehat{\xi}}_{g} \right) = \mathbf{g}_{g}^{\top}\mathbf{V}\mathbf{g}_{g}.$$
 
-Since $g$ is monotone increasing for $N_{i} \geq 1$, the resulting
-interval
-$\left\lbrack {\widehat{\xi}}_{L},{\widehat{\xi}}_{U} \right\rbrack$ has
-the correct coverage probability (asymptotically).
+The subgroup standard error
+$\widehat{se}\left( {\widehat{\xi}}_{g} \right) = \sqrt{\widehat{Var}\left( {\widehat{\xi}}_{g} \right)}$
+is then mapped to a log-normal interval
+
+$$\left( {\widehat{\xi}}_{g}\exp\!\left\{ - z_{\alpha/2}\frac{\widehat{se}\left( {\widehat{\xi}}_{g} \right)}{{\widehat{\xi}}_{g}} \right\},\;{\widehat{\xi}}_{g}\exp\!\left\{ z_{\alpha/2}\frac{\widehat{se}\left( {\widehat{\xi}}_{g} \right)}{{\widehat{\xi}}_{g}} \right\} \right).$$
+
+When analytical bias correction is requested, the package rescales both
+bounds by the ratio ${\widehat{\xi}}_{g}^{BC}/{\widehat{\xi}}_{g}$ so
+that the returned interval is centered on the bias-corrected estimate.
 
 **Total across groups.** When the model includes covariates in $\alpha$,
 the total $\widehat{\xi} = \sum_{g}{\widehat{\xi}}_{g}$ has its own
@@ -433,21 +469,38 @@ log-normal approximation to ensure positivity.
 
 Because $\xi(\alpha) = \sum_{i}N_{i}^{\alpha}$ is convex in $\alpha$ for
 $N_{i} > 1$, Jensen’s inequality implies
-$E\left\lbrack \widehat{\xi} \right\rbrack \geq \xi$. A second-order
-Taylor expansion of $h(\alpha) = \sum_{i}N_{i}^{\alpha}$ around the true
-$\alpha$ gives the approximate bias:
+$E\left\lbrack \widehat{\xi} \right\rbrack \geq \xi$. Writing
+$N_{i}^{{\widehat{\alpha}}_{i}} = \exp\left( {\widehat{\alpha}}_{i}\log N_{i} \right)$
+and treating $\widehat{\mathbf{α}}$ as approximately normal gives
+
+$$E\left\lbrack N_{i}^{{\widehat{\alpha}}_{i}} \right\rbrack \approx N_{i}^{\alpha_{i}}\exp\!\left\{ \frac{1}{2}\left( \log N_{i} \right)^{2}\mathbf{x}_{i}^{\top}\mathbf{V}_{model}\mathbf{x}_{i} \right\}.$$
+
+Inverting this yields the multiplicative lognormal correction used by
+the package for unconstrained models:
+
+$${\widehat{\xi}}^{BC} = \sum\limits_{i = 1}^{n}N_{i}^{{\widehat{\alpha}}_{i}}\exp\!\left( - \frac{1}{2}\left( \log N_{i} \right)^{2}\mathbf{x}_{i}^{\top}\mathbf{V}_{model}\mathbf{x}_{i} \right).$$
+
+This correction is strictly positive and exact under the Gaussian
+approximation for the linear predictor. For constrained fits, where
+$\alpha_{i} = \operatorname{logit}^{- 1}\left( \eta_{i} \right)$, the
+corresponding logistic-normal integral has no closed form, so the
+package falls back to a second-order Taylor approximation on the link
+scale:
 
 $${Bias}\left( \widehat{\xi} \right)\; \approx \;\frac{1}{2}\,\sum\limits_{i = 1}^{n}N_{i}^{\alpha}\,\left( \log N_{i} \right)^{2}\; \cdot \;\mathbf{x}^{\top}\mathbf{V}_{model}\,\mathbf{x},$$
 
 where $\mathbf{V}_{model}$ is the model-based (homoscedastic)
-variance–covariance matrix. The bias-corrected estimator is
-
-$${\widehat{\xi}}^{BC} = \widehat{\xi} - \widehat{Bias}.$$
+variance–covariance matrix.
 
 Model-based variance is used rather than the HC-robust variance, because
 the latter can be inflated by high-leverage observations in skewed data,
-leading to overcorrection. Bias correction is also applied to the CI
-bounds, evaluated at their respective $\alpha$ values.
+leading to overcorrection. For Poisson and NB fits, `vcov_model` is the
+Fisher-style inverse information for the mean-model parameters. This
+remains true when the coefficients are obtained by `estimator = "gmm"`
+or `estimator = "el"`: the package evaluates the same Fisher-style model
+variance at the non-MLE estimate and reserves the robust HC or FWB
+covariance for interval estimation. Bias correction is also applied to
+the CI bounds, evaluated at their respective $\alpha$ values.
 
 ### Fractional weighted bootstrap
 

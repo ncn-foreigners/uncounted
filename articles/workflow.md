@@ -99,7 +99,7 @@ fit_pois <- estimate_hidden_pop(
 )
 summary(fit_pois)
 #> Unauthorized population estimation
-#> Method: POISSON | vcov: HC3 
+#> Method: POISSON | estimator: MLE | link_rho: power | vcov: HC3 
 #> N obs: 1382 
 #> Gamma: 0.001831 (estimated) 
 #> Log-likelihood: -11380.65 
@@ -150,7 +150,7 @@ fit_pois_c <- estimate_hidden_pop(
 )
 summary(fit_pois_c)
 #> Unauthorized population estimation
-#> Method: POISSON | vcov: HC3 
+#> Method: POISSON | estimator: MLE | link_rho: power | vcov: HC3 
 #> N obs: 1382 
 #> Gamma: 0.001831 (estimated) 
 #> Log-likelihood: -11380.65 
@@ -200,7 +200,7 @@ fit_nb <- estimate_hidden_pop(
 )
 summary(fit_nb)
 #> Unauthorized population estimation
-#> Method: NB | vcov: HC1 
+#> Method: NB | estimator: MLE | link_rho: power | vcov: HC1 
 #> N obs: 1382 
 #> Gamma: 0.01901 (estimated) 
 #> Theta (NB dispersion): 1.0616 
@@ -243,7 +243,7 @@ fit_nb2 <- estimate_hidden_pop(
 )
 summary(fit_nb2)
 #> Unauthorized population estimation
-#> Method: NB | vcov: HC1 
+#> Method: NB | estimator: MLE | link_rho: power | vcov: HC1 
 #> N obs: 1382 
 #> Gamma: 0.001831 (fixed) 
 #> Theta (NB dispersion): 0.9491 
@@ -286,12 +286,14 @@ The columns are:
   we have no covariates on alpha).
 - **observed** – total observed count $\sum m_{i}$.
 - **estimate** – plug-in estimate $\widehat{\xi}$.
-- **estimate_bc** – bias-corrected estimate using a second-order Taylor
-  expansion. Because $\xi(\alpha) = \sum N_{i}^{\alpha}$ is convex, the
-  plug-in estimator is biased upward by Jensen’s inequality.
+- **estimate_bc** – analytical bias-corrected estimate. For
+  unconstrained fits this is the multiplicative lognormal correction;
+  constrained fits use a second-order Taylor approximation.
 - **lower**, **upper** – confidence interval bounds. The CI is
-  constructed by a monotone transformation of the Wald interval on the
-  link scale, with bias correction applied at the bounds.
+  constructed by a delta-method/log-normal approximation on the
+  population-size scale. When bias correction is requested, the bounds
+  are rescaled by the same `estimate_bc / estimate` ratio as the
+  reported point estimate.
 - **share_pct** – group share as a percentage of the total.
 
 Comparing across all four models:
@@ -763,16 +765,16 @@ comp <- compare_models(
 comp
 #> Model comparison
 #> ------------------------------------------------------------ 
-#>           Model  Method Constrained n_par    logLik      AIC      BIC Deviance
-#>              NB      NB       FALSE     4  -2693.48  5394.97  5415.89  1272.20
-#>     NB_twostage      NB       FALSE     3  -2727.07  5460.14  5475.84  1267.27
-#>  Poisson_constr POISSON        TRUE     3 -11380.65 22767.30 22782.99 20158.50
-#>         Poisson POISSON       FALSE     3 -11380.65 22767.30 22782.99 20158.50
-#>  Pearson_X2   RMSE R2_cor R2_D  R2_CW
-#>     2943.93 139.85 0.5168    0 0.9432
-#>     2600.28  82.27 0.5620    0 0.9442
-#>    25366.63  81.47 0.5623    0 0.9749
-#>    25366.63  81.47 0.5623    0 0.9749
+#>           Model  Method Estimator  Link Constrained n_par    logLik      AIC
+#>              NB      NB       MLE power       FALSE     4  -2693.48  5394.97
+#>     NB_twostage      NB       MLE power       FALSE     3  -2727.07  5460.14
+#>  Poisson_constr POISSON       MLE power        TRUE     3 -11380.65 22767.30
+#>         Poisson POISSON       MLE power       FALSE     3 -11380.65 22767.30
+#>       BIC Deviance Pearson_X2   RMSE R2_cor R2_D  R2_CW
+#>   5415.89  1272.20    2943.93 139.85 0.5168    0 0.9432
+#>   5475.84  1267.27    2600.28  82.27 0.5620    0 0.9442
+#>  22782.99 20158.50   25366.63  81.47 0.5623    0 0.9749
+#>  22782.99 20158.50   25366.63  81.47 0.5623    0 0.9749
 ```
 
 The output includes three pseudo $R^{2}$ measures: `R2_cor` (squared

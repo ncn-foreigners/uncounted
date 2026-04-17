@@ -72,6 +72,7 @@ modelsummary(
 | BIC                                                          | 17616.1      | 5351.0       | 925657.9     |
 | Log.Lik.                                                     | -8775.519    | -2642.969    | -462800.005  |
 | method                                                       | POISSON      | NB           | IOLS         |
+| link_rho                                                     | power        | power        | power        |
 | \+ p \< 0.1, \* p \< 0.05, \*\* p \< 0.01, \*\*\* p \< 0.001 |              |              |              |
 
 Individual coefficient tables:
@@ -99,8 +100,10 @@ tidy(fit_po, conf.int = TRUE)
 #> 8  0.852933422
 #> 9  0.031469196
 glance(fit_po)
-#>    method nobs    logLik      AIC      BIC deviance df.residual
-#> 1 POISSON 1382 -8775.519 17569.04 17616.12 14948.24        1373
+#>    method estimator link_rho nobs    logLik      AIC      BIC deviance
+#> 1 POISSON       MLE    power 1382 -8775.519 17569.04 17616.12 14948.24
+#>   df.residual
+#> 1        1373
 ```
 
 ## Plotting population size estimates

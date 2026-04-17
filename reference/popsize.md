@@ -2,9 +2,10 @@
 
 Computes the estimated total unauthorized population \\\hat{\xi} =
 \sum\_{i} N_i^{\hat{\alpha}}\\ for each group defined by the covariates
-in alpha. Includes bias correction via second-order Taylor expansion and
-confidence intervals via monotone transformation of the Wald interval on
-the link scale.
+in alpha. Includes bias correction via a multiplicative lognormal
+adjustment for unconstrained models (and a second-order Taylor
+approximation for constrained models), plus log-normal delta-method
+confidence intervals on the population-size scale.
 
 ## Usage
 
@@ -48,7 +49,7 @@ popsize(
 
 - bias_correction:
 
-  Logical; apply Taylor-expansion bias correction? Default TRUE. Uses
+  Logical; apply analytical bias correction? Default TRUE. Uses
   model-based variance (not HC-robust) to avoid overcorrection from
   inflated leverage-driven standard errors.
 
@@ -103,42 +104,53 @@ estimate, bias-corrected estimate, standard error, and CI.
 population size is \$\$\hat{\xi}\_g = \sum\_{i=1}^{n}
 N_i^{\hat{\alpha}\_g}.\$\$
 
-**Bias correction via Taylor expansion.** Because \\\xi\\ is a nonlinear
-function of \\\hat{\alpha}\\, the plug-in estimate is biased upward (by
-Jensen's inequality, \\E\[N^{\hat{\alpha}}\] \geq
-N^{E\[\hat{\alpha}\]}\\ when \\N \> 1\\). A second-order Taylor
-expansion of \\h(\alpha) = \sum_i N_i^{\alpha}\\ around \\\alpha_0\\
-gives the approximate bias \$\$ \mathrm{Bias}(\hat{\xi}\_g) \approx
-\frac{1}{2} \sum\_{i=1}^{n} N_i^{\alpha_g} (\log N_i)^2 \\
-\mathbf{x}\_g' \mathbf{V} \mathbf{x}\_g, \$\$ where \\\mathbf{x}\_g\\ is
-the design vector for group \\g\\ and \\\mathbf{V}\\ is the
-variance-covariance matrix of \\\hat{\alpha}\\. For unconstrained
-models, the exact multiplicative correction is used: \$\$
-\hat{\xi}^{BC}\_g = \sum\_{i=1}^{n} N_i^{\hat{\alpha}\_g}
+**Bias correction.** Because \\\xi\\ is a nonlinear function of
+\\\hat{\alpha}\\, the plug-in estimate is biased upward (by Jensen's
+inequality, \\E\[N^{\hat{\alpha}}\] \geq N^{E\[\hat{\alpha}\]}\\ when
+\\N \> 1\\). A second-order Taylor expansion of \\h(\alpha) = \sum_i
+N_i^{\alpha}\\ around \\\alpha_0\\ gives the approximate bias \$\$
+\mathrm{Bias}(\hat{\xi}\_g) \approx \frac{1}{2} \sum\_{i=1}^{n}
+N_i^{\alpha_g} (\log N_i)^2 \\ \mathbf{x}\_g' \mathbf{V} \mathbf{x}\_g,
+\$\$ where \\\mathbf{x}\_g\\ is the design vector for group \\g\\ and
+\\\mathbf{V}\\ is the variance-covariance matrix of \\\hat{\alpha}\\.
+For unconstrained models, the exact multiplicative correction is used:
+\$\$ \hat{\xi}^{BC}\_g = \sum\_{i=1}^{n} N_i^{\hat{\alpha}\_g}
 \exp\\\left(-\frac{1}{2} (\log N_i)^2 \mathbf{x}\_g' \mathbf{V}
 \mathbf{x}\_g\right), \$\$ which is exact under normality of
 \\\hat{\alpha}\\ and always positive. For constrained models the
 subtractive Taylor correction is used instead (the logistic-normal
 integral has no closed form), and the bias can be positive or negative
 depending on \\\alpha\\. Model-based variance is used for bias
-correction rather than HC-robust variance. For iOLS/GPML, the
-model-based variance is \\(\mathbf{Z}'\mathbf{Z})^{-1}\\ (Gamma Fisher
-information, no dispersion scaling).
+correction rather than HC-robust variance. For Poisson and NB count
+models this means the Fisher-style inverse information for the
+mean-model parameters, evaluated at the fitted coefficients. This
+remains true when the coefficients were obtained by `estimator = "gmm"`
+or `estimator = "el"`: the robust HC or FWB covariance is still used for
+confidence intervals, but the bias correction uses the same Fisher-style
+model variance as in the MLE case, evaluated at the non-MLE estimate.
+For iOLS/GPML, the model-based variance is
+\\(\mathbf{Z}'\mathbf{Z})^{-1}\\ (Gamma Fisher information, no
+dispersion scaling).
 
 When `constrained = TRUE`, the delta method accounts for the logit link:
 \\\mathrm{Var}(\alpha) = \mathrm{Var}(\eta) \cdot \[\sigma'(\eta)\]^2\\
 where \\\sigma'(\eta) = \alpha(1-\alpha)\\.
 
-**Confidence intervals via monotone transformation.** A Wald interval is
-first constructed on the link scale for the linear predictor:
-\$\$\hat{\eta}\_g \pm z\_{\alpha/2} \cdot
-\mathrm{se}(\hat{\eta}\_g),\$\$ where the standard error uses the
-HC-robust variance. The interval endpoints are then mapped through the
-monotone transformation \\g(\alpha) = \sum_i N_i^{\alpha}\\ (increasing
-for \\N_i \geq 1\\) to obtain \\\[\hat{\xi}\_L, \hat{\xi}\_U\]\\. When
-`constrained = TRUE`, the logit link is applied before exponentiation.
-Bias correction is also applied to the CI bounds at their respective
-alpha values.
+**Confidence intervals via the delta method.** Let \\\mathbf{g}\_g =
+\partial \hat{\xi}\_g / \partial \boldsymbol{\alpha}\\ denote the
+gradient of the plug-in estimator with respect to the alpha
+coefficients. For unconstrained models, \\\mathbf{g}\_g = \sum_i
+N_i^{\hat{\alpha}\_i} \log(N_i)\mathbf{x}\_i;\\ for constrained models
+the same expression is multiplied by the derivative of the inverse-logit
+map. Using the HC-robust covariance \\\mathbf{V}\\, the package computes
+\$\$ \widehat{\mathrm{Var}}(\hat{\xi}\_g) = \mathbf{g}\_g^\top
+\mathbf{V}\mathbf{g}\_g. \$\$ To preserve positivity, the subgroup
+interval is then reported on a log-normal scale: \$\$ \hat{\xi}\_g
+\exp\\\left( \pm z\_{\alpha/2}
+\frac{\widehat{\mathrm{se}}(\hat{\xi}\_g)}{\hat{\xi}\_g} \right). \$\$
+When `bias_correction = TRUE`, the lower and upper bounds are rescaled
+by \\\hat{\xi}^{BC}\_g / \hat{\xi}\_g\\, matching the returned
+bias-corrected point estimate.
 
 **Total across groups.** When multiple groups exist, the total
 \\\hat{\xi} = \sum_g \hat{\xi}\_g\\ has its own delta-method CI computed

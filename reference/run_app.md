@@ -20,7 +20,7 @@ run_app(...)
 
 ## Details
 
-The application has five tabs:
+The application has six tabs:
 
 - Data:
 

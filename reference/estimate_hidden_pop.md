@@ -21,6 +21,8 @@ estimate_hidden_pop(
   cov_gamma = NULL,
   gamma_bounds = c(1e-10, 0.5),
   theta_start = 1,
+  link_rho = c("power", "cloglog", "logistic"),
+  estimator = c("mle", "gmm", "el"),
   vcov = "HC3",
   weights = NULL,
   constrained = FALSE,
@@ -91,6 +93,20 @@ estimate_hidden_pop(
   Starting value for the NB dispersion parameter (used only when
   `method = "nb"`). Default 1.
 
+- link_rho:
+
+  Link for the detection component \\\rho_i = h(\beta_i \log(\gamma_i +
+  n_i / N_i))\\. Supported values are `"power"` (default, \\\rho_i =
+  \exp(\eta_i)\\), `"cloglog"` (\\\rho_i = 1 - \exp(-\exp(\eta_i))\\),
+  and `"logistic"` (\\\rho_i = 1 / (1 + \exp(-\eta_i))\\). Bounded links
+  are currently available for `method = "poisson"`, `"nb"`, and `"nls"`.
+
+- estimator:
+
+  Estimation criterion for count models: `"mle"` (default), `"gmm"`, or
+  `"el"`. Non-MLE estimators are currently available only for
+  `method = "poisson"` and `method = "nb"`.
+
 - vcov:
 
   Controls the variance-covariance estimator. Can be:
@@ -99,6 +115,9 @@ estimate_hidden_pop(
     or `"HC4m"`. Default `"HC3"`. When `cluster` is also provided, this
     type is passed to
     [`sandwich::vcovCL()`](https://sandwich.R-Forge.R-project.org/reference/vcovCL.html).
+    For count models fitted with `estimator = "gmm"` or
+    `estimator = "el"`, the default robust covariance is `"HC1"` and
+    HC2+ requests are downgraded to `"HC1"`.
 
   - A function that takes the fitted `uncounted` object and returns a
     variance-covariance matrix. For example,
@@ -159,7 +178,14 @@ An object of class `"uncounted"`, a list containing:
 - `vcov_model`:
 
   Model-based (homoscedastic) variance-covariance matrix, used for bias
-  correction.
+  correction. For Poisson and NB count models, this is the Fisher-style
+  inverse information for the mean-model parameters, evaluated at the
+  fitted coefficients even when `estimator = "gmm"` or
+  `estimator = "el"`.
+
+- `rho_values`:
+
+  Per-observation fitted detection component \\\hat\rho_i\\.
 
 - `fitted.values`:
 
@@ -179,25 +205,50 @@ An object of class `"uncounted"`, a list containing:
 
 - `loglik`:
 
-  Log-likelihood (for Poisson and NB methods).
+  Log-likelihood (for MLE count fits only).
 
 - `method`:
 
-  The estimation method used.
+  The model family used.
+
+- `estimator`:
+
+  The estimation criterion used.
+
+- `link_rho`:
+
+  The detection-link transformation used.
 
 ## Details
 
 **Model specification.** For observation \\i\\, the expected observed
 count \\m_i\\ is modelled as:
 
-\$\$E(m_i) = N_i^{\alpha_i} \cdot (\gamma + n_i / N_i)^{\beta_i}\$\$
+\$\$E(m_i) = \xi_i \rho_i,\qquad \xi_i = N_i^{\alpha_i}\$\$
 
 where \\N_i\\ is the reference (total registered) population, \\n_i\\ is
 an auxiliary count (e.g., new registrations), and \\\gamma \ge 0\\ is an
-intercept-like offset. On the log scale, the model is linear:
+intercept-like offset. Define \\\eta_i = \beta_i \log(\gamma_i + n_i /
+N_i)\\. Then \\\rho_i\\ is linked to \\\eta_i\\ by one of:
 
-\$\$\log E(m_i) = \alpha_i \log N_i + \beta_i \log(\gamma + n_i /
-N_i)\$\$
+- `"power"`:
+
+  \\\rho_i = \exp(\eta_i)\\
+
+- `"cloglog"`:
+
+  \\\rho_i = 1 - \exp(-\exp(\eta_i))\\
+
+- `"logistic"`:
+
+  \\\rho_i = 1 / (1 + \exp(-\eta_i))\\
+
+On the log scale,
+
+\$\$\log E(m_i) = \alpha_i \log N_i + \log(\rho_i)\$\$
+
+so for every supported `link_rho`, \\\xi_i = E(m_i) / \rho_i =
+N_i^{\alpha_i}\\.
 
 **Parameter interpretation.**
 
@@ -255,7 +306,9 @@ N_i)\$\$
   \\\hat{\theta}\\, consistent with the approach used in
   [`MASS::glm.nb`](https://rdrr.io/pkg/MASS/man/glm.nb.html). This means
   coefficient SEs do not account for uncertainty in \\\theta\\
-  estimation.
+  estimation. For `method = "poisson"` and `method = "nb"`, the same
+  moment conditions can also be fit with `estimator = "gmm"` or
+  `estimator = "el"` using momentfit.
 
 **Constrained vs. unconstrained estimation.** When `constrained = FALSE`
 (default), \\\alpha\\ and \\\beta\\ are estimated on the real line
@@ -309,7 +362,7 @@ fit_pois <- estimate_hidden_pop(
 )
 summary(fit_pois)
 #> Unauthorized population estimation
-#> Method: POISSON | vcov: HC3 
+#> Method: POISSON | estimator: MLE | link_rho: power | vcov: HC3 
 #> N obs: 50 
 #> Gamma: 0.337767 (estimated) 
 #> Log-likelihood: -134.08 
@@ -337,7 +390,7 @@ fit_ols <- estimate_hidden_pop(
 )
 summary(fit_ols)
 #> Unauthorized population estimation
-#> Method: OLS | vcov: HC3 
+#> Method: OLS | estimator: MLE | link_rho: power | vcov: HC3 
 #> N obs: 50 
 #> Gamma: 0.01 (fixed) 
 #> Deviance: 4.13 
@@ -363,7 +416,7 @@ fit_constr <- estimate_hidden_pop(
 )
 summary(fit_constr)
 #> Unauthorized population estimation
-#> Method: POISSON | vcov: HC3 
+#> Method: POISSON | estimator: MLE | link_rho: power | vcov: HC3 
 #> N obs: 50 
 #> Gamma: 0 (estimated) 
 #> Log-likelihood: -133.7 

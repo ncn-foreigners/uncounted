@@ -109,7 +109,7 @@ fit <- estimate_hidden_pop(
 )
 summary(fit)
 #> Unauthorized population estimation
-#> Method: POISSON | vcov: HC3 
+#> Method: POISSON | estimator: MLE | link_rho: power | vcov: HC3 
 #> N obs: 1382 
 #> Gamma: 0.001831 (estimated) 
 #> Log-likelihood: -11380.65 

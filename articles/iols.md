@@ -104,7 +104,7 @@ fit_iols <- estimate_hidden_pop(
 
 summary(fit_iols)
 #> Unauthorized population estimation
-#> Method: IOLS | vcov: HC3 
+#> Method: IOLS | estimator: MLE | link_rho: power | vcov: HC3 
 #> N obs: 1382 
 #> Gamma: 0.005 (fixed) 
 #> Log-likelihood: -462765.9 
@@ -223,21 +223,26 @@ upward-biased by Jensen’s inequality. The bias correction uses the
 model-based variance $\mathbf{V}_{\text{model}}$, which differs by
 method:
 
-| Method  | $\mathbf{V}_{\text{model}}$                                                              |
-|---------|------------------------------------------------------------------------------------------|
-| Poisson | $\left( \mathbf{Z}\prime\text{diag}\left( \widehat{\mu} \right)\mathbf{Z} \right)^{- 1}$ |
-| iOLS    | $(\mathbf{Z}\prime\mathbf{Z})^{- 1}$                                                     |
+| Method                             | $\mathbf{V}_{\text{model}}$                                                                                                                              |
+|------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Poisson / Poisson GMM / Poisson EL | $\left( \mathbf{Z}\prime\text{diag}\left( \widehat{\mu} \right)\mathbf{Z} \right)^{- 1}$                                                                 |
+| NB / NB GMM / NB EL                | $\left( \mathbf{Z}\prime\text{diag}\left( \widehat{\mu}\widehat{\theta}/\left( \widehat{\theta} + \widehat{\mu} \right) \right)\mathbf{Z} \right)^{- 1}$ |
+| iOLS                               | $(\mathbf{Z}\prime\mathbf{Z})^{- 1}$                                                                                                                     |
 
 For iOLS, the model-based variance is the GPML Fisher information
 inverse **without** dispersion scaling. This is because the Gamma
 quasi-likelihood has variance function $V(\mu) = \mu^{2}$, giving unit
 working weights.
 
-The current implementation uses a subtractive correction
-${\widehat{\xi}}^{BC} = \widehat{\xi} - \text{bias}$, clamped to be
-positive. A multiplicative correction based on the exact Gaussian MGF
-${\widehat{\xi}}^{BC} = \sum N_{i}^{\widehat{\alpha}}\exp\left( - \frac{1}{2}\left( \log N_{i} \right)^{2}\mathbf{x}_{i}\prime\widehat{\mathbf{V}}\mathbf{x}_{i} \right)$
-is under development and would eliminate the negativity issue entirely.
+For unconstrained models, including iOLS, the current implementation
+uses the multiplicative lognormal correction
+
+$${\widehat{\xi}}^{BC} = \sum\limits_{i}N_{i}^{{\widehat{\alpha}}_{i}}\exp\!\left( - \frac{1}{2}\left( \log N_{i} \right)^{2}\mathbf{x}_{i}^{\top}{\widehat{\mathbf{V}}}_{\text{model}}\mathbf{x}_{i} \right),$$
+
+which is exact under the Gaussian approximation for the linear predictor
+and guarantees positivity. Constrained count fits fall back to a
+subtractive second-order Taylor correction because the corresponding
+logistic-normal integral has no closed form.
 
 ## Convergence diagnostics
 

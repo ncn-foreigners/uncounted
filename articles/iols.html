@@ -197,7 +197,7 @@ convergence:</p>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">fit_iols</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Unauthorized population estimation</span></span>
-<span><span class="co">#&gt; Method: IOLS | vcov: HC3 </span></span>
+<span><span class="co">#&gt; Method: IOLS | estimator: MLE | link_rho: power | vcov: HC3 </span></span>
 <span><span class="co">#&gt; N obs: 1382 </span></span>
 <span><span class="co">#&gt; Gamma: 0.005 (fixed) </span></span>
 <span><span class="co">#&gt; Log-likelihood: -462765.9 </span></span>
@@ -351,16 +351,24 @@ model-based variance
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>𝐕</mi><mtext mathvariant="normal">model</mtext></msub><annotation encoding="application/x-tex">\mathbf{V}_{\text{model}}</annotation></semantics></math>,
 which differs by method:</p>
 <table class="table">
+<colgroup>
+<col width="21%">
+<col width="78%">
+</colgroup>
 <thead><tr class="header">
 <th>Method</th>
 <th><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>𝐕</mi><mtext mathvariant="normal">model</mtext></msub><annotation encoding="application/x-tex">\mathbf{V}_{\text{model}}</annotation></semantics></math></th>
 </tr></thead>
 <tbody>
 <tr class="odd">
-<td>Poisson</td>
+<td>Poisson / Poisson GMM / Poisson EL</td>
 <td><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mrow><mo stretchy="true" form="prefix">(</mo><mi>𝐙</mi><mi>′</mi><mtext mathvariant="normal">diag</mtext><mrow><mo stretchy="true" form="prefix">(</mo><mover><mi>μ</mi><mo accent="true">̂</mo></mover><mo stretchy="true" form="postfix">)</mo></mrow><mi>𝐙</mi><mo stretchy="true" form="postfix">)</mo></mrow><mrow><mo>−</mo><mn>1</mn></mrow></msup><annotation encoding="application/x-tex">(\mathbf{Z}'\text{diag}(\hat\mu)\mathbf{Z})^{-1}</annotation></semantics></math></td>
 </tr>
 <tr class="even">
+<td>NB / NB GMM / NB EL</td>
+<td><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mrow><mo stretchy="true" form="prefix">(</mo><mi>𝐙</mi><mi>′</mi><mtext mathvariant="normal">diag</mtext><mrow><mo stretchy="true" form="prefix">(</mo><mover><mi>μ</mi><mo accent="true">̂</mo></mover><mover><mi>θ</mi><mo accent="true">̂</mo></mover><mi>/</mi><mrow><mo stretchy="true" form="prefix">(</mo><mover><mi>θ</mi><mo accent="true">̂</mo></mover><mo>+</mo><mover><mi>μ</mi><mo accent="true">̂</mo></mover><mo stretchy="true" form="postfix">)</mo></mrow><mo stretchy="true" form="postfix">)</mo></mrow><mi>𝐙</mi><mo stretchy="true" form="postfix">)</mo></mrow><mrow><mo>−</mo><mn>1</mn></mrow></msup><annotation encoding="application/x-tex">(\mathbf{Z}'\text{diag}(\hat\mu \hat\theta / (\hat\theta + \hat\mu))\mathbf{Z})^{-1}</annotation></semantics></math></td>
+</tr>
+<tr class="odd">
 <td>iOLS</td>
 <td><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mrow><mo stretchy="true" form="prefix">(</mo><mi>𝐙</mi><mi>′</mi><mi>𝐙</mi><mo stretchy="true" form="postfix">)</mo></mrow><mrow><mo>−</mo><mn>1</mn></mrow></msup><annotation encoding="application/x-tex">(\mathbf{Z}'\mathbf{Z})^{-1}</annotation></semantics></math></td>
 </tr>
@@ -371,14 +379,18 @@ inverse <strong>without</strong> dispersion scaling. This is because the
 Gamma quasi-likelihood has variance function
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>V</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>μ</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><msup><mi>μ</mi><mn>2</mn></msup></mrow><annotation encoding="application/x-tex">V(\mu) = \mu^2</annotation></semantics></math>,
 giving unit working weights.</p>
-<p>The current implementation uses a subtractive correction
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msup><mover><mi>ξ</mi><mo accent="true">̂</mo></mover><mrow><mi>B</mi><mi>C</mi></mrow></msup><mo>=</mo><mover><mi>ξ</mi><mo accent="true">̂</mo></mover><mo>−</mo><mtext mathvariant="normal">bias</mtext></mrow><annotation encoding="application/x-tex">\hat{\xi}^{BC} = \hat{\xi} - \text{bias}</annotation></semantics></math>,
-clamped to be positive. A multiplicative correction based on the exact
-Gaussian MGF
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msup><mover><mi>ξ</mi><mo accent="true">̂</mo></mover><mrow><mi>B</mi><mi>C</mi></mrow></msup><mo>=</mo><mo>∑</mo><msubsup><mi>N</mi><mi>i</mi><mover><mi>α</mi><mo accent="true">̂</mo></mover></msubsup><mo>exp</mo><mrow><mo stretchy="true" form="prefix">(</mo><mo>−</mo><mfrac><mn>1</mn><mn>2</mn></mfrac><msup><mrow><mo stretchy="true" form="prefix">(</mo><mo>log</mo><msub><mi>N</mi><mi>i</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><mn>2</mn></msup><msub><mi>𝐱</mi><mi>i</mi></msub><mi>′</mi><mover><mi>𝐕</mi><mo accent="true">̂</mo></mover><msub><mi>𝐱</mi><mi>i</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\hat{\xi}^{BC} = \sum N_i^{\hat\alpha} \exp(-\frac{1}{2}(\log N_i)^2
-\mathbf{x}_i'\hat{\mathbf{V}}\mathbf{x}_i)</annotation></semantics></math>
-is under development and would eliminate the negativity issue
-entirely.</p>
+<p>For unconstrained models, including iOLS, the current implementation
+uses the multiplicative lognormal correction</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msup><mover><mi>ξ</mi><mo accent="true">̂</mo></mover><mrow><mi>B</mi><mi>C</mi></mrow></msup><mo>=</mo><munder><mo>∑</mo><mi>i</mi></munder><msubsup><mi>N</mi><mi>i</mi><msub><mover><mi>α</mi><mo accent="true">̂</mo></mover><mi>i</mi></msub></msubsup><mo>exp</mo><mspace width="-0.167em"></mspace><mrow><mo stretchy="true" form="prefix">(</mo><mo>−</mo><mfrac><mn>1</mn><mn>2</mn></mfrac><msup><mrow><mo stretchy="true" form="prefix">(</mo><mo>log</mo><msub><mi>N</mi><mi>i</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><mn>2</mn></msup><msubsup><mi>𝐱</mi><mi>i</mi><mi>⊤</mi></msubsup><msub><mover><mi>𝐕</mi><mo accent="true">̂</mo></mover><mtext mathvariant="normal">model</mtext></msub><msub><mi>𝐱</mi><mi>i</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>,</mo></mrow><annotation encoding="application/x-tex">
+\hat{\xi}^{BC} =
+  \sum_i N_i^{\hat\alpha_i}
+  \exp\!\left(-\frac{1}{2}(\log N_i)^2
+    \mathbf{x}_i^\top \hat{\mathbf{V}}_{\text{model}} \mathbf{x}_i\right),
+</annotation></semantics></math></p>
+<p>which is exact under the Gaussian approximation for the linear
+predictor and guarantees positivity. Constrained count fits fall back to
+a subtractive second-order Taylor correction because the corresponding
+logistic-normal integral has no closed form.</p>
 </div>
 <div class="section level2">
 <h2 id="convergence-diagnostics">Convergence diagnostics<a class="anchor" aria-label="anchor" href="#convergence-diagnostics"></a>
