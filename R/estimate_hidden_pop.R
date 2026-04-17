@@ -386,6 +386,13 @@ estimate_hidden_pop <- function(data,
   cluster_vec <- if (!is.null(cluster)) {
     eval(cluster[[2]], data)
   } else NULL
+  if (!is.null(cluster_vec)) {
+    n_clusters <- length(unique(cluster_vec[!is.na(cluster_vec)]))
+    if (n_clusters < 2L) {
+      stop("Cluster-robust variance requires at least 2 clusters.",
+           call. = FALSE)
+    }
+  }
 
   # ---- Dispatch to estimator ----
   # Estimators compute internal HC vcov (used as fallback);

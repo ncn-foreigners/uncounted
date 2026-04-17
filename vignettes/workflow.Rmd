@@ -190,12 +190,13 @@ The columns are:
   have no covariates on alpha).
 - **observed** -- total observed count $\sum m_i$.
 - **estimate** -- plug-in estimate $\hat{\xi}$.
-- **estimate_bc** -- bias-corrected estimate using a second-order Taylor
-  expansion. Because $\xi(\alpha) = \sum N_i^\alpha$ is convex, the plug-in
-  estimator is biased upward by Jensen's inequality.
+- **estimate_bc** -- analytical bias-corrected estimate. For unconstrained
+  fits this is the multiplicative lognormal correction; constrained fits use
+  a second-order Taylor approximation.
 - **lower**, **upper** -- confidence interval bounds. The CI is constructed
-  by a monotone transformation of the Wald interval on the link scale, with
-  bias correction applied at the bounds.
+  by a delta-method/log-normal approximation on the population-size scale.
+  When bias correction is requested, the bounds are rescaled by the same
+  `estimate_bc / estimate` ratio as the reported point estimate.
 - **share_pct** -- group share as a percentage of the total.
 
 Comparing across all four models:

@@ -95,7 +95,7 @@ predict.uncounted <- function(object, newdata = NULL,
   if (!is.null(cov_gamma_f) && !is.null(object$gamma_coefs) &&
       isTRUE(object$has_cov_gamma)) {
     X_gamma_new <- .predict_design(cov_gamma_f, newdata, object$X_gamma, "gamma", object$data)
-    gamma_vals <- exp(as.numeric(X_gamma_new %*% object$gamma_coefs))
+    gamma_vals <- exp(pmin(as.numeric(X_gamma_new %*% object$gamma_coefs), 10))
   } else {
     gamma_val <- object$gamma
     gamma_vals <- if (!is.null(gamma_val)) rep(gamma_val, length(ratio_new)) else NULL

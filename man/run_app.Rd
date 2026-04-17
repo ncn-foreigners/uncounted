@@ -16,7 +16,7 @@ interface for data upload, model fitting, population size estimation,
 model comparison, and diagnostics.
 }
 \details{
-The application has five tabs:
+The application has six tabs:
 \describe{
 \item{Data}{Upload CSV data or use the built-in \code{irregular_migration}
 dataset. Select which columns map to observed counts (m), auxiliary

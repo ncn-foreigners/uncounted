@@ -68,6 +68,21 @@ test_that("countries does NOT trigger clustering", {
   expect_false(all(abs(se_no - se_cl) < 1e-10))
 })
 
+test_that("clustered covariance requires at least two clusters", {
+  d <- small_data()
+  d$one_cluster <- "A"
+
+  expect_error(
+    quick_fit(d, gamma = 0.005, vcov = "HC1", cluster = ~one_cluster),
+    "at least 2 clusters"
+  )
+  expect_error(
+    quick_fit(d, method = "nb", gamma = 0.005, vcov = "HC1",
+              cluster = ~one_cluster),
+    "at least 2 clusters"
+  )
+})
+
 test_that("vcov as function works", {
   d <- small_data()
   fit <- quick_fit(d, gamma = 0.005,

@@ -204,6 +204,10 @@
     ## Sum scores within clusters
     cl <- as.factor(cluster)
     G <- nlevels(cl)
+    if (G < 2) {
+      stop("Cluster-robust variance requires at least 2 clusters.",
+           call. = FALSE)
+    }
     score_g <- rowsum(score_i, cl, reorder = FALSE)
 
     ## Meat = sum_g (S_g' S_g)
@@ -301,6 +305,10 @@
   if (!is.null(cluster)) {
     cl <- as.factor(cluster)
     G <- nlevels(cl)
+    if (G < 2) {
+      stop("Cluster-robust variance requires at least 2 clusters.",
+           call. = FALSE)
+    }
     score_g <- rowsum(score_full, cl, reorder = FALSE)
     meat <- crossprod(score_g)
     # HC0 (CR0): no correction; HC1 (CR1): small-sample correction

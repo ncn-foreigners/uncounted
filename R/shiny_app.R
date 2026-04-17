@@ -10,7 +10,7 @@ utils::globalVariables("irregular_migration")
 #' @param ... Additional arguments passed to \code{\link[shiny]{runApp}}.
 #'
 #' @details
-#' The application has five tabs:
+#' The application has six tabs:
 #' \describe{
 #'   \item{Data}{Upload CSV data or use the built-in \code{irregular_migration}
 #'     dataset. Select which columns map to observed counts (m), auxiliary
@@ -49,8 +49,11 @@ run_app <- function(...) {
 
 ## Auto-convert integer/numeric columns with <= 20 unique values to factor.
 ## This prevents year (2019-2024) from being treated as continuous.
-.auto_factor <- function(d) {
+.auto_factor <- function(d, exclude = NULL) {
+  exclude <- unique(stats::na.omit(exclude))
+  exclude <- exclude[nzchar(exclude)]
   for (col in names(d)) {
+    if (col %in% exclude) next
     if (is.integer(d[[col]]) || is.numeric(d[[col]])) {
       n_unique <- length(unique(d[[col]]))
       if (n_unique <= 20 && n_unique > 1) {
@@ -61,9 +64,42 @@ run_app <- function(...) {
   d
 }
 
+# Choose a comparison metric that is finite for every displayed model.
+.comparison_plot_spec <- function(tab) {
+  candidates <- list(
+    list(metric = "AIC",
+         values = tab$AIC,
+         title = "AIC relative to best model",
+         xlab = expression(Delta * AIC)),
+    list(metric = "Deviance",
+         values = tab$Deviance,
+         title = "Deviance relative to best model",
+         xlab = expression(Delta * Deviance)),
+    list(metric = "RMSE",
+         values = tab$RMSE,
+         title = "RMSE relative to best model",
+         xlab = "Delta RMSE")
+  )
+
+  for (spec in candidates) {
+    vals <- spec$values
+    if (!is.null(vals) && all(is.finite(vals))) {
+      spec$relative <- vals - min(vals)
+      return(spec)
+    }
+  }
+
+  stop("No finite comparison metric available for plotting.", call. = FALSE)
+}
+
 # ── UI ───────────────────────────────────────────────────────────────────────
 
 .app_ui <- function() {
+  pkg_version <- tryCatch(
+    as.character(utils::packageVersion("uncounted")),
+    error = function(e) "1.1.0"
+  )
+
   bslib::page_navbar(
     title = "uncounted",
     theme = bslib::bs_theme(version = 5, bootswatch = "flatly"),
@@ -227,9 +263,12 @@ run_app <- function(...) {
           shiny::tags$li("Assess quality with diagnostics (residuals, LOO, rootograms)")
         ),
         shiny::hr(),
-        shiny::p(shiny::HTML("Package: <code>uncounted</code> v0.4.0 |
-          Author: Maciej Ber&#281;sewicz |
-          <a href='https://github.com/ncn-foreigners/paper-unauthorized-pop' target='_blank'>GitHub</a>"))
+        shiny::p(shiny::HTML(sprintf(
+          paste0("Package: <code>uncounted</code> v%s | ",
+                 "Author: Maciej Ber&#281;sewicz | ",
+                 "<a href='https://github.com/ncn-foreigners/paper-unauthorized-pop' target='_blank'>GitHub</a>"),
+          pkg_version
+        )))
       )
     )
   )
@@ -263,6 +302,11 @@ run_app <- function(...) {
   cols <- shiny::reactive({
     if (is.null(rv$data)) return(character(0))
     names(rv$data)
+  })
+
+  processed_data <- shiny::reactive({
+    shiny::req(rv$data)
+    .auto_factor(rv$data, exclude = c(input$col_m, input$col_n, input$col_N))
   })
 
   output$var_observed <- shiny::renderUI({
@@ -342,8 +386,8 @@ run_app <- function(...) {
   })
 
   output$data_summary <- shiny::renderPrint({
-    shiny::req(rv$data)
-    d <- rv$data
+    shiny::req(processed_data())
+    d <- processed_data()
     cat("Rows:", nrow(d), "| Columns:", ncol(d), "\n")
     cat("Column names:", paste(names(d), collapse = ", "), "\n")
     if (!is.null(input$col_m) && input$col_m %in% names(d)) {
@@ -355,14 +399,14 @@ run_app <- function(...) {
   })
 
   output$data_table <- DT::renderDataTable({
-    shiny::req(rv$data)
-    DT::datatable(utils::head(rv$data, 200), options = list(pageLength = 10,
+    shiny::req(processed_data())
+    DT::datatable(utils::head(processed_data(), 200), options = list(pageLength = 10,
       scrollX = TRUE))
   })
 
   # ── Model fitting ───────────────────────────────────────────────────────
   shiny::observeEvent(input$fit_btn, {
-    shiny::req(rv$data, input$col_m, input$col_n, input$col_N)
+    shiny::req(processed_data(), input$col_m, input$col_n, input$col_N)
 
     gamma_arg <- switch(input$gamma_opt,
       estimate = "estimate",
@@ -387,7 +431,7 @@ run_app <- function(...) {
     check_vars <- function(f, label) {
       if (is.null(f)) return(TRUE)
       vars <- all.vars(f)
-      missing <- setdiff(vars, names(rv$data))
+      missing <- setdiff(vars, names(processed_data()))
       if (length(missing) > 0) {
         shiny::showNotification(
           paste0(label, ": variable(s) not in data: ", paste(missing, collapse = ", ")),
@@ -410,7 +454,7 @@ run_app <- function(...) {
     estimator_val <- input$estimator
     vcov_val <- input$vcov_type
     constr_val <- isTRUE(input$constrained)
-    dat <- rv$data
+    dat <- processed_data()
 
     ## Cluster-robust SE
     cluster_arg <- NULL
@@ -545,12 +589,23 @@ run_app <- function(...) {
     shiny::validate(shiny::need(length(rv$models) >= 2, "Fit at least 2 models to compare"))
     comp <- do.call(compare_models, rv$models)
     tab <- comp$table
-    tab <- tab[order(tab$AIC), ]
+    spec <- tryCatch(
+      .comparison_plot_spec(tab),
+      error = function(e) {
+        plot.new()
+        text(0.5, 0.5, e$message, cex = 1.1)
+        NULL
+      }
+    )
+    if (is.null(spec)) return(invisible())
+    ord <- order(spec$relative)
+    tab <- tab[ord, , drop = FALSE]
+    rel_vals <- spec$relative[ord]
     par(mar = c(5, 10, 3, 2))
-    barplot(tab$AIC - min(tab$AIC), names.arg = tab$Model, horiz = TRUE,
-            las = 1, xlab = expression(Delta * AIC),
-            main = "AIC relative to best model",
-            col = ifelse(tab$AIC == min(tab$AIC), "steelblue", "grey70"),
+    barplot(rel_vals, names.arg = tab$Model, horiz = TRUE,
+            las = 1, xlab = spec$xlab,
+            main = spec$title,
+            col = ifelse(rel_vals == 0, "steelblue", "grey70"),
             border = NA)
   })
 

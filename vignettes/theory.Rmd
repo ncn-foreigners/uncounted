@@ -387,31 +387,48 @@ covariance is HC1.
 ### Delta-method confidence intervals for population size
 
 The population size $\hat\xi = \sum_i N_i^{\hat\alpha}$ is a nonlinear
-function of $\hat\alpha$.  Confidence intervals are constructed via a
-*monotone transformation* of the Wald interval on the link scale.
+function of $\hat\alpha$. The implemented subgroup intervals are based on
+the delta method for $\hat\xi_g$ itself, followed by a log-normal
+approximation to preserve positivity.
 
-**Step 1.** Build a Wald interval for the linear predictor $\hat\eta$
-(which equals $\hat\alpha$ when unconstrained, or the logit of
-$\hat\alpha$ when constrained):
-
-$$
-\hat\eta \;\pm\; z_{\alpha/2} \cdot \mathrm{se}(\hat\eta),
-$$
-
-where $\mathrm{se}(\hat\eta) = \sqrt{\mathbf{x}^\top \mathbf{V} \mathbf{x}}$
-uses the HC-robust covariance $\mathbf{V}$.
-
-**Step 2.** Map the interval endpoints through the monotone function
-$g(\alpha) = \sum_i N_i^\alpha$:
+For a subgroup $g$, let $\mathbf{g}_g$ denote the gradient of
+$\hat\xi_g = \sum_{i \in g} N_i^{\hat\alpha_i}$ with respect to the alpha
+coefficients. In the unconstrained case,
 
 $$
-\hat\xi_L = \sum_i N_i^{\alpha_L}, \qquad
-\hat\xi_U = \sum_i N_i^{\alpha_U}.
+\mathbf{g}_g =
+  \sum_{i \in g} N_i^{\hat\alpha_i}\log(N_i)\mathbf{x}_i.
 $$
 
-Since $g$ is monotone increasing for $N_i \geq 1$, the resulting
-interval $[\hat\xi_L, \hat\xi_U]$ has the correct coverage probability
-(asymptotically).
+When `constrained = TRUE`, the same expression is multiplied by the
+derivative of the inverse-logit map,
+$\hat\alpha_i(1-\hat\alpha_i)$, because the model is parameterized on the
+link scale.
+
+Using the HC-robust covariance $\mathbf{V}$ for the alpha coefficients,
+
+$$
+\widehat{\mathrm{Var}}(\hat\xi_g) =
+  \mathbf{g}_g^\top \mathbf{V} \mathbf{g}_g.
+$$
+
+The subgroup standard error
+$\widehat{\mathrm{se}}(\hat\xi_g)=\sqrt{\widehat{\mathrm{Var}}(\hat\xi_g)}$
+is then mapped to a log-normal interval
+
+$$
+\left(
+\hat\xi_g \exp\!\left\{-z_{\alpha/2}
+  \frac{\widehat{\mathrm{se}}(\hat\xi_g)}{\hat\xi_g}\right\},
+\;
+\hat\xi_g \exp\!\left\{z_{\alpha/2}
+  \frac{\widehat{\mathrm{se}}(\hat\xi_g)}{\hat\xi_g}\right\}
+\right).
+$$
+
+When analytical bias correction is requested, the package rescales both
+bounds by the ratio $\hat\xi_g^{BC}/\hat\xi_g$ so that the returned
+interval is centered on the bias-corrected estimate.
 
 **Total across groups.**  When the model includes covariates in $\alpha$,
 the total $\hat\xi = \sum_g \hat\xi_g$ has its own delta-method CI
