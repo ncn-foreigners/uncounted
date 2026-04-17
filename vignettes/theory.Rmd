@@ -55,21 +55,39 @@ $\times$ year $\times$ sex cells).  Denote
 The conditional mean of $m_i$ is modelled as
 
 $$
-E[m_i \mid N_i, n_i] \;=\; N_i^{\alpha}\,
-  \left(\frac{n_i + \gamma}{N_i}\right)^{\!\beta},
+E[m_i \mid N_i, n_i] \;=\; \xi_i \rho_i,
+  \qquad \xi_i = N_i^{\alpha},
 $$
 
 where $\alpha$, $\beta$, and $\gamma \geq 0$ are parameters to be
-estimated.  On the log scale, this becomes a linear model:
+estimated. Define
 
 $$
-\log E[m_i] \;=\;
-  \alpha \,\log N_i \;+\;
-  \beta \,\log\!\left(\frac{n_i + \gamma}{N_i}\right).
+\eta_i = \beta \log\!\left(\gamma + \frac{n_i}{N_i}\right).
 $$
 
-Note that the argument of the second logarithm can be rewritten as
-$\gamma + n_i / N_i$ when the ratio form is used inside the code.
+The package supports three links for $\rho_i = h(\eta_i)$:
+
+- `link_rho = "power"`: $\rho_i = \exp(\eta_i)$,
+- `link_rho = "cloglog"`: $\rho_i = 1 - \exp(-\exp(\eta_i))$,
+- `link_rho = "logistic"`: $\rho_i = (1 + \exp(-\eta_i))^{-1}$.
+
+On the log scale, this becomes
+
+$$
+\log E[m_i] \;=\; \alpha \,\log N_i \;+\; \log \rho_i.
+$$
+
+Under every supported detection link,
+
+$$
+\xi_i = \frac{E[m_i]}{\rho_i} = N_i^\alpha.
+$$
+
+This is why the public population-size estimator remains
+$\hat\xi = \sum_i N_i^{\hat\alpha_i}$ even when a bounded detection link is
+used. The choice of `link_rho` affects $\hat\xi$ only indirectly through the
+fitted value of $\hat\alpha$.
 
 ### Parameter interpretation
 
@@ -242,6 +260,14 @@ the true distribution is not Poisson, provided the mean is correctly
 specified.  This makes PPML robust to heteroscedasticity and is the
 recommended default in `uncounted`.
 
+For the Poisson and Negative Binomial count models, the package can also use
+`estimator = "gmm"` or `estimator = "el"`. In those cases the same
+per-observation score equations are treated as moment conditions and fitted
+with `momentfit`. The model for $\mu_i$ is unchanged; only the estimating
+criterion differs. For these moment-based count fits the default robust
+covariance is HC1 rather than HC3, because leverage-based HC2/HC3
+adjustments are not available generically in that setting.
+
 ### Negative Binomial ML
 
 The Negative Binomial extends the Poisson by adding a dispersion parameter
@@ -351,38 +377,58 @@ are adjusted residuals.  The adjustment depends on the HC variant:
 | HC5     | $\tilde{e}_i = e_i / (1 - h_{ii})^{\min(\delta_i, h_{\max})/2}$ |
 
 Here $h_{ii}$ are the hat-matrix diagonal elements (leverages) and
-$\delta_i$ is a data-dependent exponent.  HC3 (the default) is
-recommended for moderate sample sizes as it provides a good balance
-between finite-sample bias correction and stability.
+$\delta_i$ is a data-dependent exponent. HC3 is the default for OLS,
+NLS, Poisson MLE, NB MLE, and iOLS, and is recommended for moderate
+sample sizes as it provides a good balance between finite-sample bias
+correction and stability. For the moment-based count estimators
+(`estimator = "gmm"` and `estimator = "el"`), the default robust
+covariance is HC1.
 
 ### Delta-method confidence intervals for population size
 
 The population size $\hat\xi = \sum_i N_i^{\hat\alpha}$ is a nonlinear
-function of $\hat\alpha$.  Confidence intervals are constructed via a
-*monotone transformation* of the Wald interval on the link scale.
+function of $\hat\alpha$. The implemented subgroup intervals are based on
+the delta method for $\hat\xi_g$ itself, followed by a log-normal
+approximation to preserve positivity.
 
-**Step 1.** Build a Wald interval for the linear predictor $\hat\eta$
-(which equals $\hat\alpha$ when unconstrained, or the logit of
-$\hat\alpha$ when constrained):
-
-$$
-\hat\eta \;\pm\; z_{\alpha/2} \cdot \mathrm{se}(\hat\eta),
-$$
-
-where $\mathrm{se}(\hat\eta) = \sqrt{\mathbf{x}^\top \mathbf{V} \mathbf{x}}$
-uses the HC-robust covariance $\mathbf{V}$.
-
-**Step 2.** Map the interval endpoints through the monotone function
-$g(\alpha) = \sum_i N_i^\alpha$:
+For a subgroup $g$, let $\mathbf{g}_g$ denote the gradient of
+$\hat\xi_g = \sum_{i \in g} N_i^{\hat\alpha_i}$ with respect to the alpha
+coefficients. In the unconstrained case,
 
 $$
-\hat\xi_L = \sum_i N_i^{\alpha_L}, \qquad
-\hat\xi_U = \sum_i N_i^{\alpha_U}.
+\mathbf{g}_g =
+  \sum_{i \in g} N_i^{\hat\alpha_i}\log(N_i)\mathbf{x}_i.
 $$
 
-Since $g$ is monotone increasing for $N_i \geq 1$, the resulting
-interval $[\hat\xi_L, \hat\xi_U]$ has the correct coverage probability
-(asymptotically).
+When `constrained = TRUE`, the same expression is multiplied by the
+derivative of the inverse-logit map,
+$\hat\alpha_i(1-\hat\alpha_i)$, because the model is parameterized on the
+link scale.
+
+Using the HC-robust covariance $\mathbf{V}$ for the alpha coefficients,
+
+$$
+\widehat{\mathrm{Var}}(\hat\xi_g) =
+  \mathbf{g}_g^\top \mathbf{V} \mathbf{g}_g.
+$$
+
+The subgroup standard error
+$\widehat{\mathrm{se}}(\hat\xi_g)=\sqrt{\widehat{\mathrm{Var}}(\hat\xi_g)}$
+is then mapped to a log-normal interval
+
+$$
+\left(
+\hat\xi_g \exp\!\left\{-z_{\alpha/2}
+  \frac{\widehat{\mathrm{se}}(\hat\xi_g)}{\hat\xi_g}\right\},
+\;
+\hat\xi_g \exp\!\left\{z_{\alpha/2}
+  \frac{\widehat{\mathrm{se}}(\hat\xi_g)}{\hat\xi_g}\right\}
+\right).
+$$
+
+When analytical bias correction is requested, the package rescales both
+bounds by the ratio $\hat\xi_g^{BC}/\hat\xi_g$ so that the returned
+interval is centered on the bias-corrected estimate.
 
 **Total across groups.**  When the model includes covariates in $\alpha$,
 the total $\hat\xi = \sum_g \hat\xi_g$ has its own delta-method CI
@@ -392,9 +438,34 @@ approximation to ensure positivity.
 ### Bias correction
 
 Because $\xi(\alpha) = \sum_i N_i^\alpha$ is convex in $\alpha$ for
-$N_i > 1$, Jensen's inequality implies $E[\hat\xi] \geq \xi$.  A
-second-order Taylor expansion of $h(\alpha) = \sum_i N_i^\alpha$ around
-the true $\alpha$ gives the approximate bias:
+$N_i > 1$, Jensen's inequality implies $E[\hat\xi] \geq \xi$. Writing
+$N_i^{\hat\alpha_i} = \exp(\hat\alpha_i \log N_i)$ and treating
+$\hat{\boldsymbol{\alpha}}$ as approximately normal gives
+
+$$
+E[N_i^{\hat\alpha_i}] \approx N_i^{\alpha_i}
+  \exp\!\left\{\frac{1}{2}(\log N_i)^2
+  \mathbf{x}_i^\top \mathbf{V}_{\mathrm{model}} \mathbf{x}_i\right\}.
+$$
+
+Inverting this yields the multiplicative lognormal correction used by
+the package for unconstrained models:
+
+$$
+\hat\xi^{BC} =
+  \sum_{i=1}^{n}
+  N_i^{\hat\alpha_i}
+  \exp\!\left(
+    -\frac{1}{2}(\log N_i)^2
+    \mathbf{x}_i^\top \mathbf{V}_{\mathrm{model}} \mathbf{x}_i
+  \right).
+$$
+
+This correction is strictly positive and exact under the Gaussian
+approximation for the linear predictor. For constrained fits, where
+$\alpha_i = \operatorname{logit}^{-1}(\eta_i)$, the corresponding
+logistic-normal integral has no closed form, so the package falls back
+to a second-order Taylor approximation on the link scale:
 
 $$
 \mathrm{Bias}(\hat\xi) \;\approx\;
@@ -403,16 +474,17 @@ $$
 $$
 
 where $\mathbf{V}_{\mathrm{model}}$ is the model-based (homoscedastic)
-variance--covariance matrix.  The bias-corrected estimator is
-
-$$
-\hat\xi^{BC} = \hat\xi - \widehat{\mathrm{Bias}}.
-$$
+variance--covariance matrix.
 
 Model-based variance is used rather than the HC-robust variance, because
 the latter can be inflated by high-leverage observations in skewed data,
-leading to overcorrection.  Bias correction is also applied to the CI
-bounds, evaluated at their respective $\alpha$ values.
+leading to overcorrection. For Poisson and NB fits, `vcov_model` is the
+Fisher-style inverse information for the mean-model parameters. This
+remains true when the coefficients are obtained by `estimator = "gmm"`
+or `estimator = "el"`: the package evaluates the same Fisher-style model
+variance at the non-MLE estimate and reserves the robust HC or FWB
+covariance for interval estimation. Bias correction is also applied to
+the CI bounds, evaluated at their respective $\alpha$ values.
 
 ### Fractional weighted bootstrap
 

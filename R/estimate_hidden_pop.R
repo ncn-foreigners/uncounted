@@ -32,11 +32,25 @@
 #'   the estimated gamma parameter. Default \code{c(1e-10, 0.5)}.
 #' @param theta_start Starting value for the NB dispersion parameter (used
 #'   only when \code{method = "nb"}). Default 1.
+#' @param link_rho Link for the detection component
+#'   \eqn{\rho_i = h(\beta_i \log(\gamma_i + n_i / N_i))}. Supported values are
+#'   \code{"power"} (default, \eqn{\rho_i = \exp(\eta_i)}),
+#'   \code{"cloglog"} (\eqn{\rho_i = 1 - \exp(-\exp(\eta_i))}), and
+#'   \code{"logistic"} (\eqn{\rho_i = 1 / (1 + \exp(-\eta_i))}).
+#'   Bounded links are currently available for \code{method = "poisson"},
+#'   \code{"nb"}, and \code{"nls"}.
+#' @param estimator Estimation criterion for count models:
+#'   \code{"mle"} (default), \code{"gmm"}, or \code{"el"}.
+#'   Non-MLE estimators are currently available only for
+#'   \code{method = "poisson"} and \code{method = "nb"}.
 #' @param vcov Controls the variance-covariance estimator. Can be:
 #'   \itemize{
 #'     \item A character string specifying the HC type: \code{"HC0"} through
 #'       \code{"HC5"}, or \code{"HC4m"}. Default \code{"HC3"}. When \code{cluster}
 #'       is also provided, this type is passed to \code{sandwich::vcovCL()}.
+#'       For count models fitted with \code{estimator = "gmm"} or
+#'       \code{estimator = "el"}, the default robust covariance is
+#'       \code{"HC1"} and HC2+ requests are downgraded to \code{"HC1"}.
 #'     \item A function that takes the fitted \code{uncounted} object and returns
 #'       a variance-covariance matrix. For example,
 #'       \code{sandwich::vcovHC} or
@@ -64,14 +78,23 @@
 #' \strong{Model specification.}
 #' For observation \eqn{i}, the expected observed count \eqn{m_i} is modelled as:
 #'
-#' \deqn{E(m_i) = N_i^{\alpha_i} \cdot (\gamma + n_i / N_i)^{\beta_i}}{E(m_i) = N_i^alpha_i * (gamma + n_i / N_i)^beta_i}
+#' \deqn{E(m_i) = \xi_i \rho_i,\qquad \xi_i = N_i^{\alpha_i}}{E(m_i) = xi_i rho_i, xi_i = N_i^alpha_i}
 #'
 #' where \eqn{N_i} is the reference (total registered) population,
 #' \eqn{n_i} is an auxiliary count (e.g., new registrations),
-#' and \eqn{\gamma \ge 0}{gamma >= 0} is an intercept-like offset.
-#' On the log scale, the model is linear:
+#' and \eqn{\gamma \ge 0}{gamma >= 0} is an intercept-like offset. Define
+#' \eqn{\eta_i = \beta_i \log(\gamma_i + n_i / N_i)}{eta_i = beta_i log(gamma_i + n_i / N_i)}.
+#' Then \eqn{\rho_i}{rho_i} is linked to \eqn{\eta_i}{eta_i} by one of:
+#' \describe{
+#'   \item{\code{"power"}}{\eqn{\rho_i = \exp(\eta_i)}{rho_i = exp(eta_i)}}
+#'   \item{\code{"cloglog"}}{\eqn{\rho_i = 1 - \exp(-\exp(\eta_i))}{rho_i = 1 - exp(-exp(eta_i))}}
+#'   \item{\code{"logistic"}}{\eqn{\rho_i = 1 / (1 + \exp(-\eta_i))}{rho_i = 1 / (1 + exp(-eta_i))}}
+#' }
+#' On the log scale,
 #'
-#' \deqn{\log E(m_i) = \alpha_i \log N_i + \beta_i \log(\gamma + n_i / N_i)}{log E(m_i) = alpha_i * log(N_i) + beta_i * log(gamma + n_i / N_i)}
+#' \deqn{\log E(m_i) = \alpha_i \log N_i + \log(\rho_i)}{log E(m_i) = alpha_i * log(N_i) + log(rho_i)}
+#'
+#' so for every supported \code{link_rho}, \eqn{\xi_i = E(m_i) / \rho_i = N_i^{\alpha_i}}{xi_i = E(m_i) / rho_i = N_i^alpha_i}.
 #'
 #' \strong{Parameter interpretation.}
 #' \describe{
@@ -114,7 +137,10 @@
 #'     allows. Standard errors for the regression coefficients are computed
 #'     conditional on \eqn{\hat{\theta}}, consistent with the approach used
 #'     in \code{MASS::glm.nb}. This means coefficient SEs do not account for
-#'     uncertainty in \eqn{\theta} estimation.}
+#'     uncertainty in \eqn{\theta} estimation. For \code{method = "poisson"}
+#'     and \code{method = "nb"}, the same moment conditions can also be fit
+#'     with \code{estimator = "gmm"} or \code{estimator = "el"} using
+#'     \pkg{momentfit}.}
 #' }
 #'
 #' \strong{Constrained vs. unconstrained estimation.}
@@ -144,13 +170,20 @@
 #'       constrained).}
 #'     \item{\code{vcov}}{HC-robust variance-covariance matrix.}
 #'     \item{\code{vcov_model}}{Model-based (homoscedastic) variance-covariance
-#'       matrix, used for bias correction.}
+#'       matrix, used for bias correction. For Poisson and NB count models,
+#'       this is the Fisher-style inverse information for the mean-model
+#'       parameters, evaluated at the fitted coefficients even when
+#'       \code{estimator = "gmm"} or \code{estimator = "el"}.}
+#'     \item{\code{rho_values}}{Per-observation fitted detection component
+#'       \eqn{\hat\rho_i}{rho_hat_i}.}
 #'     \item{\code{fitted.values}}{Fitted values \eqn{\hat{m}_i}{m_hat_i}.}
 #'     \item{\code{residuals}}{Raw residuals \eqn{m_i - \hat{m}_i}{m_i - m_hat_i}.}
 #'     \item{\code{gamma}}{Estimated or fixed gamma value (or \code{NULL}).}
 #'     \item{\code{theta}}{NB dispersion parameter (only for \code{method = "nb"}).}
-#'     \item{\code{loglik}}{Log-likelihood (for Poisson and NB methods).}
-#'     \item{\code{method}}{The estimation method used.}
+#'     \item{\code{loglik}}{Log-likelihood (for MLE count fits only).}
+#'     \item{\code{method}}{The model family used.}
+#'     \item{\code{estimator}}{The estimation criterion used.}
+#'     \item{\code{link_rho}}{The detection-link transformation used.}
 #'   }
 #'
 #' @references
@@ -213,6 +246,8 @@ estimate_hidden_pop <- function(data,
                                 cov_gamma = NULL,
                                 gamma_bounds = c(1e-10, 0.5),
                                 theta_start = 1,
+                                link_rho = c("power", "cloglog", "logistic"),
+                                estimator = c("mle", "gmm", "el"),
                                 vcov = "HC3",
                                 weights = NULL,
                                 constrained = FALSE,
@@ -220,22 +255,56 @@ estimate_hidden_pop <- function(data,
                                 cluster = NULL) {
 
   method <- match.arg(method)
+  link_rho <- .normalize_link_rho(match.arg(link_rho))
+  estimator <- match.arg(estimator)
+  vcov_missing <- missing(vcov)
   call <- match.call()
   ## Force-evaluate formula arguments so the stored call contains actual
   ## formula objects, not symbols. This ensures loo() can re-evaluate the
   ## call without needing the original calling environment (e.g., Shiny).
+  call$data <- data
   call$observed <- observed
   call$auxiliary <- auxiliary
   call$reference_pop <- reference_pop
+  call$method <- method
+  call$gamma <- gamma
+  call$gamma_bounds <- gamma_bounds
+  call$theta_start <- theta_start
+  call$constrained <- constrained
   if (!is.null(cov_alpha)) call$cov_alpha <- cov_alpha
   if (!is.null(cov_beta)) call$cov_beta <- cov_beta
   if (!is.null(cov_gamma)) call$cov_gamma <- cov_gamma
+  if (!is.null(weights)) call$weights <- weights
   if (!is.null(countries)) call$countries <- countries
   if (!is.null(cluster)) call$cluster <- cluster
+  call$link_rho <- link_rho
+  call$estimator <- estimator
 
   ## Determine vcov type
   vcov_is_function <- is.function(vcov)
   vcov_type <- if (vcov_is_function) "HC0" else vcov
+  if (estimator != "mle" && !method %in% c("poisson", "nb")) {
+    stop("'estimator' is only supported for method = 'poisson' and method = 'nb'.",
+         call. = FALSE)
+  }
+  if (constrained && !method %in% c("poisson", "nb")) {
+    stop("'constrained = TRUE' is only available for method = 'poisson' and ",
+         "method = 'nb'.", call. = FALSE)
+  }
+  if (link_rho != "power" && method %in% c("ols", "iols")) {
+    stop("'link_rho' values other than 'power' are currently available only ",
+         "for method = 'poisson', method = 'nb', and method = 'nls'.",
+         call. = FALSE)
+  }
+  actual_vcov_type <- if (estimator != "mle" && !vcov_is_function) {
+    if (vcov_missing && identical(vcov_type, "HC3")) {
+      "HC1"
+    } else {
+      .normalize_moment_vcov_type(vcov_type)
+    }
+  } else {
+    vcov_type
+  }
 
   # ---- Extract variables ----
   m <- eval(observed[[2]], data)
@@ -317,6 +386,13 @@ estimate_hidden_pop <- function(data,
   cluster_vec <- if (!is.null(cluster)) {
     eval(cluster[[2]], data)
   } else NULL
+  if (!is.null(cluster_vec)) {
+    n_clusters <- length(unique(cluster_vec[!is.na(cluster_vec)]))
+    if (n_clusters < 2L) {
+      stop("Cluster-robust variance requires at least 2 clusters.",
+           call. = FALSE)
+    }
+  }
 
   # ---- Dispatch to estimator ----
   # Estimators compute internal HC vcov (used as fallback);
@@ -327,10 +403,10 @@ estimate_hidden_pop <- function(data,
       if (estimate_gamma) {
         .fit_ols_gamma(m, N, ratio, log_N, X_alpha, X_beta,
                        gamma_start, gamma_bounds,
-                       weights = weights, vcov_type = vcov_type)
+                       weights = weights, vcov_type = actual_vcov_type)
       } else {
         .fit_ols(m, N, ratio, log_N, log_rate, X_alpha, X_beta,
-                 weights = weights, vcov_type = vcov_type)
+                 weights = weights, vcov_type = actual_vcov_type)
       }
     },
     "nls" = {
@@ -339,28 +415,58 @@ estimate_hidden_pop <- function(data,
                estimate_gamma = estimate_gamma,
                gamma_start = gamma_start,
                gamma_bounds = gamma_bounds,
-               weights = weights, vcov_type = vcov_type)
+               weights = weights, vcov_type = actual_vcov_type,
+               link_rho = link_rho)
     },
     "poisson" = {
-      .fit_poisson(m, N, ratio, log_N, log_rate, X_alpha, X_beta,
-                   gamma_value = gamma_value,
-                   estimate_gamma = estimate_gamma,
-                   gamma_start = gamma_start,
-                   gamma_bounds = gamma_bounds,
-                   X_gamma = X_gamma,
-                   weights = weights, vcov_type = vcov_type,
-                   constrained = constrained)
+      if (estimator == "mle") {
+        .fit_poisson(m, N, ratio, log_N, log_rate, X_alpha, X_beta,
+                     gamma_value = gamma_value,
+                     estimate_gamma = estimate_gamma,
+                     gamma_start = gamma_start,
+                     gamma_bounds = gamma_bounds,
+                     X_gamma = X_gamma,
+                     weights = weights, vcov_type = actual_vcov_type,
+                     constrained = constrained,
+                     link_rho = link_rho)
+      } else {
+        .fit_poisson_moment(m, N, ratio, log_N, log_rate, X_alpha, X_beta,
+                            gamma_value = gamma_value,
+                            estimate_gamma = estimate_gamma,
+                            gamma_start = gamma_start,
+                            gamma_bounds = gamma_bounds,
+                            X_gamma = X_gamma,
+                            weights = weights,
+                            constrained = constrained,
+                            link_rho = link_rho,
+                            estimator = estimator)
+      }
     },
     "nb" = {
-      .fit_nb(m, N, ratio, log_N, log_rate, X_alpha, X_beta,
-              gamma_value = gamma_value,
-              estimate_gamma = estimate_gamma,
-              gamma_start = gamma_start,
-              gamma_bounds = gamma_bounds,
-              theta_start = theta_start,
-              X_gamma = X_gamma,
-              weights = weights, vcov_type = vcov_type,
-              constrained = constrained)
+      if (estimator == "mle") {
+        .fit_nb(m, N, ratio, log_N, log_rate, X_alpha, X_beta,
+                gamma_value = gamma_value,
+                estimate_gamma = estimate_gamma,
+                gamma_start = gamma_start,
+                gamma_bounds = gamma_bounds,
+                theta_start = theta_start,
+                X_gamma = X_gamma,
+                weights = weights, vcov_type = actual_vcov_type,
+                constrained = constrained,
+                link_rho = link_rho)
+      } else {
+        .fit_nb_moment(m, N, ratio, log_N, log_rate, X_alpha, X_beta,
+                       gamma_value = gamma_value,
+                       estimate_gamma = estimate_gamma,
+                       gamma_start = gamma_start,
+                       gamma_bounds = gamma_bounds,
+                       theta_start = theta_start,
+                       X_gamma = X_gamma,
+                       weights = weights,
+                       constrained = constrained,
+                       link_rho = link_rho,
+                       estimator = estimator)
+      }
     },
     "iols" = {
       if (estimate_gamma) {
@@ -369,7 +475,7 @@ estimate_hidden_pop <- function(data,
       }
       .fit_iols(m, N, ratio, log_N, log_rate, X_alpha, X_beta,
                 gamma_value = gamma_value,
-                weights = weights, vcov_type = vcov_type)
+                weights = weights, vcov_type = actual_vcov_type)
     }
   )
 
@@ -389,7 +495,19 @@ estimate_hidden_pop <- function(data,
   } else {
     c(result$alpha_coefs, result$beta_coefs)
   }
-  rownames(result$vcov) <- colnames(result$vcov) <- names(all_coefs)[seq_len(nrow(result$vcov))]
+  vcov_names <- colnames(result$vcov)
+  if (is.null(vcov_names) || anyNA(vcov_names)) {
+    vcov_names <- names(all_coefs)
+    if (estimate_gamma && !has_cov_gamma && nrow(result$vcov) > length(vcov_names)) {
+      vcov_names <- c(vcov_names, colnames(X_gamma))
+    }
+    if (length(vcov_names) < nrow(result$vcov)) {
+      vcov_names <- c(vcov_names,
+                      rep(NA_character_, nrow(result$vcov) - length(vcov_names)))
+    }
+    vcov_names <- vcov_names[seq_len(nrow(result$vcov))]
+    rownames(result$vcov) <- colnames(result$vcov) <- vcov_names
+  }
 
   # Compute alpha/beta per observation (response scale for constrained)
   alpha_values <- if (!is.null(result$alpha_values)) {
@@ -402,6 +520,18 @@ estimate_hidden_pop <- function(data,
   } else {
     as.numeric(X_beta %*% result$beta_coefs)
   }
+  gamma_obs <- if (!is.null(result$gamma_values)) {
+    result$gamma_values
+  } else if (estimate_gamma && !is.null(result$gamma_estimated)) {
+    rep(result$gamma_estimated, length(ratio))
+  } else if (gamma_fixed) {
+    rep(gamma, length(ratio))
+  } else {
+    NULL
+  }
+  rate_values <- .rate_from_gamma(ratio, gamma_obs)
+  rho_values <- .rho_from_eta(.eta_from_rate(beta_values, rate_values),
+                              link_rho = link_rho)
 
   # Warn if alpha out of sensible range
   if (any(alpha_values > 1, na.rm = TRUE)) {
@@ -420,6 +550,7 @@ estimate_hidden_pop <- function(data,
     beta_coefs = result$beta_coefs,
     alpha_values = alpha_values,
     beta_values = beta_values,
+    rho_values = rho_values,
     vcov = NULL,  # computed below via sandwich
     vcov_full = NULL,
     vcov_model = result$vcov_model,
@@ -442,7 +573,10 @@ estimate_hidden_pop <- function(data,
     has_cov_gamma = has_cov_gamma,
     constrained = constrained,
     method = method,
-    vcov_type = vcov_type,
+    estimator = estimator,
+    link_rho = link_rho,
+    vcov_type = actual_vcov_type,
+    vcov_requested = if (vcov_is_function) NULL else vcov_type,
     vcov_spec = vcov,  # store original vcov specification
     call = call,
     data = data,
@@ -466,6 +600,12 @@ estimate_hidden_pop <- function(data,
     cluster_var = cluster_vec,
     obs_weights = weights,
     convergence = if (!is.null(result$convergence)) result$convergence else 0L,
+    theta_se = result$theta_se,
+    score_full = result$score_full,
+    hessian_nll = result$hessian_nll,
+    backend_vcov_full = result$backend_vcov_full,
+    backend_vcov_model_full = result$backend_vcov_model_full,
+    moment_backend = result$moment_backend,
     call_args = list(
       observed = observed, auxiliary = auxiliary, reference_pop = reference_pop
     )
@@ -498,13 +638,14 @@ estimate_hidden_pop <- function(data,
     }
   }
 
-  if (method == "nb" && !is.null(result$hessian_nll) && is.character(vcov)) {
+  if (method == "nb" && estimator == "mle" &&
+      !is.null(result$hessian_nll) && is.character(vcov)) {
     # NB with character vcov: dedicated sandwich path including theta
     V_nb_full <- .compute_nb_sandwich(
       hessian_nll = result$hessian_nll,
       score_full  = result$score_full,
       n_obs       = nrow(data),
-      vcov_type   = vcov,
+      vcov_type   = actual_vcov_type,
       cluster     = cluster_vec
     )
     vv <- .extract_vcov(V_nb_full)
@@ -515,19 +656,24 @@ estimate_hidden_pop <- function(data,
     out$hessian_nll <- result$hessian_nll
     # Store both requested and actual vcov types.
     # NB theta-aware sandwich supports HC0 and HC1 only; HC2+ downgraded to HC1.
-    actual_type <- if (vcov %in% c("HC2","HC3","HC4","HC4m","HC5")) "HC1" else vcov
-    out$vcov_requested <- vcov
+    actual_type <- if (vcov %in% c("HC2","HC3","HC4","HC4m","HC5")) "HC1" else actual_vcov_type
+    out$vcov_requested <- vcov_type
     out$vcov_type <- actual_type
   } else if (is.function(vcov)) {
     # User-supplied vcov function: first build object with default HC vcov
     # (so update() inside vcovFWB etc. doesn't recurse), then apply function.
-    V_default <- .compute_vcov_sandwich(out, "HC3", cluster_vec)
+    default_type <- if (estimator != "mle" && method %in% c("poisson", "nb")) {
+      "HC1"
+    } else {
+      "HC3"
+    }
+    V_default <- .compute_vcov_sandwich(out, default_type, cluster_vec)
     vv <- .extract_vcov(V_default)
     out$vcov_full <- vv$vcov_full
     out$vcov <- vv$vcov
     # Replace vcov in the stored call so update() doesn't re-invoke the function
-    out$vcov_spec <- "HC3"
-    out$call[["vcov"]] <- "HC3"
+    out$vcov_spec <- default_type
+    out$call[["vcov"]] <- default_type
     # Now apply the user function on the fully constructed object
     V_user <- vcov(out)
     vv <- .extract_vcov(V_user)
@@ -543,7 +689,7 @@ estimate_hidden_pop <- function(data,
     }
   } else {
     # Character vcov type: use sandwich package directly
-    V_full <- .compute_vcov_sandwich(out, vcov, cluster_vec)
+    V_full <- .compute_vcov_sandwich(out, actual_vcov_type, cluster_vec)
     vv <- .extract_vcov(V_full)
     out$vcov_full <- vv$vcov_full
     out$vcov <- vv$vcov
@@ -570,7 +716,8 @@ print.uncounted <- function(x, ...) {
   } else {
     x$vcov_type
   }
-  cat("Method:", toupper(x$method), "| vcov:", vcov_label, "\n")
+  cat("Method:", toupper(x$method), "| estimator:", toupper(x$estimator),
+      "| link_rho:", x$link_rho, "| vcov:", vcov_label, "\n")
   cat("N obs:", x$n_obs, "\n")
   if (!is.null(x$gamma_values) && length(x$gamma_values) > 0 && isTRUE(x$has_cov_gamma)) {
     cat("Gamma: covariate-varying (response scale), range [",
@@ -583,7 +730,7 @@ print.uncounted <- function(x, ...) {
   if (!is.null(x$theta)) {
     cat("Theta (NB dispersion):", round(x$theta, 4), "\n")
   }
-  if (!is.null(x$loglik)) {
+  if (!is.null(x$loglik) && length(x$loglik) == 1 && is.finite(x$loglik)) {
     cat("Log-likelihood:", round(x$loglik, 2), "\n")
   }
   if (isTRUE(x$constrained)) {
@@ -661,7 +808,8 @@ summary.uncounted <- function(object, total = FALSE, ...) {
   } else {
     object$vcov_type
   }
-  cat("Method:", toupper(object$method), "| vcov:", vcov_label, "\n")
+  cat("Method:", toupper(object$method), "| estimator:", toupper(object$estimator),
+      "| link_rho:", object$link_rho, "| vcov:", vcov_label, "\n")
   cat("N obs:", object$n_obs, "\n")
   if (!is.null(object$gamma_values) && length(object$gamma_values) > 0 &&
       !is.null(object$p_gamma) && isTRUE(object$has_cov_gamma)) {
@@ -675,10 +823,12 @@ summary.uncounted <- function(object, total = FALSE, ...) {
   if (!is.null(object$theta)) {
     cat("Theta (NB dispersion):", round(object$theta, 4), "\n")
   }
-  if (!is.null(object$loglik)) {
+  if (!is.null(object$loglik) && length(object$loglik) == 1 &&
+      is.finite(object$loglik)) {
     cat("Log-likelihood:", round(object$loglik, 2), "\n")
   }
-  if (!is.null(object$loglik)) {
+  if (!is.null(object$loglik) && length(object$loglik) == 1 &&
+      is.finite(object$loglik)) {
     n_par <- .count_params(object)
     aic <- -2 * object$loglik + 2 * n_par
     bic <- -2 * object$loglik + log(object$n_obs) * n_par
@@ -753,9 +903,14 @@ update.uncounted <- function(object, ..., evaluate = TRUE) {
     call[[nm]] <- extras[[nm]]
   }
   # If vcov was a function and update doesn't explicitly override it,
-  # replace with "HC3" to prevent infinite recursion from vcovFWB etc.
+  # replace with a simple built-in type to prevent infinite recursion from
+  # vcovFWB etc.
   if (is.function(object$vcov_spec) && !"vcov" %in% names(extras)) {
-    call[["vcov"]] <- "HC3"
+    call[["vcov"]] <- if (identical(object$estimator %in% c("gmm", "el"), TRUE)) {
+      "HC1"
+    } else {
+      "HC3"
+    }
   }
   if (!evaluate) return(call)
   eval(call, parent.frame())

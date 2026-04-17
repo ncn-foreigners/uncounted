@@ -8,8 +8,9 @@
 #   residuals.uncounted   -> diagnostics.R (includes type = "working")
 #   vcov.uncounted        -> estimate_hidden_pop.R
 
-#' @importFrom sandwich bread estfun
-#' @importFrom stats nobs residuals hatvalues model.matrix weights dfbeta
+#' @importFrom sandwich bread estfun vcovCL vcovHC
+#' @importFrom methods selectMethod
+#' @importFrom stats coef nobs residuals hatvalues model.matrix weights dfbeta
 #'   cor deviance dnbinom dpois lm lm.fit lm.wfit logLik median optim
 #'   optimize pchisq pnbinom pnorm ppois printCoefmat pt qnorm qqline
 #'   qqnorm quantile sd AIC BIC vcov terms model.frame .getXlevels qt
@@ -88,6 +89,49 @@ estfun.uncounted <- function(x, ...) {
   ef
 }
 
+#' Heteroskedasticity-consistent covariance for uncounted models
+#'
+#' @method vcovHC uncounted
+#' @param x An uncounted object
+#' @param type HC type
+#' @param omega Optional omega function passed to \code{sandwich::meatHC()}
+#' @param ... Ignored
+#' @export
+vcovHC.uncounted <- function(x,
+                             type = c("HC3", "const", "HC", "HC0", "HC1",
+                                      "HC2", "HC4", "HC4m", "HC5"),
+                             omega = NULL, ...) {
+  type <- match.arg(type)
+  type <- .normalize_object_vcov_type(x, type)
+  sandwich::sandwich(
+    x,
+    meat = sandwich::meatHC(x, type = type, omega = omega, ...)
+  )
+}
+
+#' Cluster-robust covariance for uncounted models
+#'
+#' @method vcovCL uncounted
+#' @param x An uncounted object
+#' @param cluster Clustering variable
+#' @param type HC type
+#' @param sandwich Return the full sandwich when \code{TRUE}
+#' @param fix Passed to \code{sandwich::meatCL()}
+#' @param ... Ignored
+#' @export
+vcovCL.uncounted <- function(x, cluster = NULL, type = NULL,
+                             sandwich = TRUE, fix = FALSE, ...) {
+  if (is.null(type)) {
+    type <- if (identical(x$estimator %in% c("gmm", "el"), TRUE)) "HC1" else "HC0"
+  }
+  type <- .normalize_object_vcov_type(x, type)
+  meat <- sandwich::meatCL(x, cluster = cluster, type = type, fix = fix, ...)
+  if (isTRUE(sandwich)) {
+    return(sandwich::sandwich(x, meat = meat))
+  }
+  meat
+}
+
 
 #' Theta-Aware Full Variance-Covariance for NB Models
 #'
@@ -120,6 +164,16 @@ estfun.uncounted <- function(x, ...) {
 vcov_nb <- function(object, vcov_type = "HC1", cluster = NULL) {
   if (!inherits(object, "uncounted"))
     stop("'object' must be of class 'uncounted'")
+  if (identical(object$method, "nb") &&
+      identical(object$estimator %in% c("gmm", "el"), TRUE) &&
+      !is.null(object$backend_vcov_full)) {
+    if (!missing(vcov_type) || !is.null(cluster)) {
+      warning("For estimator = '", object$estimator, "', vcov_nb() returns the ",
+              "stored backend covariance including theta. 'vcov_type' and ",
+              "'cluster' are ignored.", call. = FALSE)
+    }
+    return(object$backend_vcov_full)
+  }
   if (is.null(object$hessian_nll) || is.null(object$score_full)) {
     return(vcov(object))
   }

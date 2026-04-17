@@ -3,8 +3,9 @@
 #' Computes the estimated total unauthorized population
 #' \eqn{\hat{\xi} = \sum_{i} N_i^{\hat{\alpha}}} for each group
 #' defined by the covariates in alpha. Includes bias correction via
-#' second-order Taylor expansion and confidence intervals via monotone
-#' transformation of the Wald interval on the link scale.
+#' a multiplicative lognormal adjustment for unconstrained models (and a
+#' second-order Taylor approximation for constrained models), plus log-normal
+#' delta-method confidence intervals on the population-size scale.
 #'
 #' @details
 #' **Point estimate.** For a group \eqn{g} with reference populations
@@ -12,7 +13,7 @@
 #' the plug-in population size is
 #' \deqn{\hat{\xi}_g = \sum_{i=1}^{n} N_i^{\hat{\alpha}_g}.}
 #'
-#' **Bias correction via Taylor expansion.** Because \eqn{\xi} is a nonlinear
+#' **Bias correction.** Because \eqn{\xi} is a nonlinear
 #' function of \eqn{\hat{\alpha}}, the plug-in estimate is biased upward
 #' (by Jensen's inequality, \eqn{E[N^{\hat{\alpha}}] \geq N^{E[\hat{\alpha}]}}
 #' when \eqn{N > 1}).
@@ -36,7 +37,13 @@
 #' (the logistic-normal integral has no closed form), and the bias can be
 #' positive or negative depending on \eqn{\alpha}.
 #' Model-based variance is used for bias correction rather than HC-robust
-#' variance. For iOLS/GPML, the model-based variance is
+#' variance. For Poisson and NB count models this means the Fisher-style
+#' inverse information for the mean-model parameters, evaluated at the fitted
+#' coefficients. This remains true when the coefficients were obtained by
+#' \code{estimator = "gmm"} or \code{estimator = "el"}: the robust HC or FWB
+#' covariance is still used for confidence intervals, but the bias correction
+#' uses the same Fisher-style model variance as in the MLE case, evaluated at
+#' the non-MLE estimate. For iOLS/GPML, the model-based variance is
 #' \eqn{(\mathbf{Z}'\mathbf{Z})^{-1}} (Gamma Fisher information, no
 #' dispersion scaling).
 #'
@@ -44,15 +51,29 @@
 #' logit link: \eqn{\mathrm{Var}(\alpha) = \mathrm{Var}(\eta) \cdot
 #' [\sigma'(\eta)]^2} where \eqn{\sigma'(\eta) = \alpha(1-\alpha)}.
 #'
-#' **Confidence intervals via monotone transformation.** A Wald interval is
-#' first constructed on the link scale for the linear predictor:
-#' \deqn{\hat{\eta}_g \pm z_{\alpha/2} \cdot \mathrm{se}(\hat{\eta}_g),}
-#' where the standard error uses the HC-robust variance.
-#' The interval endpoints are then mapped through the monotone transformation
-#' \eqn{g(\alpha) = \sum_i N_i^{\alpha}} (increasing for \eqn{N_i \geq 1})
-#' to obtain \eqn{[\hat{\xi}_L, \hat{\xi}_U]}. When \code{constrained = TRUE},
-#' the logit link is applied before exponentiation. Bias correction
-#' is also applied to the CI bounds at their respective alpha values.
+#' **Confidence intervals via the delta method.** Let
+#' \eqn{\mathbf{g}_g = \partial \hat{\xi}_g / \partial \boldsymbol{\alpha}}
+#' denote the gradient of the plug-in estimator with respect to the alpha
+#' coefficients. For unconstrained models,
+#' \eqn{\mathbf{g}_g = \sum_i N_i^{\hat{\alpha}_i} \log(N_i)\mathbf{x}_i;}
+#' for constrained models the same expression is multiplied by the derivative
+#' of the inverse-logit map. Using the HC-robust covariance
+#' \eqn{\mathbf{V}}, the package computes
+#' \deqn{
+#'   \widehat{\mathrm{Var}}(\hat{\xi}_g) =
+#'     \mathbf{g}_g^\top \mathbf{V}\mathbf{g}_g.
+#' }
+#' To preserve positivity, the subgroup interval is then reported on a
+#' log-normal scale:
+#' \deqn{
+#'   \hat{\xi}_g \exp\!\left(
+#'     \pm z_{\alpha/2}
+#'     \frac{\widehat{\mathrm{se}}(\hat{\xi}_g)}{\hat{\xi}_g}
+#'   \right).
+#' }
+#' When \code{bias_correction = TRUE}, the lower and upper bounds are
+#' rescaled by \eqn{\hat{\xi}^{BC}_g / \hat{\xi}_g}, matching the returned
+#' bias-corrected point estimate.
 #'
 #' **Total across groups.** When multiple groups exist, the total
 #' \eqn{\hat{\xi} = \sum_g \hat{\xi}_g} has its own delta-method CI
@@ -61,7 +82,7 @@
 #'
 #' @param object An `"uncounted"` object.
 #' @param level Confidence level for intervals (default 0.95).
-#' @param bias_correction Logical; apply Taylor-expansion bias correction?
+#' @param bias_correction Logical; apply analytical bias correction?
 #'   Default TRUE. Uses model-based variance (not HC-robust) to avoid
 #'   overcorrection from inflated leverage-driven standard errors.
 #' @param total Logical; if \code{TRUE} and multiple groups exist, compute a

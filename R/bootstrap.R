@@ -77,7 +77,9 @@
 #'   \item{t}{Matrix (\code{R} x \code{n_groups}): bootstrap population size
 #'     estimates per group. Each row is one replicate.}
 #'   \item{t0}{Numeric vector: plug-in point estimates from original fit.}
-#'   \item{t0_bc}{Numeric vector: bias-corrected point estimates (Taylor expansion).}
+#'   \item{t0_bc}{Numeric vector: analytical bias-corrected point estimates
+#'     from \code{popsize()} (multiplicative lognormal for unconstrained fits,
+#'     Taylor approximation for constrained fits).}
 #'   \item{popsize}{Data frame with columns: \code{group}, \code{estimate},
 #'     \code{lower}, \code{upper}, where \code{estimate} uses the chosen
 #'     \code{point_estimate} type.}
@@ -164,6 +166,8 @@ bootstrap_popsize <- function(object, R = 199, cluster = NULL,
   theta_start <- if (!is.null(object$theta)) object$theta else 1
   constrained_arg <- isTRUE(object$constrained)
   countries <- if (!is.null(cl$countries)) eval(cl$countries) else NULL
+  estimator_arg <- object$estimator
+  link_rho_arg <- object$link_rho
 
   # Point estimates from original fit (using by if provided)
   ps0 <- popsize(object, by = by, bias_correction = TRUE, total = total)
@@ -212,6 +216,8 @@ bootstrap_popsize <- function(object, R = 199, cluster = NULL,
         cov_gamma = cov_gamma,
         gamma_bounds = gamma_bounds,
         theta_start = theta_start,
+        link_rho = link_rho_arg,
+        estimator = estimator_arg,
         vcov = "HC0",
         weights = w,
         constrained = constrained_arg,
@@ -400,7 +406,8 @@ bootstrap_popsize <- function(object, R = 199, cluster = NULL,
 #' bootstrap confidence interval. The output columns are:
 #' \describe{
 #'   \item{Plugin}{Plug-in estimate \eqn{\hat{\xi} = \sum N^{\hat{\alpha}}}.}
-#'   \item{Plugin (BC)}{Bias-corrected plug-in (Taylor expansion).}
+#'   \item{Plugin (BC)}{Analytical bias-corrected plug-in estimate from
+#'     \code{popsize()}.}
 #'   \item{Boot median}{Median of the bootstrap distribution (recommended).}
 #'   \item{Boot mean}{Mean of the bootstrap distribution.}
 #'   \item{CI lower / CI upper}{Bootstrap confidence interval bounds.}

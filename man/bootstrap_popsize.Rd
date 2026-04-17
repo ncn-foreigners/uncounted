@@ -56,7 +56,9 @@ An object of class \code{"uncounted_boot"} with components:
 \item{t}{Matrix (\code{R} x \code{n_groups}): bootstrap population size
 estimates per group. Each row is one replicate.}
 \item{t0}{Numeric vector: plug-in point estimates from original fit.}
-\item{t0_bc}{Numeric vector: bias-corrected point estimates (Taylor expansion).}
+\item{t0_bc}{Numeric vector: analytical bias-corrected point estimates
+from \code{popsize()} (multiplicative lognormal for unconstrained fits,
+Taylor approximation for constrained fits).}
 \item{popsize}{Data frame with columns: \code{group}, \code{estimate},
 \code{lower}, \code{upper}, where \code{estimate} uses the chosen
 \code{point_estimate} type.}

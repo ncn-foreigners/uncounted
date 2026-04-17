@@ -156,21 +156,30 @@ The plug-in estimator $\hat{\xi}_g = \sum_{i \in g} N_i^{\hat{\alpha}_g}$ is
 upward-biased by Jensen's inequality.  The bias correction uses the
 model-based variance $\mathbf{V}_{\text{model}}$, which differs by method:
 
-| Method  | $\mathbf{V}_{\text{model}}$ |
-|---------|----------------------------|
-| Poisson | $(\mathbf{Z}'\text{diag}(\hat\mu)\mathbf{Z})^{-1}$ |
-| iOLS    | $(\mathbf{Z}'\mathbf{Z})^{-1}$ |
+| Method | $\mathbf{V}_{\text{model}}$ |
+|--------|-----------------------------|
+| Poisson / Poisson GMM / Poisson EL | $(\mathbf{Z}'\text{diag}(\hat\mu)\mathbf{Z})^{-1}$ |
+| NB / NB GMM / NB EL | $(\mathbf{Z}'\text{diag}(\hat\mu \hat\theta / (\hat\theta + \hat\mu))\mathbf{Z})^{-1}$ |
+| iOLS | $(\mathbf{Z}'\mathbf{Z})^{-1}$ |
 
 For iOLS, the model-based variance is the GPML Fisher information inverse
 **without** dispersion scaling.  This is because the Gamma quasi-likelihood
 has variance function $V(\mu) = \mu^2$, giving unit working weights.
 
-The current implementation uses a subtractive correction
-$\hat{\xi}^{BC} = \hat{\xi} - \text{bias}$, clamped to be positive.
-A multiplicative correction based on the exact Gaussian MGF
-$\hat{\xi}^{BC} = \sum N_i^{\hat\alpha} \exp(-\frac{1}{2}(\log N_i)^2
-\mathbf{x}_i'\hat{\mathbf{V}}\mathbf{x}_i)$ is under development and
-would eliminate the negativity issue entirely.
+For unconstrained models, including iOLS, the current implementation uses
+the multiplicative lognormal correction
+
+$$
+\hat{\xi}^{BC} =
+  \sum_i N_i^{\hat\alpha_i}
+  \exp\!\left(-\frac{1}{2}(\log N_i)^2
+    \mathbf{x}_i^\top \hat{\mathbf{V}}_{\text{model}} \mathbf{x}_i\right),
+$$
+
+which is exact under the Gaussian approximation for the linear predictor
+and guarantees positivity. Constrained count fits fall back to a
+subtractive second-order Taylor correction because the corresponding
+logistic-normal integral has no closed form.
 
 ## Convergence diagnostics
 

@@ -364,6 +364,10 @@ rootogram.uncounted <- function(object, style = c("hanging", "standing", "suspen
 #' @export
 profile_gamma <- function(object, gamma_grid = seq(1e-4, 0.5, length.out = 20),
                           plot = TRUE, ...) {
+  if (!identical(object$estimator, "mle")) {
+    stop("profile_gamma() is only available for models fitted with ",
+         "estimator = 'mle'.", call. = FALSE)
+  }
   if (!object$method %in% c("poisson", "nb")) {
     stop("profile_gamma() is only available for Poisson and NB models.")
   }
@@ -385,6 +389,8 @@ profile_gamma <- function(object, gamma_grid = seq(1e-4, 0.5, length.out = 20),
   vcov_type <- object$vcov_type
   constrained_arg <- isTRUE(object$constrained)
   theta_start <- if (!is.null(object$theta)) object$theta else 1
+  estimator_arg <- object$estimator
+  link_rho_arg <- object$link_rho
 
   results <- data.frame(gamma = gamma_grid, xi = NA_real_, loglik = NA_real_)
 
@@ -395,6 +401,7 @@ profile_gamma <- function(object, gamma_grid = seq(1e-4, 0.5, length.out = 20),
         reference_pop = reference_pop, method = method,
         cov_alpha = cov_alpha, cov_beta = cov_beta,
         gamma = gamma_grid[i], theta_start = theta_start,
+        link_rho = link_rho_arg, estimator = estimator_arg,
         vcov = vcov_type, constrained = constrained_arg
       ),
       error = function(e) NULL
@@ -442,6 +449,10 @@ profile_gamma <- function(object, gamma_grid = seq(1e-4, 0.5, length.out = 20),
 #' @return A list with nll (function), par0 (MLE vector), compute_xi (function).
 #' @noRd
 .build_nll_from_object <- function(object) {
+  if (!identical(object$estimator, "mle")) {
+    stop("Profile likelihood is only available for models fitted with ",
+         "estimator = 'mle'.", call. = FALSE)
+  }
   m <- object$m
   N <- object$N
   n_aux <- object$n_aux
@@ -455,6 +466,7 @@ profile_gamma <- function(object, gamma_grid = seq(1e-4, 0.5, length.out = 20),
   weights <- if (!is.null(object$obs_weights)) object$obs_weights else rep(1, n_obs)
   is_constr <- isTRUE(object$constrained)
   method <- object$method
+  link_rho <- object$link_rho
   theta_mle <- object$theta
 
   .alpha_fn <- if (is_constr) .inv_logit else identity
@@ -462,11 +474,11 @@ profile_gamma <- function(object, gamma_grid = seq(1e-4, 0.5, length.out = 20),
 
   # Use fitted gamma (scalar or vector)
   if (!is.null(object$gamma_values) && isTRUE(object$has_cov_gamma)) {
-    log_rate <- log(object$gamma_values + ratio)
+    rate <- object$gamma_values + ratio
   } else if (!is.null(object$gamma)) {
-    log_rate <- log(object$gamma + ratio)
+    rate <- object$gamma + ratio
   } else {
-    log_rate <- log(ratio)
+    rate <- ratio
   }
 
   par0 <- c(object$alpha_coefs, object$beta_coefs)
@@ -476,7 +488,8 @@ profile_gamma <- function(object, gamma_grid = seq(1e-4, 0.5, length.out = 20),
     b <- par[p_alpha + seq_len(p_beta)]
     alpha_lin <- .alpha_fn(as.numeric(X_alpha %*% a))
     beta_lin <- .beta_fn(as.numeric(X_beta %*% b))
-    log_mu <- pmin(alpha_lin * log_N + beta_lin * log_rate, 20)
+    log_mu <- pmin(.compute_log_mu(alpha_lin, log_N, beta_lin, rate,
+                                   link_rho = link_rho), 20)
     mu <- pmax(exp(log_mu), 1e-300)
 
     if (method == "nb") {
@@ -510,6 +523,10 @@ profile_gamma <- function(object, gamma_grid = seq(1e-4, 0.5, length.out = 20),
 #' @noRd
 .profile_coef <- function(object, coef_index, block = c("alpha", "beta"),
                           grid = NULL, reoptimize = FALSE, plot = TRUE, ...) {
+  if (!identical(object$estimator, "mle")) {
+    stop("profile_alpha() and profile_beta() are only available for models ",
+         "fitted with estimator = 'mle'.", call. = FALSE)
+  }
   block <- match.arg(block)
   p_alpha <- object$p_alpha
   p_beta <- object$p_beta

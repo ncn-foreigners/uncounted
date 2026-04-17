@@ -16,7 +16,8 @@ Prints a formatted table showing all point estimate types and the
 bootstrap confidence interval. The output columns are:
 \describe{
 \item{Plugin}{Plug-in estimate \eqn{\hat{\xi} = \sum N^{\hat{\alpha}}}.}
-\item{Plugin (BC)}{Bias-corrected plug-in (Taylor expansion).}
+\item{Plugin (BC)}{Analytical bias-corrected plug-in estimate from
+\code{popsize()}.}
 \item{Boot median}{Median of the bootstrap distribution (recommended).}
 \item{Boot mean}{Mean of the bootstrap distribution.}
 \item{CI lower / CI upper}{Bootstrap confidence interval bounds.}

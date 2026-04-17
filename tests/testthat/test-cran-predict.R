@@ -73,3 +73,44 @@ test_that("predict with single-level factor subset works", {
   idx_m <- which(d$sex == "M")
   expect_equal(pred, fitted(fit)[idx_m], tolerance = 1e-10)
 })
+
+test_that("predict caps cov_gamma linear predictor like the fitting path", {
+  d <- small_data()
+  d$z <- rep(c(0, 1), length.out = nrow(d))
+
+  fit <- suppressWarnings(
+    estimate_hidden_pop(
+      data = d,
+      observed = ~ m,
+      auxiliary = ~ n,
+      reference_pop = ~ N,
+      method = "poisson",
+      gamma = "estimate",
+      cov_gamma = ~ 0 + z
+    )
+  )
+
+  fit$gamma_coefs[] <- 100
+  newdata <- d[1:5, , drop = FALSE]
+  newdata$z <- 1
+
+  pred_link <- predict(fit, newdata = newdata, type = "link")
+  X_gamma_new <- uncounted:::.predict_design(~ 0 + z, newdata, fit$X_gamma,
+                                             "gamma", fit$data)
+  gamma_vals <- exp(pmin(as.numeric(X_gamma_new %*% fit$gamma_coefs), 10))
+  rate_vals <- uncounted:::.rate_from_gamma(newdata$n / newdata$N, gamma_vals)
+  X_alpha_new <- uncounted:::.predict_design(NULL, newdata, fit$X_alpha,
+                                             "alpha", fit$data)
+  X_beta_new <- uncounted:::.predict_design(NULL, newdata, fit$X_beta,
+                                            "beta", fit$data)
+  manual_link <- uncounted:::.compute_log_mu(
+    alpha_values = as.numeric(X_alpha_new %*% fit$alpha_coefs),
+    log_N = log(newdata$N),
+    beta_values = as.numeric(X_beta_new %*% fit$beta_coefs),
+    rate_values = rate_vals,
+    link_rho = fit$link_rho
+  )
+
+  expect_true(all(is.finite(pred_link)))
+  expect_equal(pred_link, as.numeric(manual_link), tolerance = 1e-10)
+})

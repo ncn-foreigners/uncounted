@@ -144,6 +144,8 @@ loo.uncounted <- function(object, by = c("obs", "country"),
   theta_start <- if (!is.null(object$theta)) object$theta else 1
   countries <- if (!is.null(cl$countries)) eval(cl$countries) else NULL
   constrained_arg <- isTRUE(object$constrained)
+  estimator_arg <- object$estimator
+  link_rho_arg <- object$link_rho
 
   warned_rank <- FALSE
   for (i in seq_len(n_drops)) {
@@ -200,6 +202,8 @@ loo.uncounted <- function(object, by = c("obs", "country"),
         cov_gamma = cov_gamma,
         gamma_bounds = gamma_bounds,
         theta_start = theta_start,
+        link_rho = link_rho_arg,
+        estimator = estimator_arg,
         vcov = vcov_type,
         constrained = constrained_arg,
         countries = countries,

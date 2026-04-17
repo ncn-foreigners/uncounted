@@ -77,16 +77,28 @@ compare_models <- function(..., sort_by = c("AIC", "BIC", "loglik")) {
   # Check for mixed likelihood types
   methods <- sapply(models, function(x) x$method)
   has_pseudo <- any(methods %in% c("ols", "nls", "iols"))
-  has_ml <- any(methods %in% c("poisson", "nb"))
+  has_ml <- any(vapply(models, function(x) {
+    x$method %in% c("poisson", "nb") && identical(x$estimator, "mle")
+  }, logical(1)))
   if (has_pseudo && has_ml) {
     warning("Comparing pseudo-loglik (OLS/NLS/iOLS) with count likelihood ",
             "(Poisson/NB) is not meaningful for AIC/BIC.", call. = FALSE)
+  }
+  count_estimators <- unique(vapply(models, function(x) {
+    if (x$method %in% c("poisson", "nb")) x$estimator else NA_character_
+  }, character(1)))
+  count_estimators <- stats::na.omit(count_estimators)
+  if (length(count_estimators) > 1) {
+    warning("Likelihood-based columns are NA for non-MLE count fits. ",
+            "Mixed-estimator comparisons should be interpreted using ",
+            "deviance and prediction-based metrics instead.", call. = FALSE)
   }
 
   # Build table
   tab <- do.call(rbind, lapply(seq_along(models), function(i) {
     x <- models[[i]]
     ll <- logLik(x)
+    ll_num <- as.numeric(ll)
     n_par <- attr(ll, "df")
     n <- x$n_obs
     dev <- tryCatch(deviance(x), error = function(e) NA_real_)
@@ -111,11 +123,13 @@ compare_models <- function(..., sort_by = c("AIC", "BIC", "loglik")) {
     data.frame(
       Model = model_name,
       Method = toupper(x$method),
+      Estimator = toupper(x$estimator),
+      Link = x$link_rho,
       Constrained = isTRUE(x$constrained),
       n_par = n_par,
-      logLik = as.numeric(ll),
-      AIC = -2 * as.numeric(ll) + 2 * n_par,
-      BIC = -2 * as.numeric(ll) + log(n) * n_par,
+      logLik = ll_num,
+      AIC = if (is.na(ll_num)) NA_real_ else -2 * ll_num + 2 * n_par,
+      BIC = if (is.na(ll_num)) NA_real_ else -2 * ll_num + log(n) * n_par,
       Deviance = dev,
       Pearson_X2 = pearson,
       RMSE = rmse,
@@ -128,9 +142,9 @@ compare_models <- function(..., sort_by = c("AIC", "BIC", "loglik")) {
 
   # Sort
   ord <- switch(sort_by,
-    "AIC" = order(tab$AIC),
-    "BIC" = order(tab$BIC),
-    "loglik" = order(tab$logLik, decreasing = TRUE)
+    "AIC" = order(is.na(tab$AIC), tab$AIC),
+    "BIC" = order(is.na(tab$BIC), tab$BIC),
+    "loglik" = order(is.na(tab$logLik), -tab$logLik)
   )
   tab <- tab[ord, , drop = FALSE]
   rownames(tab) <- NULL
@@ -219,8 +233,14 @@ lrtest <- function(object1, object2) {
   if (!inherits(object1, "uncounted") || !inherits(object2, "uncounted"))
     stop("Both objects must be of class 'uncounted'")
 
-  if (is.null(object1$loglik) || is.null(object2$loglik))
-    stop("Both models must have a log-likelihood (not OLS/NLS)")
+  if (!identical(object1$estimator, "mle") || !identical(object2$estimator, "mle")) {
+    stop("lrtest() is only available for models fitted with estimator = 'mle'.",
+         call. = FALSE)
+  }
+  if (is.null(object1$loglik) || is.null(object2$loglik) ||
+      !is.finite(object1$loglik) || !is.finite(object2$loglik)) {
+    stop("Both models must have a finite log-likelihood.", call. = FALSE)
+  }
 
   if (object1$n_obs != object2$n_obs)
     stop("Models must be fitted to the same data (different n_obs)")
@@ -337,7 +357,12 @@ print.uncounted_lrtest <- function(x, ...) {
       auxiliary = object$call_args$auxiliary,
       reference_pop = object$call_args$reference_pop,
       method = object$method,
+      estimator = object$estimator,
+      link_rho = object$link_rho,
       gamma = if (object$gamma_estimated) "estimate" else object$gamma,
+      cov_gamma = if (!is.null(object$call$cov_gamma)) eval(object$call$cov_gamma) else NULL,
+      theta_start = if (!is.null(object$theta)) object$theta else 1,
+      vcov = "HC0",
       constrained = isTRUE(object$constrained)
     )
   }, error = function(e) NULL)
