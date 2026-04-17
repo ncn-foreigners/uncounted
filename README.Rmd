@@ -19,21 +19,51 @@ knitr::opts_chunk$set(
 [![Codecov test coverage](https://codecov.io/gh/ncn-foreigners/uncounted/graph/badge.svg)](https://app.codecov.io/gh/ncn-foreigners/uncounted)
 <!-- badges: end -->
 
-R package for estimating the size of unauthorised (hidden) populations using
-a power-law model that relates observed counts to reference populations and
-auxiliary detection data.
+R package for estimating the size of unauthorized migrant populations using a
+power-law model that relates observed counts to reference populations and
+auxiliary detection data. Supports OLS, NLS, Poisson, Negative Binomial, and
+iOLS estimation, alternative bounded detection links, optional gamma offsets,
+and moment-based count estimators via the `momentfit` package.
 
 ## Model
 
-For observation $i$, the expected observed count $m_i$ is modelled as:
+The paper’s theoretical model factors the expected observed count into a
+latent population component and a detection component:
 
-$$E(m_i) = N_i^{\alpha_i} \cdot (\gamma + n_i / N_i)^{\beta_i}$$
+$$
+\mu_i = E(m_i \mid N_i, n_i) = \xi_i \rho_i,
+$$
+
+where $\xi_i = E(M_i \mid N_i)$ is the theoretical unauthorized population
+size and $\rho_i = E(p_i \mid N_i, n_i)$ is the theoretical detection rate.
+
+In the baseline empirical specification implemented by default,
+
+$$
+\xi_i = N_i^{\alpha_i}, \qquad
+\rho_i = \left(\gamma_i + \frac{n_i}{N_i}\right)^{\beta_i},
+$$
 
 where $N_i$ is the reference (total registered) population,
-$n_i$ is an auxiliary count (e.g. new registrations), and
-$\gamma \geq 0$ is an intercept-like offset. On the log scale the model
-is linear, enabling estimation via OLS, NLS, Poisson PML, or Negative
-Binomial MLE.
+$n_i$ is an auxiliary count (e.g. police records), and
+$\gamma_i \geq 0$ is a baseline detection offset. This gives
+
+$$
+\mu_i = N_i^{\alpha_i}\left(\gamma_i + \frac{n_i}{N_i}\right)^{\beta_i}.
+$$
+
+The package also supports bounded alternatives for the detection component by
+writing
+
+$$
+\eta_i = \beta_i \log\!\left(\gamma_i + \frac{n_i}{N_i}\right), \qquad
+\rho_i = h(\eta_i),
+$$
+
+with `link_rho = "power"` (the paper’s baseline specification),
+`"cloglog"`, `"logit"`, or `"probit"`. On the log scale, the mean structure
+remains linear in the power-link case and is handled directly for the
+nonlinear estimators.
 
 ## Installation
 
@@ -50,6 +80,7 @@ remotes::install_github("ncn-foreigners/uncounted")
 library(uncounted)
 data(irregular_migration)
 irregular_migration$year <- as.factor(irregular_migration$year)
+irregular_migration$ukr <- as.integer(irregular_migration$country_code == "UKR")
 ## Fit Poisson PML with year x UKR interaction in alpha
 fit <- estimate_hidden_pop(
   data = irregular_migration,
@@ -57,7 +88,7 @@ fit <- estimate_hidden_pop(
   auxiliary = ~ n,
   reference_pop = ~ N,
   method = "poisson",
-  cov_alpha = ~ year + sex,
+  cov_alpha = ~ year * ukr + sex,
   cov_beta = ~ year,
   countries = ~ country_code
 )
@@ -84,7 +115,7 @@ boot
 
 ### Diagnostics
 
-```{r diagnostics, eval = FALSE}
+```{r diagnostics, eval = F}
 ## Leave-one-out influence
 db <- dfbeta(fit)
 dp <- dfpopsize(fit)
@@ -95,10 +126,14 @@ head(sort(abs(dp), decreasing = TRUE))
 
 ## Features
 
-- **Estimation methods**: OLS, NLS, Poisson PML, Negative Binomial MLE
+- **Estimation methods**: OLS, NLS, Poisson (MLE, GMM, EL), Negative Binomial (MLE, GMM, EL), iOLS
 - **Covariate-varying parameters**: $\alpha$ and $\beta$ via formula interface
+- **Detection links**: `power`, `cloglog`, `logit`, and `probit`
 - **Gamma offset**: estimated, fixed, or excluded
-- **Constrained estimation**: $\alpha \in (0,1)$ via logit, $\beta > 0$ via log link
+- **Constrained estimation**: for Poisson/NB fits with `constrained = TRUE`,
+  $\alpha_i = \mathrm{logit}^{-1}(X_{\alpha,i} a)$ and
+  $\beta_i = \exp(X_{\beta,i} b)$, so fitted $\alpha_i \in (0,1)$ and
+  fitted $\beta_i > 0$
 - **Robust inference**: HC0--HC5, cluster-robust via `sandwich`, fractional
   weighted bootstrap via `fwb`
 - **Population size**: bias-corrected point estimates with delta-method or
@@ -110,7 +145,7 @@ head(sort(abs(dp), decreasing = TRUE))
 
 ## Funding
 
-This work is supported by the National Science Centre, OPUS 22 grant
+This work is supported by the National Science Centre, OPUS 20 grant
 no. 2021/43/B/HS4/00469.
 
 ## References

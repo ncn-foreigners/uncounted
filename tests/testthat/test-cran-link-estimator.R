@@ -3,7 +3,7 @@
 test_that("bounded link_rho choices keep rho in (0, 1) and preserve xi identity", {
   d <- small_data()
 
-  for (link_name in c("cloglog", "logistic")) {
+  for (link_name in c("cloglog", "logit", "probit")) {
     fit <- quick_fit(d, method = "poisson", gamma = 0.005, link_rho = link_name)
 
     expect_true(all(fit$rho_values > 0))
@@ -18,19 +18,39 @@ test_that("bounded link_rho choices keep rho in (0, 1) and preserve xi identity"
 
 test_that("predict works with non-power detection links", {
   d <- small_data()
-  fit <- quick_fit(d, method = "poisson", gamma = 0.005, link_rho = "logistic")
+  fit <- quick_fit(d, method = "poisson", gamma = 0.005, link_rho = "probit")
 
   expect_equal(as.numeric(predict(fit)), as.numeric(fit$fitted.values))
   expect_true(all(is.finite(predict(fit, type = "link"))))
 })
 
+test_that("NLS supports the probit detection link", {
+  d <- small_data()
+  fit <- quick_fit(d, method = "nls", gamma = 0.005, link_rho = "probit")
+
+  expect_identical(fit$link_rho, "probit")
+  expect_true(all(fit$rho_values > 0))
+  expect_true(all(fit$rho_values < 1))
+  expect_true(all(is.finite(fit$fitted.values)))
+})
+
+test_that("legacy logistic alias is accepted and normalized to logit", {
+  d <- small_data()
+  fit <- quick_fit(d, method = "poisson", gamma = 0.005, link_rho = "logistic")
+
+  expect_identical(fit$link_rho, "logit")
+  expect_true(all(fit$rho_values > 0))
+  expect_true(all(fit$rho_values < 1))
+})
+
 test_that("Poisson GMM fit returns a usable uncounted object", {
   d <- small_data()
-  fit <- quick_fit(d, method = "poisson", gamma = 0.005, estimator = "gmm")
+  fit <- quick_fit(d, method = "poisson", gamma = 0.005,
+                   estimator = "gmm", link_rho = "probit")
 
   expect_s3_class(fit, "uncounted")
   expect_identical(fit$estimator, "gmm")
-  expect_equal(fit$link_rho, "power")
+  expect_equal(fit$link_rho, "probit")
   expect_true(all(is.finite(coef(fit))))
   expect_true(all(is.finite(fit$fitted.values)))
   expect_true(is.na(as.numeric(logLik(fit))))
@@ -40,10 +60,12 @@ test_that("Poisson GMM fit returns a usable uncounted object", {
 
 test_that("NB EL fit stores theta-aware backend covariance", {
   d <- small_data()
-  fit <- quick_fit(d, method = "nb", gamma = 0.005, estimator = "el")
+  fit <- quick_fit(d, method = "nb", gamma = 0.005,
+                   estimator = "el", link_rho = "probit")
 
   expect_s3_class(fit, "uncounted")
   expect_identical(fit$estimator, "el")
+  expect_identical(fit$link_rho, "probit")
   expect_true(is.finite(fit$theta))
   expect_true(is.finite(fit$theta_se))
   expect_equal(dim(vcov_nb(fit)), c(length(coef(fit)) + 1, length(coef(fit)) + 1))
@@ -137,14 +159,14 @@ test_that("compare_models warns for mixed estimators and keeps likelihood column
 test_that("update and loo preserve estimator metadata", {
   d <- small_data()
   fit <- quick_fit(d, method = "poisson", gamma = 0.005,
-                   estimator = "gmm", link_rho = "logistic",
+                   estimator = "gmm", link_rho = "probit",
                    countries = ~country)
 
   fit_upd <- update(fit, vcov = "HC0")
   loo_res <- loo(fit, by = "obs")
 
   expect_identical(fit_upd$estimator, "gmm")
-  expect_identical(fit_upd$link_rho, "logistic")
+  expect_identical(fit_upd$link_rho, "probit")
   expect_s3_class(loo_res, "uncounted_loo")
   expect_true(sum(loo_res$converged) > 0)
 })
@@ -153,7 +175,8 @@ test_that("bootstrap_popsize works for a small Poisson GMM fit", {
   skip_if_not_installed("fwb")
   set.seed(321)
   d <- small_data()
-  fit <- quick_fit(d, method = "poisson", gamma = 0.005, estimator = "gmm")
+  fit <- quick_fit(d, method = "poisson", gamma = 0.005,
+                   estimator = "gmm", link_rho = "probit")
 
   boot <- bootstrap_popsize(fit, R = 9, seed = 123, verbose = FALSE)
   expect_s3_class(boot, "uncounted_boot")

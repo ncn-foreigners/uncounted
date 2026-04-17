@@ -2,6 +2,27 @@
 
 ## New features
 
+* **Bounded detection links** (`link_rho`): Count-model fits now support
+  `link_rho = "power"` (paper baseline), `"cloglog"`, `"logit"`, and
+  `"probit"`.
+  The bounded links constrain the detection component to `(0, 1)` while
+  preserving the population-size identity
+  `xi_i = mu_i / rho_i = N_i^alpha_i`. The legacy spelling `"logistic"`
+  remains accepted as a backward-compatible alias and is normalized to
+  `"logit"`.
+
+* **Moment-based count estimation** (`estimator = "gmm"` / `"el"`):
+  Poisson and Negative Binomial models can now be estimated with the same
+  score equations via the `momentfit` package in addition to the default
+  MLE path. The fitted object stores the estimator type and propagates it
+  through `update()`, `loo()`, `bootstrap_popsize()`, `predict()`, and the
+  Shiny app.
+
+* **Robust covariance support for non-MLE count fits**: `sandwich::vcovHC()`,
+  `sandwich::vcovCL()`, and `fwb::vcovFWB()` now work for `estimator = "gmm"`
+  and `estimator = "el"`. HC0/HC1 are supported directly; HC2+ requests are
+  downgraded to HC1 with a message.
+
 * **`profile_alpha()` and `profile_beta()`**: Profile likelihood functions
   analogous to `profile_gamma()`. Evaluate log-likelihood and population size
   over a grid of values for a chosen alpha or beta coefficient.
@@ -22,11 +43,43 @@
 
 ## Bug fixes
 
+* **Non-MLE bias correction**: `popsize(..., bias_correction = TRUE)` now uses
+  the same Fisher-style model-based variance for Poisson/NB mean parameters at
+  the fitted `gmm`/`el` estimates as in the MLE case, matching the paper’s
+  lognormal bias-correction derivation.
+
+* **`predict()` gamma stabilization**: Predictions now apply the same cap for
+  covariate-varying gamma linear predictors as the fitting code, avoiding
+  overflow and keeping `predict(newdata = ...)` aligned with the fitted model.
+
+* **Cluster-robust variance guard**: Clustered HC/CR covariance paths now stop
+  cleanly when fewer than two clusters are supplied instead of failing with a
+  low-level matrix error.
+
+* **Shiny data/model-comparison fixes**: Uploaded count columns selected as
+  `m`, `n`, or `N` are no longer silently coerced to factors by the
+  auto-factor heuristic, and the comparison plot now falls back gracefully
+  when likelihood-based metrics such as AIC are unavailable for non-MLE fits.
+
 * **`bootstrap_popsize(..., total = TRUE)`**: The Total row now appears in
   `$popsize` and `$popsize_full` data frames (previously only in the separate
   `$total` list). The bias-corrected total now uses the correct full-gradient
   delta-method computation from `popsize(total = TRUE)` instead of naively
   summing independent per-group bias corrections.
+
+## Documentation
+
+* **Theory and API documentation refresh**: The README, theory vignette, and
+  `estimate_hidden_pop()` help page now distinguish the paper’s theoretical
+  decomposition `mu = xi * rho` from the baseline empirical power-law
+  specification and the package’s bounded-link extensions. The constrained
+  parameterization is documented explicitly as
+  `alpha_values = logit^{-1}(X_alpha a)` and `beta_values = exp(X_beta b)`.
+
+* **README and examples**: The README now reflects the current package surface
+  (`iols`, bounded `link_rho`, count-model `gmm`/`el`), uses the `ukr`
+  interaction example in `cov_alpha`, suppresses bootstrap progress via
+  `verbose = FALSE`, and updates the funding line to NCN OPUS 20.
 
 # uncounted 1.0.0
 

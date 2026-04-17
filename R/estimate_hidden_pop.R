@@ -36,7 +36,10 @@
 #'   \eqn{\rho_i = h(\beta_i \log(\gamma_i + n_i / N_i))}. Supported values are
 #'   \code{"power"} (default, \eqn{\rho_i = \exp(\eta_i)}),
 #'   \code{"cloglog"} (\eqn{\rho_i = 1 - \exp(-\exp(\eta_i))}), and
-#'   \code{"logistic"} (\eqn{\rho_i = 1 / (1 + \exp(-\eta_i))}).
+#'   \code{"logit"} (\eqn{\rho_i = 1 / (1 + \exp(-\eta_i))}), and
+#'   \code{"probit"} (\eqn{\rho_i = \Phi(\eta_i)}).
+#'   The legacy alias \code{"logistic"} is accepted and normalized to
+#'   \code{"logit"}.
 #'   Bounded links are currently available for \code{method = "poisson"},
 #'   \code{"nb"}, and \code{"nls"}.
 #' @param estimator Estimation criterion for count models:
@@ -65,10 +68,16 @@
 #'   for non-GLM objects. Use \code{"HC0"} or \code{"HC1"} with clustering
 #'   to avoid this. Ignored when \code{vcov} is a function.
 #' @param weights Optional numeric vector of observation weights.
-#' @param constrained Logical. If \code{TRUE}, applies link functions to
-#'   ensure \eqn{\alpha \in (0, 1)} (logit) and \eqn{\beta > 0} (exp).
-#'   Only available for \code{method = "poisson"} and \code{method = "nb"}.
-#'   Default \code{FALSE}. See Details.
+#' @param constrained Logical. If \code{TRUE} and
+#'   \code{method \%in\% c("poisson", "nb")}, the fitted per-observation
+#'   parameters are constrained on the response scale via
+#'   \eqn{\alpha_i = \mathrm{logit}^{-1}(\mathbf{X}_{\alpha,i}' \mathbf{a})}
+#'   and \eqn{\beta_i = \exp(\mathbf{X}_{\beta,i}' \mathbf{b})}.
+#'   This keeps \eqn{\alpha_i \in (0, 1)} and \eqn{\beta_i > 0}. The reported
+#'   coefficient vectors \code{alpha_coefs} and \code{beta_coefs} remain on
+#'   the transformed scales (logit for alpha, log for beta); use
+#'   \code{summary()} or \code{alpha_values} / \code{beta_values} for
+#'   response-scale values. Default \code{FALSE}. See Details.
 #' @param countries One-sided formula identifying a country or group variable
 #'   used when reporting population size estimates (e.g., \code{~ country}).
 #'   This does \strong{not} enable cluster-robust variance; use \code{cluster}
@@ -78,19 +87,26 @@
 #' \strong{Model specification.}
 #' For observation \eqn{i}, the expected observed count \eqn{m_i} is modelled as:
 #'
-#' \deqn{E(m_i) = \xi_i \rho_i,\qquad \xi_i = N_i^{\alpha_i}}{E(m_i) = xi_i rho_i, xi_i = N_i^alpha_i}
+#' \deqn{E(m_i) = \xi_i \rho_i}{E(m_i) = xi_i rho_i}
 #'
-#' where \eqn{N_i} is the reference (total registered) population,
-#' \eqn{n_i} is an auxiliary count (e.g., new registrations),
-#' and \eqn{\gamma \ge 0}{gamma >= 0} is an intercept-like offset. Define
-#' \eqn{\eta_i = \beta_i \log(\gamma_i + n_i / N_i)}{eta_i = beta_i log(gamma_i + n_i / N_i)}.
-#' Then \eqn{\rho_i}{rho_i} is linked to \eqn{\eta_i}{eta_i} by one of:
+#' where \eqn{\xi_i = E(M_i \mid N_i)}{xi_i = E(M_i | N_i)} is the theoretical
+#' unauthorized population size and
+#' \eqn{\rho_i = E(p_i \mid N_i, n_i)}{rho_i = E(p_i | N_i, n_i)} is the
+#' theoretical detection rate. In the baseline empirical specification,
+#' \eqn{\xi_i = N_i^{\alpha_i}}{xi_i = N_i^alpha_i} and, under the default
+#' \code{link_rho = "power"},
+#' \eqn{\rho_i = (\gamma_i + n_i / N_i)^{\beta_i}}{rho_i = (gamma_i + n_i / N_i)^beta_i}.
+#' More generally, the package writes the detection component as
+#' \deqn{\eta_i = \beta_i \log(\gamma_i + n_i / N_i), \qquad \rho_i = h(\eta_i)}{eta_i = beta_i log(gamma_i + n_i / N_i), rho_i = h(eta_i)}
+#' where \eqn{h}{h} is chosen by \code{link_rho}. Supported links are:
 #' \describe{
 #'   \item{\code{"power"}}{\eqn{\rho_i = \exp(\eta_i)}{rho_i = exp(eta_i)}}
 #'   \item{\code{"cloglog"}}{\eqn{\rho_i = 1 - \exp(-\exp(\eta_i))}{rho_i = 1 - exp(-exp(eta_i))}}
-#'   \item{\code{"logistic"}}{\eqn{\rho_i = 1 / (1 + \exp(-\eta_i))}{rho_i = 1 / (1 + exp(-eta_i))}}
+#'   \item{\code{"logit"}}{\eqn{\rho_i = 1 / (1 + \exp(-\eta_i))}{rho_i = 1 / (1 + exp(-eta_i))}}
+#'   \item{\code{"probit"}}{\eqn{\rho_i = \Phi(\eta_i)}{rho_i = Phi(eta_i)}}
 #' }
-#' On the log scale,
+#' The \code{"power"} link reproduces the paper's baseline power-law detection
+#' model exactly; the bounded links are package extensions. On the log scale,
 #'
 #' \deqn{\log E(m_i) = \alpha_i \log N_i + \log(\rho_i)}{log E(m_i) = alpha_i * log(N_i) + log(rho_i)}
 #'
@@ -146,13 +162,18 @@
 #' \strong{Constrained vs. unconstrained estimation.}
 #' When \code{constrained = FALSE} (default), \eqn{\alpha} and \eqn{\beta}
 #' are estimated on the real line without restrictions. When
-#' \code{constrained = TRUE}, link functions enforce parameter bounds:
-#' \eqn{\alpha = \mathrm{logit}(\eta)}{alpha = logit(eta)} so that
-#' \eqn{\alpha \in (0, 1)}{alpha in (0, 1)}, and
-#' \eqn{\beta = \exp(\zeta)}{beta = exp(zeta)} so that \eqn{\beta > 0}.
-#' Coefficients are then reported on the link (transformed) scale; use
-#' \code{summary()} or the \code{alpha_values} / \code{beta_values} elements
-#' of the returned object for response-scale values.
+#' \code{constrained = TRUE}, the linear predictors are
+#' \eqn{\eta_{\alpha,i} = \mathbf{X}_{\alpha,i}' \mathbf{a}}{eta_alpha_i = X_alpha_i' a}
+#' and \eqn{\eta_{\beta,i} = \mathbf{X}_{\beta,i}' \mathbf{b}}{eta_beta_i = X_beta_i' b},
+#' with response-scale parameters
+#' \eqn{\alpha_i = \mathrm{logit}^{-1}(\eta_{\alpha,i})}{alpha_i = logit^-1(eta_alpha_i)}
+#' and \eqn{\beta_i = \exp(\eta_{\beta,i})}{beta_i = exp(eta_beta_i)}.
+#' This constrains the fitted \eqn{\alpha_i}{alpha_i} values to \eqn{(0, 1)}
+#' and the fitted \eqn{\beta_i}{beta_i} values to be strictly positive.
+#' The stored coefficient vectors \code{alpha_coefs} and \code{beta_coefs}
+#' remain on the transformed scales (logit for alpha, log for beta); use
+#' \code{summary()} or the \code{alpha_values} / \code{beta_values}
+#' elements of the returned object for response-scale values.
 #' Constrained estimation is available for the Poisson and NB methods only.
 #'
 #' \strong{Population size estimation.}
@@ -246,7 +267,7 @@ estimate_hidden_pop <- function(data,
                                 cov_gamma = NULL,
                                 gamma_bounds = c(1e-10, 0.5),
                                 theta_start = 1,
-                                link_rho = c("power", "cloglog", "logistic"),
+                                link_rho = c("power", "cloglog", "logit", "probit"),
                                 estimator = c("mle", "gmm", "el"),
                                 vcov = "HC3",
                                 weights = NULL,
@@ -255,7 +276,7 @@ estimate_hidden_pop <- function(data,
                                 cluster = NULL) {
 
   method <- match.arg(method)
-  link_rho <- .normalize_link_rho(match.arg(link_rho))
+  link_rho <- .normalize_link_rho(link_rho)
   estimator <- match.arg(estimator)
   vcov_missing <- missing(vcov)
   call <- match.call()
@@ -734,7 +755,8 @@ print.uncounted <- function(x, ...) {
     cat("Log-likelihood:", round(x$loglik, 2), "\n")
   }
   if (isTRUE(x$constrained)) {
-    cat("Constrained: alpha in (0,1), beta > 0\n")
+    cat("Constrained: alpha_values = logit^-1(X_alpha %*% alpha_coefs), ",
+        "beta_values = exp(X_beta %*% beta_coefs)\n", sep = "")
     cat("\nCoefficients (link scale: logit-alpha, log-beta):\n")
     print(round(x$coefficients, 6))
     cat("\nPopulation parameters (response scale):\n")
@@ -847,7 +869,8 @@ summary.uncounted <- function(object, total = FALSE, ...) {
 
   # Response-scale summary for constrained models
   if (isTRUE(object$constrained)) {
-    cat("\nResponse-scale parameters (alpha in (0,1), beta > 0):\n")
+    cat("\nResponse-scale fitted parameters ",
+        "(alpha_values in (0,1), beta_values > 0):\n", sep = "")
     .print_response_summary(object)
   }
 
