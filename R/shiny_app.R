@@ -340,7 +340,7 @@ run_app <- function(...) {
   output$link_rho_ui <- shiny::renderUI({
     method_val <- if (is.null(input$method)) "poisson" else input$method
     choices <- if (method_val %in% c("poisson", "nb", "nls")) {
-      c("power", "cloglog", "logit")
+      c("power", "cloglog", "logit", "probit")
     } else {
       c("power")
     }

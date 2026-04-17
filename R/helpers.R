@@ -29,7 +29,7 @@
   if (is.null(link_rho)) return("power")
   if (length(link_rho) > 1) link_rho <- link_rho[[1]]
   if (identical(link_rho, "logistic")) link_rho <- "logit"
-  match.arg(link_rho, c("power", "cloglog", "logit"))
+  match.arg(link_rho, c("power", "cloglog", "logit", "probit"))
 }
 
 #' Compute rate term gamma + n/N
@@ -57,7 +57,8 @@
   switch(link_rho,
     power = exp(eta),
     cloglog = -expm1(-exp(eta)),
-    logit = .inv_logit(eta)
+    logit = .inv_logit(eta),
+    probit = stats::pnorm(eta)
   )
 }
 
@@ -68,7 +69,8 @@
   switch(link_rho,
     power = eta,
     cloglog = .log1mexp_neg(exp(eta)),
-    logit = stats::plogis(eta, log.p = TRUE)
+    logit = stats::plogis(eta, log.p = TRUE),
+    probit = stats::pnorm(eta, log.p = TRUE)
   )
 }
 
@@ -84,7 +86,9 @@
       out[!is.finite(out) & eta > 0] <- 0
       out
     },
-    logit = .inv_logit(-eta)
+    logit = .inv_logit(-eta),
+    probit = exp(stats::dnorm(eta, log = TRUE) -
+                   stats::pnorm(eta, log.p = TRUE))
   )
 }
 

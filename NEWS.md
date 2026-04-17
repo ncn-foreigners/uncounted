@@ -3,7 +3,8 @@
 ## New features
 
 * **Bounded detection links** (`link_rho`): Count-model fits now support
-  `link_rho = "power"` (paper baseline), `"cloglog"`, and `"logit"`.
+  `link_rho = "power"` (paper baseline), `"cloglog"`, `"logit"`, and
+  `"probit"`.
   The bounded links constrain the detection component to `(0, 1)` while
   preserving the population-size identity
   `xi_i = mu_i / rho_i = N_i^alpha_i`. The legacy spelling `"logistic"`

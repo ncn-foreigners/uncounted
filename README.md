@@ -53,9 +53,9 @@ $$
 $$
 
 with `link_rho = "power"` (the paper’s baseline specification),
-`"cloglog"`, or `"logit"`. On the log scale, the mean structure remains
-linear in the power-link case and is handled directly for the nonlinear
-estimators.
+`"cloglog"`, `"logit"`, or `"probit"`. On the log scale, the mean
+structure remains linear in the power-link case and is handled directly
+for the nonlinear estimators.
 
 ## Installation
 
@@ -189,7 +189,7 @@ head(sort(abs(dp), decreasing = TRUE))
   Binomial (MLE, GMM, EL), iOLS
 - **Covariate-varying parameters**: $\alpha$ and $\beta$ via formula
   interface
-- **Detection links**: `power`, `cloglog`, and `logit`
+- **Detection links**: `power`, `cloglog`, `logit`, and `probit`
 - **Gamma offset**: estimated, fixed, or excluded
 - **Constrained estimation**: for Poisson/NB fits with
   `constrained = TRUE`, $\alpha_i = \mathrm{logit}^{-1}(X_{\alpha,i} a)$

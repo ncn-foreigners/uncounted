@@ -36,7 +36,8 @@
 #'   \eqn{\rho_i = h(\beta_i \log(\gamma_i + n_i / N_i))}. Supported values are
 #'   \code{"power"} (default, \eqn{\rho_i = \exp(\eta_i)}),
 #'   \code{"cloglog"} (\eqn{\rho_i = 1 - \exp(-\exp(\eta_i))}), and
-#'   \code{"logit"} (\eqn{\rho_i = 1 / (1 + \exp(-\eta_i))}).
+#'   \code{"logit"} (\eqn{\rho_i = 1 / (1 + \exp(-\eta_i))}), and
+#'   \code{"probit"} (\eqn{\rho_i = \Phi(\eta_i)}).
 #'   The legacy alias \code{"logistic"} is accepted and normalized to
 #'   \code{"logit"}.
 #'   Bounded links are currently available for \code{method = "poisson"},
@@ -102,6 +103,7 @@
 #'   \item{\code{"power"}}{\eqn{\rho_i = \exp(\eta_i)}{rho_i = exp(eta_i)}}
 #'   \item{\code{"cloglog"}}{\eqn{\rho_i = 1 - \exp(-\exp(\eta_i))}{rho_i = 1 - exp(-exp(eta_i))}}
 #'   \item{\code{"logit"}}{\eqn{\rho_i = 1 / (1 + \exp(-\eta_i))}{rho_i = 1 / (1 + exp(-eta_i))}}
+#'   \item{\code{"probit"}}{\eqn{\rho_i = \Phi(\eta_i)}{rho_i = Phi(eta_i)}}
 #' }
 #' The \code{"power"} link reproduces the paper's baseline power-law detection
 #' model exactly; the bounded links are package extensions. On the log scale,
@@ -265,7 +267,7 @@ estimate_hidden_pop <- function(data,
                                 cov_gamma = NULL,
                                 gamma_bounds = c(1e-10, 0.5),
                                 theta_start = 1,
-                                link_rho = c("power", "cloglog", "logit"),
+                                link_rho = c("power", "cloglog", "logit", "probit"),
                                 estimator = c("mle", "gmm", "el"),
                                 vcov = "HC3",
                                 weights = NULL,

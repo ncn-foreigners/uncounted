@@ -128,15 +128,16 @@ $$
 \qquad \rho_i = h(\eta_i),
 $$
 
-with one of three links:
+with one of four links:
 
 - `link_rho = "power"`: $\rho_i = \exp(\eta_i)$,
 - `link_rho = "cloglog"`: $\rho_i = 1 - \exp(-\exp(\eta_i))$,
-- `link_rho = "logit"`: $\rho_i = (1 + \exp(-\eta_i))^{-1}$.
+- `link_rho = "logit"`: $\rho_i = (1 + \exp(-\eta_i))^{-1}$,
+- `link_rho = "probit"`: $\rho_i = \Phi(\eta_i)$.
 
 The `power` link reproduces the paper’s baseline power-law detection model
-exactly. The `cloglog` and `logit` links are package extensions that constrain
-$0 < \rho_i < 1$.
+exactly. The `cloglog`, `logit`, and `probit` links are package extensions
+that constrain $0 < \rho_i < 1$.
 
 Under every supported detection link,
 
