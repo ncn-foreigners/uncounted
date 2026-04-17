@@ -133,9 +133,13 @@ Key output to look for:
 ### Model 2: Poisson constrained (alpha in (0,1), beta \> 0)
 
 Constraining alpha to the unit interval and beta to be positive enforces
-theoretical expectations. Internally, alpha is parameterised via a
-inverse logit link and beta via an exponential link, so the reported
-coefficients are on the link scale.
+theoretical expectations. With `constrained = TRUE`, the fitted
+observation-level parameters are
+`alpha_values = plogis(X_alpha %*% alpha_coefs)` and
+`beta_values = exp(X_beta %*% beta_coefs)`, so fitted alpha stays in
+`(0, 1)` and fitted beta stays positive. The reported coefficient
+vectors remain on the transformed scales (logit for alpha, log for
+beta).
 
 ``` r
 fit_pois_c <- estimate_hidden_pop(
@@ -164,7 +168,7 @@ summary(fit_pois_c)
 #> ---
 #> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 #> 
-#> Response-scale parameters (alpha in (0,1), beta > 0):
+#> Response-scale fitted parameters (alpha_values in (0,1), beta_values > 0):
 #>   Alpha (response scale):
 #>        alpha SE(alpha)
 #> (all) 0.7366    0.0403

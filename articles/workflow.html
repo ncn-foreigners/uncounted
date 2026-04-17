@@ -206,9 +206,13 @@ small).</li>
 <h3 id="model-2-poisson-constrained-alpha-in-01-beta-0">Model 2: Poisson constrained (alpha in (0,1), beta &gt; 0)<a class="anchor" aria-label="anchor" href="#model-2-poisson-constrained-alpha-in-01-beta-0"></a>
 </h3>
 <p>Constraining alpha to the unit interval and beta to be positive
-enforces theoretical expectations. Internally, alpha is parameterised
-via a inverse logit link and beta via an exponential link, so the
-reported coefficients are on the link scale.</p>
+enforces theoretical expectations. With <code>constrained = TRUE</code>,
+the fitted observation-level parameters are
+<code>alpha_values = plogis(X_alpha %*% alpha_coefs)</code> and
+<code>beta_values = exp(X_beta %*% beta_coefs)</code>, so fitted alpha
+stays in <code>(0, 1)</code> and fitted beta stays positive. The
+reported coefficient vectors remain on the transformed scales (logit for
+alpha, log for beta).</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">fit_pois_c</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/estimate_hidden_pop.html">estimate_hidden_pop</a></span><span class="op">(</span></span>
 <span>  data <span class="op">=</span> <span class="va">irregular_migration</span>,</span>
@@ -236,7 +240,7 @@ reported coefficients are on the link scale.</p>
 <span><span class="co">#&gt; ---</span></span>
 <span><span class="co">#&gt; Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; Response-scale parameters (alpha in (0,1), beta &gt; 0):</span></span>
+<span><span class="co">#&gt; Response-scale fitted parameters (alpha_values in (0,1), beta_values &gt; 0):</span></span>
 <span><span class="co">#&gt;   Alpha (response scale):</span></span>
 <span><span class="co">#&gt;        alpha SE(alpha)</span></span>
 <span><span class="co">#&gt; (all) 0.7366    0.0403</span></span>

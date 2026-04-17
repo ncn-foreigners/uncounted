@@ -51,7 +51,9 @@ Specify and fit multiple models. For each model, choose:
 - **cov_beta**: formula for detection elasticity covariates (e.g.,
   `~ year`)
 - **Gamma**: estimate jointly, fix at a value, or exclude
-- **Constrained**: enforce alpha in (0,1) and beta \> 0
+- **Constrained**: fit `alpha_values = plogis(X_alpha %*% alpha_coefs)`
+  and `beta_values = exp(X_beta %*% beta_coefs)` so alpha stays in
+  `(0, 1)` and beta stays positive
 
 Click “Fit Model” to estimate. The model is stored and can be compared
 with others. The summary panel shows coefficients with robust standard

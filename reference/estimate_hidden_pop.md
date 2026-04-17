@@ -21,7 +21,7 @@ estimate_hidden_pop(
   cov_gamma = NULL,
   gamma_bounds = c(1e-10, 0.5),
   theta_start = 1,
-  link_rho = c("power", "cloglog", "logistic"),
+  link_rho = c("power", "cloglog", "logit", "probit"),
   estimator = c("mle", "gmm", "el"),
   vcov = "HC3",
   weights = NULL,
@@ -98,8 +98,10 @@ estimate_hidden_pop(
   Link for the detection component \\\rho_i = h(\beta_i \log(\gamma_i +
   n_i / N_i))\\. Supported values are `"power"` (default, \\\rho_i =
   \exp(\eta_i)\\), `"cloglog"` (\\\rho_i = 1 - \exp(-\exp(\eta_i))\\),
-  and `"logistic"` (\\\rho_i = 1 / (1 + \exp(-\eta_i))\\). Bounded links
-  are currently available for `method = "poisson"`, `"nb"`, and `"nls"`.
+  and `"logit"` (\\\rho_i = 1 / (1 + \exp(-\eta_i))\\), and `"probit"`
+  (\\\rho_i = \Phi(\eta_i)\\). The legacy alias `"logistic"` is accepted
+  and normalized to `"logit"`. Bounded links are currently available for
+  `method = "poisson"`, `"nb"`, and `"nls"`.
 
 - estimator:
 
@@ -130,10 +132,15 @@ estimate_hidden_pop(
 
 - constrained:
 
-  Logical. If `TRUE`, applies link functions to ensure \\\alpha \in (0,
-  1)\\ (logit) and \\\beta \> 0\\ (exp). Only available for
-  `method = "poisson"` and `method = "nb"`. Default `FALSE`. See
-  Details.
+  Logical. If `TRUE` and `method %in% c("poisson", "nb")`, the fitted
+  per-observation parameters are constrained on the response scale via
+  \\\alpha_i = \mathrm{logit}^{-1}(\mathbf{X}\_{\alpha,i}' \mathbf{a})\\
+  and \\\beta_i = \exp(\mathbf{X}\_{\beta,i}' \mathbf{b})\\. This keeps
+  \\\alpha_i \in (0, 1)\\ and \\\beta_i \> 0\\. The reported coefficient
+  vectors `alpha_coefs` and `beta_coefs` remain on the transformed
+  scales (logit for alpha, log for beta); use
+  [`summary()`](https://rdrr.io/r/base/summary.html) or `alpha_values` /
+  `beta_values` for response-scale values. Default `FALSE`. See Details.
 
 - countries:
 
@@ -224,12 +231,16 @@ An object of class `"uncounted"`, a list containing:
 **Model specification.** For observation \\i\\, the expected observed
 count \\m_i\\ is modelled as:
 
-\$\$E(m_i) = \xi_i \rho_i,\qquad \xi_i = N_i^{\alpha_i}\$\$
+\$\$E(m_i) = \xi_i \rho_i\$\$
 
-where \\N_i\\ is the reference (total registered) population, \\n_i\\ is
-an auxiliary count (e.g., new registrations), and \\\gamma \ge 0\\ is an
-intercept-like offset. Define \\\eta_i = \beta_i \log(\gamma_i + n_i /
-N_i)\\. Then \\\rho_i\\ is linked to \\\eta_i\\ by one of:
+where \\\xi_i = E(M_i \mid N_i)\\ is the theoretical unauthorized
+population size and \\\rho_i = E(p_i \mid N_i, n_i)\\ is the theoretical
+detection rate. In the baseline empirical specification, \\\xi_i =
+N_i^{\alpha_i}\\ and, under the default `link_rho = "power"`, \\\rho_i =
+(\gamma_i + n_i / N_i)^{\beta_i}\\. More generally, the package writes
+the detection component as \$\$\eta_i = \beta_i \log(\gamma_i + n_i /
+N_i), \qquad \rho_i = h(\eta_i)\$\$ where \\h\\ is chosen by `link_rho`.
+Supported links are:
 
 - `"power"`:
 
@@ -239,11 +250,17 @@ N_i)\\. Then \\\rho_i\\ is linked to \\\eta_i\\ by one of:
 
   \\\rho_i = 1 - \exp(-\exp(\eta_i))\\
 
-- `"logistic"`:
+- `"logit"`:
 
   \\\rho_i = 1 / (1 + \exp(-\eta_i))\\
 
-On the log scale,
+- `"probit"`:
+
+  \\\rho_i = \Phi(\eta_i)\\
+
+The `"power"` link reproduces the paper's baseline power-law detection
+model exactly; the bounded links are package extensions. On the log
+scale,
 
 \$\$\log E(m_i) = \alpha_i \log N_i + \log(\rho_i)\$\$
 
@@ -312,10 +329,15 @@ N_i^{\alpha_i}\\.
 
 **Constrained vs. unconstrained estimation.** When `constrained = FALSE`
 (default), \\\alpha\\ and \\\beta\\ are estimated on the real line
-without restrictions. When `constrained = TRUE`, link functions enforce
-parameter bounds: \\\alpha = \mathrm{logit}(\eta)\\ so that \\\alpha \in
-(0, 1)\\, and \\\beta = \exp(\zeta)\\ so that \\\beta \> 0\\.
-Coefficients are then reported on the link (transformed) scale; use
+without restrictions. When `constrained = TRUE`, the linear predictors
+are \\\eta\_{\alpha,i} = \mathbf{X}\_{\alpha,i}' \mathbf{a}\\ and
+\\\eta\_{\beta,i} = \mathbf{X}\_{\beta,i}' \mathbf{b}\\, with
+response-scale parameters \\\alpha_i =
+\mathrm{logit}^{-1}(\eta\_{\alpha,i})\\ and \\\beta_i =
+\exp(\eta\_{\beta,i})\\. This constrains the fitted \\\alpha_i\\ values
+to \\(0, 1)\\ and the fitted \\\beta_i\\ values to be strictly positive.
+The stored coefficient vectors `alpha_coefs` and `beta_coefs` remain on
+the transformed scales (logit for alpha, log for beta); use
 [`summary()`](https://rdrr.io/r/base/summary.html) or the `alpha_values`
 / `beta_values` elements of the returned object for response-scale
 values. Constrained estimation is available for the Poisson and NB
@@ -428,7 +450,7 @@ summary(fit_constr)
 #> alpha  0.229427   0.263416  0.8710   0.3838
 #> beta  -0.025829   0.230379 -0.1121   0.9107
 #> 
-#> Response-scale parameters (alpha in (0,1), beta > 0):
+#> Response-scale fitted parameters (alpha_values in (0,1), beta_values > 0):
 #>   Alpha (response scale):
 #>        alpha SE(alpha)
 #> (all) 0.5571     0.065

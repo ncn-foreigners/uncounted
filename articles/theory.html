@@ -95,49 +95,120 @@ estimation methods, and the inference procedures implemented in the
 package.</p>
 </div>
 <div class="section level2">
-<h2 id="the-model">The Model<a class="anchor" aria-label="anchor" href="#the-model"></a>
+<h2 id="theoretical-model">Theoretical model<a class="anchor" aria-label="anchor" href="#theoretical-model"></a>
 </h2>
 <div class="section level3">
-<h3 id="mean-structure">Mean structure<a class="anchor" aria-label="anchor" href="#mean-structure"></a>
+<h3 id="model-statement">Model statement<a class="anchor" aria-label="anchor" href="#model-statement"></a>
 </h3>
 <p>Let
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>i</mi><mo>=</mo><mn>1</mn><mo>,</mo><mi>…</mi><mo>,</mo><mi>n</mi></mrow><annotation encoding="application/x-tex">i = 1, \ldots, n</annotation></semantics></math>
-index observational units (e.g., country-of-origin
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mo>×</mo><annotation encoding="application/x-tex">\times</annotation></semantics></math>
-year
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mo>×</mo><annotation encoding="application/x-tex">\times</annotation></semantics></math>
-sex cells). Denote</p>
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>M</mi><mrow><mi>i</mi><mi>t</mi></mrow></msub><annotation encoding="application/x-tex">M_{it}</annotation></semantics></math>
+denote the unobserved unauthorized population from country
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>i</mi><annotation encoding="application/x-tex">i</annotation></semantics></math>
+in period
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>t</mi><annotation encoding="application/x-tex">t</annotation></semantics></math>,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>N</mi><mrow><mi>i</mi><mi>t</mi></mrow></msub><annotation encoding="application/x-tex">N_{it}</annotation></semantics></math>
+the corresponding authorized population,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>m</mi><mrow><mi>i</mi><mi>t</mi></mrow></msub><annotation encoding="application/x-tex">m_{it}</annotation></semantics></math>
+the observed unauthorized count,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>n</mi><mrow><mi>i</mi><mi>t</mi></mrow></msub><annotation encoding="application/x-tex">n_{it}</annotation></semantics></math>
+an auxiliary observed count, and
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>p</mi><mrow><mi>i</mi><mi>t</mi></mrow></msub><annotation encoding="application/x-tex">p_{it}</annotation></semantics></math>
+the detection rate. Denote</p>
 <ul>
 <li>
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>m</mi><mi>i</mi></msub><annotation encoding="application/x-tex">m_i</annotation></semantics></math>:
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>M</mi><mrow><mi>i</mi><mi>t</mi></mrow></msub><annotation encoding="application/x-tex">M_{it}</annotation></semantics></math>:
+the unobserved unauthorized population size,</li>
+<li>
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>m</mi><mrow><mi>i</mi><mi>t</mi></mrow></msub><annotation encoding="application/x-tex">m_{it}</annotation></semantics></math>:
 the observed count of unauthorized migrants (e.g., apprehensions),</li>
 <li>
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>N</mi><mi>i</mi></msub><annotation encoding="application/x-tex">N_i</annotation></semantics></math>:
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>N</mi><mrow><mi>i</mi><mi>t</mi></mrow></msub><annotation encoding="application/x-tex">N_{it}</annotation></semantics></math>:
 the reference population size (e.g., insured foreigners from the same
 origin),</li>
 <li>
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>n</mi><mi>i</mi></msub><annotation encoding="application/x-tex">n_i</annotation></semantics></math>:
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>n</mi><mrow><mi>i</mi><mi>t</mi></mrow></msub><annotation encoding="application/x-tex">n_{it}</annotation></semantics></math>:
 an auxiliary count from a second administrative source (e.g., police
-identifications).</li>
+identifications),</li>
+<li>
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>p</mi><mrow><mi>i</mi><mi>t</mi></mrow></msub><annotation encoding="application/x-tex">p_{it}</annotation></semantics></math>:
+the detection rate, i.e. the probability that an unauthorized migrant is
+observed.</li>
 </ul>
-<p>The conditional mean of
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>m</mi><mi>i</mi></msub><annotation encoding="application/x-tex">m_i</annotation></semantics></math>
-is modelled as</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>E</mi><mrow><mo stretchy="true" form="prefix">[</mo><msub><mi>m</mi><mi>i</mi></msub><mo>∣</mo><msub><mi>N</mi><mi>i</mi></msub><mo>,</mo><msub><mi>n</mi><mi>i</mi></msub><mo stretchy="true" form="postfix">]</mo></mrow><mspace width="0.278em"></mspace><mo>=</mo><mspace width="0.278em"></mspace><msub><mi>ξ</mi><mi>i</mi></msub><msub><mi>ρ</mi><mi>i</mi></msub><mo>,</mo><mspace width="2.0em"></mspace><msub><mi>ξ</mi><mi>i</mi></msub><mo>=</mo><msubsup><mi>N</mi><mi>i</mi><mi>α</mi></msubsup><mo>,</mo></mrow><annotation encoding="application/x-tex">
-E[m_i \mid N_i, n_i] \;=\; \xi_i \rho_i,
-  \qquad \xi_i = N_i^{\alpha},
+<p>Following the paper, define the theoretical unauthorized population
+size as</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>ξ</mi><mrow><mi>i</mi><mi>t</mi></mrow></msub><mo>=</mo><mi>E</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>M</mi><mrow><mi>i</mi><mi>t</mi></mrow></msub><mo>∣</mo><msub><mi>N</mi><mrow><mi>i</mi><mi>t</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>,</mo></mrow><annotation encoding="application/x-tex">
+\xi_{it} = E(M_{it} \mid N_{it}),
+</annotation></semantics></math></p>
+<p>and the theoretical detection rate as</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>ρ</mi><mrow><mi>i</mi><mi>t</mi></mrow></msub><mo>=</mo><mi>E</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>p</mi><mrow><mi>i</mi><mi>t</mi></mrow></msub><mo>∣</mo><msub><mi>N</mi><mrow><mi>i</mi><mi>t</mi></mrow></msub><mo>,</mo><msub><mi>n</mi><mrow><mi>i</mi><mi>t</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mi>.</mi></mrow><annotation encoding="application/x-tex">
+\rho_{it} = E(p_{it} \mid N_{it}, n_{it}).
+</annotation></semantics></math></p>
+<p>Under the maintained assumptions that detection does not depend on
+the unobserved population size once we condition on observed quantities,
+and that
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>n</mi><mrow><mi>i</mi><mi>t</mi></mrow></msub><annotation encoding="application/x-tex">n_{it}</annotation></semantics></math>
+provides no additional information about
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>M</mi><mrow><mi>i</mi><mi>t</mi></mrow></msub><annotation encoding="application/x-tex">M_{it}</annotation></semantics></math>
+beyond
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>N</mi><mrow><mi>i</mi><mi>t</mi></mrow></msub><annotation encoding="application/x-tex">N_{it}</annotation></semantics></math>,
+the expected observed count factorises as</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>μ</mi><mrow><mi>i</mi><mi>t</mi></mrow></msub><mo>=</mo><mi>E</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>m</mi><mrow><mi>i</mi><mi>t</mi></mrow></msub><mo>∣</mo><msub><mi>N</mi><mrow><mi>i</mi><mi>t</mi></mrow></msub><mo>,</mo><msub><mi>n</mi><mrow><mi>i</mi><mi>t</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><msub><mi>ξ</mi><mrow><mi>i</mi><mi>t</mi></mrow></msub><msub><mi>ρ</mi><mrow><mi>i</mi><mi>t</mi></mrow></msub><mi>.</mi></mrow><annotation encoding="application/x-tex">
+\mu_{it} = E(m_{it} \mid N_{it}, n_{it}) = \xi_{it} \rho_{it}.
+</annotation></semantics></math></p>
+<p>This is the core theoretical decomposition: the observed count is the
+product of a latent population component and a detection component.</p>
+<p>For the remainder of the vignette, each observed
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="true" form="prefix">(</mo><mi>i</mi><mo>,</mo><mi>t</mi><mo stretchy="true" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">(i,t)</annotation></semantics></math>
+cell is treated as one observational unit, so we suppress the explicit
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>t</mi><annotation encoding="application/x-tex">t</annotation></semantics></math>
+index when discussing the package implementation.</p>
+</div>
+</div>
+<div class="section level2">
+<h2 id="empirical-model">Empirical model<a class="anchor" aria-label="anchor" href="#empirical-model"></a>
+</h2>
+<div class="section level3">
+<h3 id="baseline-parametric-specification">Baseline parametric specification<a class="anchor" aria-label="anchor" href="#baseline-parametric-specification"></a>
+</h3>
+<p>The theoretical model does not itself impose functional forms on
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>ξ</mi><mi>i</mi></msub><annotation encoding="application/x-tex">\xi_i</annotation></semantics></math>
+and
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>ρ</mi><mi>i</mi></msub><annotation encoding="application/x-tex">\rho_i</annotation></semantics></math>.
+In the baseline empirical specification used in the paper, the
+unauthorized population follows a power law</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>ξ</mi><mi>i</mi></msub><mo>=</mo><msubsup><mi>N</mi><mi>i</mi><msub><mi>α</mi><mi>i</mi></msub></msubsup><mo>,</mo></mrow><annotation encoding="application/x-tex">
+\xi_i = N_i^{\alpha_i},
+</annotation></semantics></math></p>
+<p>and the detection rate is modelled as</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>ρ</mi><mi>i</mi></msub><mo>=</mo><msup><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>γ</mi><mi>i</mi></msub><mo>+</mo><mfrac><msub><mi>n</mi><mi>i</mi></msub><msub><mi>N</mi><mi>i</mi></msub></mfrac><mo stretchy="true" form="postfix">)</mo></mrow><msub><mi>β</mi><mi>i</mi></msub></msup><mo>,</mo></mrow><annotation encoding="application/x-tex">
+\rho_i = \left(\gamma_i + \frac{n_i}{N_i}\right)^{\beta_i},
 </annotation></semantics></math></p>
 <p>where
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>α</mi><annotation encoding="application/x-tex">\alpha</annotation></semantics></math>,
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>β</mi><annotation encoding="application/x-tex">\beta</annotation></semantics></math>,
-and
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>γ</mi><mo>≥</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">\gamma \geq 0</annotation></semantics></math>
-are parameters to be estimated. Define</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>η</mi><mi>i</mi></msub><mo>=</mo><mi>β</mi><mo>log</mo><mspace width="-0.167em"></mspace><mrow><mo stretchy="true" form="prefix">(</mo><mi>γ</mi><mo>+</mo><mfrac><msub><mi>n</mi><mi>i</mi></msub><msub><mi>N</mi><mi>i</mi></msub></mfrac><mo stretchy="true" form="postfix">)</mo></mrow><mi>.</mi></mrow><annotation encoding="application/x-tex">
-\eta_i = \beta \log\!\left(\gamma + \frac{n_i}{N_i}\right).
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>γ</mi><mi>i</mi></msub><mo>≥</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">\gamma_i \ge 0</annotation></semantics></math>
+is a baseline detection offset that keeps the model well-defined even
+when
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>n</mi><mi>i</mi></msub><mo>=</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">n_i = 0</annotation></semantics></math>.
+Combining the two pieces gives</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>μ</mi><mi>i</mi></msub><mo>=</mo><msubsup><mi>N</mi><mi>i</mi><msub><mi>α</mi><mi>i</mi></msub></msubsup><msup><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>γ</mi><mi>i</mi></msub><mo>+</mo><mfrac><msub><mi>n</mi><mi>i</mi></msub><msub><mi>N</mi><mi>i</mi></msub></mfrac><mo stretchy="true" form="postfix">)</mo></mrow><msub><mi>β</mi><mi>i</mi></msub></msup><mi>.</mi></mrow><annotation encoding="application/x-tex">
+\mu_i = N_i^{\alpha_i}\left(\gamma_i + \frac{n_i}{N_i}\right)^{\beta_i}.
 </annotation></semantics></math></p>
-<p>The package supports three links for
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>ρ</mi><mi>i</mi></msub><mo>=</mo><mi>h</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>η</mi><mi>i</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\rho_i = h(\eta_i)</annotation></semantics></math>:</p>
+<p>Under the default <code>link_rho = "power"</code>, this is exactly
+the model fit by the package. On the log scale it becomes</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo>log</mo><mi>E</mi><mrow><mo stretchy="true" form="prefix">[</mo><msub><mi>m</mi><mi>i</mi></msub><mo stretchy="true" form="postfix">]</mo></mrow><mspace width="0.278em"></mspace><mo>=</mo><mspace width="0.278em"></mspace><msub><mi>α</mi><mi>i</mi></msub><mspace width="0.167em"></mspace><mo>log</mo><msub><mi>N</mi><mi>i</mi></msub><mspace width="0.278em"></mspace><mo>+</mo><mspace width="0.278em"></mspace><mo>log</mo><msub><mi>ρ</mi><mi>i</mi></msub><mi>.</mi></mrow><annotation encoding="application/x-tex">
+\log E[m_i] \;=\; \alpha_i \,\log N_i \;+\; \log \rho_i.
+</annotation></semantics></math></p>
+</div>
+<div class="section level3">
+<h3 id="package-extensions-to-the-detection-model">Package extensions to the detection model<a class="anchor" aria-label="anchor" href="#package-extensions-to-the-detection-model"></a>
+</h3>
+<p>To preserve the paper’s baseline specification while allowing bounded
+detection rates when desired, the package can rewrite the detection
+component as</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>η</mi><mi>i</mi></msub><mo>=</mo><msub><mi>β</mi><mi>i</mi></msub><mo>log</mo><mspace width="-0.167em"></mspace><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>γ</mi><mi>i</mi></msub><mo>+</mo><mfrac><msub><mi>n</mi><mi>i</mi></msub><msub><mi>N</mi><mi>i</mi></msub></mfrac><mo stretchy="true" form="postfix">)</mo></mrow><mo>,</mo><mspace width="2.0em"></mspace><msub><mi>ρ</mi><mi>i</mi></msub><mo>=</mo><mi>h</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>η</mi><mi>i</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>,</mo></mrow><annotation encoding="application/x-tex">
+\eta_i = \beta_i \log\!\left(\gamma_i + \frac{n_i}{N_i}\right),
+\qquad \rho_i = h(\eta_i),
+</annotation></semantics></math></p>
+<p>with one of four links:</p>
 <ul>
 <li>
 <code>link_rho = "power"</code>:
@@ -146,31 +217,33 @@ are parameters to be estimated. Define</p>
 <code>link_rho = "cloglog"</code>:
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>ρ</mi><mi>i</mi></msub><mo>=</mo><mn>1</mn><mo>−</mo><mo>exp</mo><mrow><mo stretchy="true" form="prefix">(</mo><mo>−</mo><mo>exp</mo><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>η</mi><mi>i</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\rho_i = 1 - \exp(-\exp(\eta_i))</annotation></semantics></math>,</li>
 <li>
-<code>link_rho = "logistic"</code>:
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>ρ</mi><mi>i</mi></msub><mo>=</mo><msup><mrow><mo stretchy="true" form="prefix">(</mo><mn>1</mn><mo>+</mo><mo>exp</mo><mrow><mo stretchy="true" form="prefix">(</mo><mo>−</mo><msub><mi>η</mi><mi>i</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo stretchy="true" form="postfix">)</mo></mrow><mrow><mo>−</mo><mn>1</mn></mrow></msup></mrow><annotation encoding="application/x-tex">\rho_i = (1 + \exp(-\eta_i))^{-1}</annotation></semantics></math>.</li>
+<code>link_rho = "logit"</code>:
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>ρ</mi><mi>i</mi></msub><mo>=</mo><msup><mrow><mo stretchy="true" form="prefix">(</mo><mn>1</mn><mo>+</mo><mo>exp</mo><mrow><mo stretchy="true" form="prefix">(</mo><mo>−</mo><msub><mi>η</mi><mi>i</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo stretchy="true" form="postfix">)</mo></mrow><mrow><mo>−</mo><mn>1</mn></mrow></msup></mrow><annotation encoding="application/x-tex">\rho_i = (1 + \exp(-\eta_i))^{-1}</annotation></semantics></math>,</li>
+<li>
+<code>link_rho = "probit"</code>:
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>ρ</mi><mi>i</mi></msub><mo>=</mo><mi>Φ</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>η</mi><mi>i</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\rho_i = \Phi(\eta_i)</annotation></semantics></math>.</li>
 </ul>
-<p>On the log scale, this becomes</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo>log</mo><mi>E</mi><mrow><mo stretchy="true" form="prefix">[</mo><msub><mi>m</mi><mi>i</mi></msub><mo stretchy="true" form="postfix">]</mo></mrow><mspace width="0.278em"></mspace><mo>=</mo><mspace width="0.278em"></mspace><mi>α</mi><mspace width="0.167em"></mspace><mo>log</mo><msub><mi>N</mi><mi>i</mi></msub><mspace width="0.278em"></mspace><mo>+</mo><mspace width="0.278em"></mspace><mo>log</mo><msub><mi>ρ</mi><mi>i</mi></msub><mi>.</mi></mrow><annotation encoding="application/x-tex">
-\log E[m_i] \;=\; \alpha \,\log N_i \;+\; \log \rho_i.
-</annotation></semantics></math></p>
+<p>The <code>power</code> link reproduces the paper’s baseline power-law
+detection model exactly. The <code>cloglog</code>, <code>logit</code>,
+and <code>probit</code> links are package extensions that constrain
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>0</mn><mo>&lt;</mo><msub><mi>ρ</mi><mi>i</mi></msub><mo>&lt;</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">0 &lt; \rho_i &lt; 1</annotation></semantics></math>.</p>
 <p>Under every supported detection link,</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>ξ</mi><mi>i</mi></msub><mo>=</mo><mfrac><mrow><mi>E</mi><mrow><mo stretchy="true" form="prefix">[</mo><msub><mi>m</mi><mi>i</mi></msub><mo stretchy="true" form="postfix">]</mo></mrow></mrow><msub><mi>ρ</mi><mi>i</mi></msub></mfrac><mo>=</mo><msubsup><mi>N</mi><mi>i</mi><mi>α</mi></msubsup><mi>.</mi></mrow><annotation encoding="application/x-tex">
-\xi_i = \frac{E[m_i]}{\rho_i} = N_i^\alpha.
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>ξ</mi><mi>i</mi></msub><mo>=</mo><mfrac><mrow><mi>E</mi><mrow><mo stretchy="true" form="prefix">[</mo><msub><mi>m</mi><mi>i</mi></msub><mo stretchy="true" form="postfix">]</mo></mrow></mrow><msub><mi>ρ</mi><mi>i</mi></msub></mfrac><mo>=</mo><msubsup><mi>N</mi><mi>i</mi><msub><mi>α</mi><mi>i</mi></msub></msubsup><mi>.</mi></mrow><annotation encoding="application/x-tex">
+\xi_i = \frac{E[m_i]}{\rho_i} = N_i^{\alpha_i}.
 </annotation></semantics></math></p>
 <p>This is why the public population-size estimator remains
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mover><mi>ξ</mi><mo accent="true">̂</mo></mover><mo>=</mo><msub><mo>∑</mo><mi>i</mi></msub><msubsup><mi>N</mi><mi>i</mi><msub><mover><mi>α</mi><mo accent="true">̂</mo></mover><mi>i</mi></msub></msubsup></mrow><annotation encoding="application/x-tex">\hat\xi = \sum_i N_i^{\hat\alpha_i}</annotation></semantics></math>
 even when a bounded detection link is used. The choice of
 <code>link_rho</code> affects
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mover><mi>ξ</mi><mo accent="true">̂</mo></mover><annotation encoding="application/x-tex">\hat\xi</annotation></semantics></math>
-only indirectly through the fitted value of
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mover><mi>α</mi><mo accent="true">̂</mo></mover><annotation encoding="application/x-tex">\hat\alpha</annotation></semantics></math>.</p>
+only indirectly through the fitted values of
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mover><mi>α</mi><mo accent="true">̂</mo></mover><mi>i</mi></msub><annotation encoding="application/x-tex">\hat\alpha_i</annotation></semantics></math>.</p>
 </div>
 <div class="section level3">
 <h3 id="parameter-interpretation">Parameter interpretation<a class="anchor" aria-label="anchor" href="#parameter-interpretation"></a>
 </h3>
 <p><strong><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>α</mi><annotation encoding="application/x-tex">\alpha</annotation></semantics></math>
-– elasticity with respect to reference population.</strong> The
-parameter
+– Community Anchor.</strong> The parameter
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>α</mi><annotation encoding="application/x-tex">\alpha</annotation></semantics></math>
 governs how the expected observed count scales with the reference
 population. When
@@ -185,7 +258,7 @@ near zero indicate weak dependence on population size. The constraint
 is theoretically motivated but not always imposed during estimation (see
 Section “Covariates” below).</p>
 <p><strong><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>β</mi><annotation encoding="application/x-tex">\beta</annotation></semantics></math>
-– elasticity with respect to registration rate.</strong> The parameter
+– Exposure Elasticity.</strong> The parameter
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>β</mi><annotation encoding="application/x-tex">\beta</annotation></semantics></math>
 captures the association between the auxiliary registration rate
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="true" form="prefix">(</mo><mi>γ</mi><mo>+</mo><msub><mi>n</mi><mi>i</mi></msub><mi>/</mi><msub><mi>N</mi><mi>i</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">(\gamma + n_i / N_i)</annotation></semantics></math>
@@ -195,7 +268,7 @@ indicates that groups with higher auxiliary detection rates also tend to
 have more observed unauthorized migrants. This is expected when both
 sources partially detect the same latent population.</p>
 <p><strong><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>γ</mi><annotation encoding="application/x-tex">\gamma</annotation></semantics></math>
-– offset for zero auxiliary counts.</strong> Many groups may have
+– baseline detection rate.</strong> Many groups may have
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>n</mi><mi>i</mi></msub><mo>=</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">n_i = 0</annotation></semantics></math>
 (no auxiliary detections), which would make
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo>log</mo><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>n</mi><mi>i</mi></msub><mi>/</mi><msub><mi>N</mi><mi>i</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\log(n_i / N_i)</annotation></semantics></math>
@@ -321,9 +394,11 @@ functions can be applied:</p>
 and
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>β</mi><mi>i</mi></msub><mo>&gt;</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">\beta_i &gt; 0</annotation></semantics></math>.
 Constrained estimation is available for the Poisson and Negative
-Binomial methods (set <code>constrained = TRUE</code>). Coefficients are
-then reported on the link scale; response-scale values are shown by
-<code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code>.</p>
+Binomial methods (set <code>constrained = TRUE</code>). Here the fitted
+values are <code>alpha_values = plogis(X_alpha %*% alpha_coefs)</code>
+and <code>beta_values = exp(X_beta %*% beta_coefs)</code>, while the
+stored coefficient vectors remain on the transformed scales;
+response-scale values are shown by <code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code>.</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co">## Alpha and beta varying by sex</span></span>
 <span><span class="va">fit_cov</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/estimate_hidden_pop.html">estimate_hidden_pop</a></span><span class="op">(</span></span>
@@ -387,7 +462,7 @@ then reported on the link scale; response-scale values are shown by
 <span><span class="co">#&gt; ---</span></span>
 <span><span class="co">#&gt; Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; Response-scale parameters (alpha in (0,1), beta &gt; 0):</span></span>
+<span><span class="co">#&gt; Response-scale fitted parameters (alpha_values in (0,1), beta_values &gt; 0):</span></span>
 <span><span class="co">#&gt;   Alpha (response scale):</span></span>
 <span><span class="co">#&gt;             alpha SE(alpha)</span></span>
 <span><span class="co">#&gt; sex=Female 0.6960    0.0520</span></span>

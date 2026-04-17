@@ -68,7 +68,7 @@ supports covariate-varying parameters through interaction formulas.</p>
 <span>  cov_gamma <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  gamma_bounds <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1e-10</span>, <span class="fl">0.5</span><span class="op">)</span>,</span>
 <span>  theta_start <span class="op">=</span> <span class="fl">1</span>,</span>
-<span>  link_rho <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"power"</span>, <span class="st">"cloglog"</span>, <span class="st">"logistic"</span><span class="op">)</span>,</span>
+<span>  link_rho <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"power"</span>, <span class="st">"cloglog"</span>, <span class="st">"logit"</span>, <span class="st">"probit"</span><span class="op">)</span>,</span>
 <span>  estimator <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"mle"</span>, <span class="st">"gmm"</span>, <span class="st">"el"</span><span class="op">)</span>,</span>
 <span>  vcov <span class="op">=</span> <span class="st">"HC3"</span>,</span>
 <span>  weights <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -145,7 +145,10 @@ only when <code>method = "nb"</code>). Default 1.</p></dd>
 \(\rho_i = h(\beta_i \log(\gamma_i + n_i / N_i))\). Supported values are
 <code>"power"</code> (default, \(\rho_i = \exp(\eta_i)\)),
 <code>"cloglog"</code> (\(\rho_i = 1 - \exp(-\exp(\eta_i))\)), and
-<code>"logistic"</code> (\(\rho_i = 1 / (1 + \exp(-\eta_i))\)).
+<code>"logit"</code> (\(\rho_i = 1 / (1 + \exp(-\eta_i))\)), and
+<code>"probit"</code> (\(\rho_i = \Phi(\eta_i)\)).
+The legacy alias <code>"logistic"</code> is accepted and normalized to
+<code>"logit"</code>.
 Bounded links are currently available for <code>method = "poisson"</code>,
 <code>"nb"</code>, and <code>"nls"</code>.</p></dd>
 
@@ -176,10 +179,16 @@ a variance-covariance matrix. For example,
 
 
 <dt id="arg-constrained">constrained<a class="anchor" aria-label="anchor" href="#arg-constrained"></a></dt>
-<dd><p>Logical. If <code>TRUE</code>, applies link functions to
-ensure \(\alpha \in (0, 1)\) (logit) and \(\beta &gt; 0\) (exp).
-Only available for <code>method = "poisson"</code> and <code>method = "nb"</code>.
-Default <code>FALSE</code>. See Details.</p></dd>
+<dd><p>Logical. If <code>TRUE</code> and
+<code>method %in% c("poisson", "nb")</code>, the fitted per-observation
+parameters are constrained on the response scale via
+\(\alpha_i = \mathrm{logit}^{-1}(\mathbf{X}_{\alpha,i}' \mathbf{a})\)
+and \(\beta_i = \exp(\mathbf{X}_{\beta,i}' \mathbf{b})\).
+This keeps \(\alpha_i \in (0, 1)\) and \(\beta_i &gt; 0\). The reported
+coefficient vectors <code>alpha_coefs</code> and <code>beta_coefs</code> remain on
+the transformed scales (logit for alpha, log for beta); use
+<code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code> or <code>alpha_values</code> / <code>beta_values</code> for
+response-scale values. Default <code>FALSE</code>. See Details.</p></dd>
 
 
 <dt id="arg-countries">countries<a class="anchor" aria-label="anchor" href="#arg-countries"></a></dt>
@@ -258,22 +267,31 @@ parameters, evaluated at the fitted coefficients even when
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p><strong>Model specification.</strong>
 For observation \(i\), the expected observed count \(m_i\) is modelled as:</p>
-<p>$$E(m_i) = \xi_i \rho_i,\qquad \xi_i = N_i^{\alpha_i}$$</p>
-<p>where \(N_i\) is the reference (total registered) population,
-\(n_i\) is an auxiliary count (e.g., new registrations),
-and \(\gamma \ge 0\) is an intercept-like offset. Define
-\(\eta_i = \beta_i \log(\gamma_i + n_i / N_i)\).
-Then \(\rho_i\) is linked to \(\eta_i\) by one of:</p><dl><dt><code>"power"</code></dt>
+<p>$$E(m_i) = \xi_i \rho_i$$</p>
+<p>where \(\xi_i = E(M_i \mid N_i)\) is the theoretical
+unauthorized population size and
+\(\rho_i = E(p_i \mid N_i, n_i)\) is the
+theoretical detection rate. In the baseline empirical specification,
+\(\xi_i = N_i^{\alpha_i}\) and, under the default
+<code>link_rho = "power"</code>,
+\(\rho_i = (\gamma_i + n_i / N_i)^{\beta_i}\).
+More generally, the package writes the detection component as
+$$\eta_i = \beta_i \log(\gamma_i + n_i / N_i), \qquad \rho_i = h(\eta_i)$$
+where \(h\) is chosen by <code>link_rho</code>. Supported links are:</p><dl><dt><code>"power"</code></dt>
 <dd><p>\(\rho_i = \exp(\eta_i)\)</p></dd>
 
 <dt><code>"cloglog"</code></dt>
 <dd><p>\(\rho_i = 1 - \exp(-\exp(\eta_i))\)</p></dd>
 
-<dt><code>"logistic"</code></dt>
+<dt><code>"logit"</code></dt>
 <dd><p>\(\rho_i = 1 / (1 + \exp(-\eta_i))\)</p></dd>
 
+<dt><code>"probit"</code></dt>
+<dd><p>\(\rho_i = \Phi(\eta_i)\)</p></dd>
 
-</dl><p>On the log scale,</p>
+
+</dl><p>The <code>"power"</code> link reproduces the paper's baseline power-law detection
+model exactly; the bounded links are package extensions. On the log scale,</p>
 <p>$$\log E(m_i) = \alpha_i \log N_i + \log(\rho_i)$$</p>
 <p>so for every supported <code>link_rho</code>, \(\xi_i = E(m_i) / \rho_i = N_i^{\alpha_i}\).</p>
 <p><strong>Parameter interpretation.</strong></p><dl><dt>\(\alpha\)</dt>
@@ -334,13 +352,18 @@ with <code>estimator = "gmm"</code> or <code>estimator = "el"</code> using
 </dl><p><strong>Constrained vs. unconstrained estimation.</strong>
 When <code>constrained = FALSE</code> (default), \(\alpha\) and \(\beta\)
 are estimated on the real line without restrictions. When
-<code>constrained = TRUE</code>, link functions enforce parameter bounds:
-\(\alpha = \mathrm{logit}(\eta)\) so that
-\(\alpha \in (0, 1)\), and
-\(\beta = \exp(\zeta)\) so that \(\beta &gt; 0\).
-Coefficients are then reported on the link (transformed) scale; use
-<code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code> or the <code>alpha_values</code> / <code>beta_values</code> elements
-of the returned object for response-scale values.
+<code>constrained = TRUE</code>, the linear predictors are
+\(\eta_{\alpha,i} = \mathbf{X}_{\alpha,i}' \mathbf{a}\)
+and \(\eta_{\beta,i} = \mathbf{X}_{\beta,i}' \mathbf{b}\),
+with response-scale parameters
+\(\alpha_i = \mathrm{logit}^{-1}(\eta_{\alpha,i})\)
+and \(\beta_i = \exp(\eta_{\beta,i})\).
+This constrains the fitted \(\alpha_i\) values to \((0, 1)\)
+and the fitted \(\beta_i\) values to be strictly positive.
+The stored coefficient vectors <code>alpha_coefs</code> and <code>beta_coefs</code>
+remain on the transformed scales (logit for alpha, log for beta); use
+<code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code> or the <code>alpha_values</code> / <code>beta_values</code>
+elements of the returned object for response-scale values.
 Constrained estimation is available for the Poisson and NB methods only.</p>
 <p><strong>Population size estimation.</strong>
 The total unauthorized population is estimated as
@@ -446,7 +469,7 @@ irregular foreigners in Poland using non-linear count regression models.
 <span class="r-out co"><span class="r-pr">#&gt;</span> alpha  0.229427   0.263416  0.8710   0.3838</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> beta  -0.025829   0.230379 -0.1121   0.9107</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Response-scale parameters (alpha in (0,1), beta &gt; 0):</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Response-scale fitted parameters (alpha_values in (0,1), beta_values &gt; 0):</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   Alpha (response scale):</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>        alpha SE(alpha)</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> (all) 0.5571     0.065</span>

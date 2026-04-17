@@ -135,8 +135,10 @@ covariates (e.g., <code>~ year</code>)</li>
 <strong>Gamma</strong>: estimate jointly, fix at a value, or
 exclude</li>
 <li>
-<strong>Constrained</strong>: enforce alpha in (0,1) and beta &gt;
-0</li>
+<strong>Constrained</strong>: fit
+<code>alpha_values = plogis(X_alpha %*% alpha_coefs)</code> and
+<code>beta_values = exp(X_beta %*% beta_coefs)</code> so alpha stays in
+<code>(0, 1)</code> and beta stays positive</li>
 </ul>
 <p>Click “Fit Model” to estimate. The model is stored and can be
 compared with others. The summary panel shows coefficients with robust

@@ -24,73 +24,124 @@ This vignette describes the theory behind the model, the available
 estimation methods, and the inference procedures implemented in the
 package.
 
-## The Model
+## Theoretical model
 
-### Mean structure
+### Model statement
 
-Let $i = 1,\ldots,n$ index observational units (e.g., country-of-origin
-$\times$ year $\times$ sex cells). Denote
+Let $M_{it}$ denote the unobserved unauthorized population from country
+$i$ in period $t$, $N_{it}$ the corresponding authorized population,
+$m_{it}$ the observed unauthorized count, $n_{it}$ an auxiliary observed
+count, and $p_{it}$ the detection rate. Denote
 
-- $m_{i}$: the observed count of unauthorized migrants (e.g.,
+- $M_{it}$: the unobserved unauthorized population size,
+- $m_{it}$: the observed count of unauthorized migrants (e.g.,
   apprehensions),
-- $N_{i}$: the reference population size (e.g., insured foreigners from
+- $N_{it}$: the reference population size (e.g., insured foreigners from
   the same origin),
-- $n_{i}$: an auxiliary count from a second administrative source (e.g.,
-  police identifications).
+- $n_{it}$: an auxiliary count from a second administrative source
+  (e.g., police identifications),
+- $p_{it}$: the detection rate, i.e. the probability that an
+  unauthorized migrant is observed.
 
-The conditional mean of $m_{i}$ is modelled as
+Following the paper, define the theoretical unauthorized population size
+as
 
-$$E\left\lbrack m_{i} \mid N_{i},n_{i} \right\rbrack\; = \;\xi_{i}\rho_{i},\qquad\xi_{i} = N_{i}^{\alpha},$$
+$$\xi_{it} = E\left( M_{it} \mid N_{it} \right),$$
 
-where $\alpha$, $\beta$, and $\gamma \geq 0$ are parameters to be
-estimated. Define
+and the theoretical detection rate as
 
-$$\eta_{i} = \beta\log\!\left( \gamma + \frac{n_{i}}{N_{i}} \right).$$
+$$\rho_{it} = E\left( p_{it} \mid N_{it},n_{it} \right).$$
 
-The package supports three links for
-$\rho_{i} = h\left( \eta_{i} \right)$:
+Under the maintained assumptions that detection does not depend on the
+unobserved population size once we condition on observed quantities, and
+that $n_{it}$ provides no additional information about $M_{it}$ beyond
+$N_{it}$, the expected observed count factorises as
+
+$$\mu_{it} = E\left( m_{it} \mid N_{it},n_{it} \right) = \xi_{it}\rho_{it}.$$
+
+This is the core theoretical decomposition: the observed count is the
+product of a latent population component and a detection component.
+
+For the remainder of the vignette, each observed $(i,t)$ cell is treated
+as one observational unit, so we suppress the explicit $t$ index when
+discussing the package implementation.
+
+## Empirical model
+
+### Baseline parametric specification
+
+The theoretical model does not itself impose functional forms on
+$\xi_{i}$ and $\rho_{i}$. In the baseline empirical specification used
+in the paper, the unauthorized population follows a power law
+
+$$\xi_{i} = N_{i}^{\alpha_{i}},$$
+
+and the detection rate is modelled as
+
+$$\rho_{i} = \left( \gamma_{i} + \frac{n_{i}}{N_{i}} \right)^{\beta_{i}},$$
+
+where $\gamma_{i} \geq 0$ is a baseline detection offset that keeps the
+model well-defined even when $n_{i} = 0$. Combining the two pieces gives
+
+$$\mu_{i} = N_{i}^{\alpha_{i}}\left( \gamma_{i} + \frac{n_{i}}{N_{i}} \right)^{\beta_{i}}.$$
+
+Under the default `link_rho = "power"`, this is exactly the model fit by
+the package. On the log scale it becomes
+
+$$\log E\left\lbrack m_{i} \right\rbrack\; = \;\alpha_{i}\,\log N_{i}\; + \;\log\rho_{i}.$$
+
+### Package extensions to the detection model
+
+To preserve the paper’s baseline specification while allowing bounded
+detection rates when desired, the package can rewrite the detection
+component as
+
+$$\eta_{i} = \beta_{i}\log\!\left( \gamma_{i} + \frac{n_{i}}{N_{i}} \right),\qquad\rho_{i} = h\left( \eta_{i} \right),$$
+
+with one of four links:
 
 - `link_rho = "power"`: $\rho_{i} = \exp\left( \eta_{i} \right)$,
 - `link_rho = "cloglog"`:
   $\rho_{i} = 1 - \exp\left( - \exp\left( \eta_{i} \right) \right)$,
-- `link_rho = "logistic"`:
-  $\rho_{i} = \left( 1 + \exp\left( - \eta_{i} \right) \right)^{- 1}$.
+- `link_rho = "logit"`:
+  $\rho_{i} = \left( 1 + \exp\left( - \eta_{i} \right) \right)^{- 1}$,
+- `link_rho = "probit"`: $\rho_{i} = \Phi\left( \eta_{i} \right)$.
 
-On the log scale, this becomes
-
-$$\log E\left\lbrack m_{i} \right\rbrack\; = \;\alpha\,\log N_{i}\; + \;\log\rho_{i}.$$
+The `power` link reproduces the paper’s baseline power-law detection
+model exactly. The `cloglog`, `logit`, and `probit` links are package
+extensions that constrain $0 < \rho_{i} < 1$.
 
 Under every supported detection link,
 
-$$\xi_{i} = \frac{E\left\lbrack m_{i} \right\rbrack}{\rho_{i}} = N_{i}^{\alpha}.$$
+$$\xi_{i} = \frac{E\left\lbrack m_{i} \right\rbrack}{\rho_{i}} = N_{i}^{\alpha_{i}}.$$
 
 This is why the public population-size estimator remains
 $\widehat{\xi} = \sum_{i}N_{i}^{{\widehat{\alpha}}_{i}}$ even when a
 bounded detection link is used. The choice of `link_rho` affects
-$\widehat{\xi}$ only indirectly through the fitted value of
-$\widehat{\alpha}$.
+$\widehat{\xi}$ only indirectly through the fitted values of
+${\widehat{\alpha}}_{i}$.
 
 ### Parameter interpretation
 
-**$\alpha$ – elasticity with respect to reference population.** The
-parameter $\alpha$ governs how the expected observed count scales with
-the reference population. When $\alpha = 1$, the relationship is
-proportional; when $\alpha \in (0,1)$, the scaling is sublinear, meaning
-that larger reference populations yield proportionally fewer detections.
-Values of $\alpha$ near zero indicate weak dependence on population
-size. The constraint $\alpha \in (0,1)$ is theoretically motivated but
-not always imposed during estimation (see Section “Covariates” below).
+**$\alpha$ – Community Anchor.** The parameter $\alpha$ governs how the
+expected observed count scales with the reference population. When
+$\alpha = 1$, the relationship is proportional; when $\alpha \in (0,1)$,
+the scaling is sublinear, meaning that larger reference populations
+yield proportionally fewer detections. Values of $\alpha$ near zero
+indicate weak dependence on population size. The constraint
+$\alpha \in (0,1)$ is theoretically motivated but not always imposed
+during estimation (see Section “Covariates” below).
 
-**$\beta$ – elasticity with respect to registration rate.** The
-parameter $\beta$ captures the association between the auxiliary
-registration rate $\left( \gamma + n_{i}/N_{i} \right)$ and the observed
-unauthorized count. A positive $\beta$ indicates that groups with higher
-auxiliary detection rates also tend to have more observed unauthorized
-migrants. This is expected when both sources partially detect the same
-latent population.
+**$\beta$ – Exposure Elasticity.** The parameter $\beta$ captures the
+association between the auxiliary registration rate
+$\left( \gamma + n_{i}/N_{i} \right)$ and the observed unauthorized
+count. A positive $\beta$ indicates that groups with higher auxiliary
+detection rates also tend to have more observed unauthorized migrants.
+This is expected when both sources partially detect the same latent
+population.
 
-**$\gamma$ – offset for zero auxiliary counts.** Many groups may have
-$n_{i} = 0$ (no auxiliary detections), which would make
+**$\gamma$ – baseline detection rate.** Many groups may have $n_{i} = 0$
+(no auxiliary detections), which would make
 $\log\left( n_{i}/N_{i} \right)$ undefined. The offset $\gamma \geq 0$
 ensures that the rate term remains positive. In practice, $\gamma$ is
 typically small (close to zero). It can be fixed at a known value,
@@ -174,9 +225,11 @@ $$\alpha_{i} = {logit^{- 1}}\left( \mathbf{X}_{\alpha,i}^{\top}\mathbf{a} \right
 
 ensuring $\alpha_{i} \in (0,1)$ and $\beta_{i} > 0$. Constrained
 estimation is available for the Poisson and Negative Binomial methods
-(set `constrained = TRUE`). Coefficients are then reported on the link
-scale; response-scale values are shown by
-[`summary()`](https://rdrr.io/r/base/summary.html).
+(set `constrained = TRUE`). Here the fitted values are
+`alpha_values = plogis(X_alpha %*% alpha_coefs)` and
+`beta_values = exp(X_beta %*% beta_coefs)`, while the stored coefficient
+vectors remain on the transformed scales; response-scale values are
+shown by [`summary()`](https://rdrr.io/r/base/summary.html).
 
 ``` r
 ## Alpha and beta varying by sex
@@ -241,7 +294,7 @@ summary(fit_constr)
 #> ---
 #> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 #> 
-#> Response-scale parameters (alpha in (0,1), beta > 0):
+#> Response-scale fitted parameters (alpha_values in (0,1), beta_values > 0):
 #>   Alpha (response scale):
 #>             alpha SE(alpha)
 #> sex=Female 0.6960    0.0520
