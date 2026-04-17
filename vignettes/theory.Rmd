@@ -39,59 +39,119 @@ estimation methods, and the inference procedures implemented in the
 package.
 
 
-## The Model
+## Theoretical model
 
-### Mean structure
+### Model statement
 
-Let $i = 1, \ldots, n$ index observational units (e.g., country-of-origin
-$\times$ year $\times$ sex cells).  Denote
+Let $M_{it}$ denote the unobserved unauthorized population from country $i$
+in period $t$, $N_{it}$ the corresponding authorized population, $m_{it}$ the
+observed unauthorized count, $n_{it}$ an auxiliary observed count, and
+$p_{it}$ the detection rate. Denote
 
-- $m_i$: the observed count of unauthorized migrants (e.g., apprehensions),
-- $N_i$: the reference population size (e.g., insured foreigners from the
+- $M_{it}$: the unobserved unauthorized population size,
+- $m_{it}$: the observed count of unauthorized migrants (e.g., apprehensions),
+- $N_{it}$: the reference population size (e.g., insured foreigners from the
   same origin),
-- $n_i$: an auxiliary count from a second administrative source (e.g.,
-  police identifications).
+- $n_{it}$: an auxiliary count from a second administrative source (e.g.,
+  police identifications),
+- $p_{it}$: the detection rate, i.e. the probability that an unauthorized
+  migrant is observed.
 
-The conditional mean of $m_i$ is modelled as
-
-$$
-E[m_i \mid N_i, n_i] \;=\; \xi_i \rho_i,
-  \qquad \xi_i = N_i^{\alpha},
-$$
-
-where $\alpha$, $\beta$, and $\gamma \geq 0$ are parameters to be
-estimated. Define
+Following the paper, define the theoretical unauthorized population size as
 
 $$
-\eta_i = \beta \log\!\left(\gamma + \frac{n_i}{N_i}\right).
+\xi_{it} = E(M_{it} \mid N_{it}),
 $$
 
-The package supports three links for $\rho_i = h(\eta_i)$:
+and the theoretical detection rate as
+
+$$
+\rho_{it} = E(p_{it} \mid N_{it}, n_{it}).
+$$
+
+Under the maintained assumptions that detection does not depend on the
+unobserved population size once we condition on observed quantities, and that
+$n_{it}$ provides no additional information about $M_{it}$ beyond $N_{it}$, the
+expected observed count factorises as
+
+$$
+\mu_{it} = E(m_{it} \mid N_{it}, n_{it}) = \xi_{it} \rho_{it}.
+$$
+
+This is the core theoretical decomposition: the observed count is the product
+of a latent population component and a detection component.
+
+For the remainder of the vignette, each observed $(i,t)$ cell is treated as
+one observational unit, so we suppress the explicit $t$ index when discussing
+the package implementation.
+
+## Empirical model
+
+### Baseline parametric specification
+
+The theoretical model does not itself impose functional forms on $\xi_i$ and
+$\rho_i$. In the baseline empirical specification used in the paper, the
+unauthorized population follows a power law
+
+$$
+\xi_i = N_i^{\alpha_i},
+$$
+
+and the detection rate is modelled as
+
+$$
+\rho_i = \left(\gamma_i + \frac{n_i}{N_i}\right)^{\beta_i},
+$$
+
+where $\gamma_i \ge 0$ is a baseline detection offset that keeps the model
+well-defined even when $n_i = 0$. Combining the two pieces gives
+
+$$
+\mu_i = N_i^{\alpha_i}\left(\gamma_i + \frac{n_i}{N_i}\right)^{\beta_i}.
+$$
+
+Under the default `link_rho = "power"`, this is exactly the model fit by the
+package. On the log scale it becomes
+
+$$
+\log E[m_i] \;=\; \alpha_i \,\log N_i \;+\; \log \rho_i.
+$$
+
+### Package extensions to the detection model
+
+To preserve the paper’s baseline specification while allowing bounded
+detection rates when desired, the package can rewrite the detection component
+as
+
+$$
+\eta_i = \beta_i \log\!\left(\gamma_i + \frac{n_i}{N_i}\right),
+\qquad \rho_i = h(\eta_i),
+$$
+
+with one of three links:
 
 - `link_rho = "power"`: $\rho_i = \exp(\eta_i)$,
 - `link_rho = "cloglog"`: $\rho_i = 1 - \exp(-\exp(\eta_i))$,
 - `link_rho = "logit"`: $\rho_i = (1 + \exp(-\eta_i))^{-1}$.
 
-On the log scale, this becomes
-
-$$
-\log E[m_i] \;=\; \alpha \,\log N_i \;+\; \log \rho_i.
-$$
+The `power` link reproduces the paper’s baseline power-law detection model
+exactly. The `cloglog` and `logit` links are package extensions that constrain
+$0 < \rho_i < 1$.
 
 Under every supported detection link,
 
 $$
-\xi_i = \frac{E[m_i]}{\rho_i} = N_i^\alpha.
+\xi_i = \frac{E[m_i]}{\rho_i} = N_i^{\alpha_i}.
 $$
 
 This is why the public population-size estimator remains
 $\hat\xi = \sum_i N_i^{\hat\alpha_i}$ even when a bounded detection link is
 used. The choice of `link_rho` affects $\hat\xi$ only indirectly through the
-fitted value of $\hat\alpha$.
+fitted values of $\hat\alpha_i$.
 
 ### Parameter interpretation
 
-**$\alpha$ -- elasticity with respect to reference population.**
+**$\alpha$ -- Community Anchor.**
 The parameter $\alpha$ governs how the expected observed count scales with
 the reference population.  When $\alpha = 1$, the relationship is
 proportional; when $\alpha \in (0, 1)$, the scaling is sublinear, meaning
@@ -100,7 +160,7 @@ Values of $\alpha$ near zero indicate weak dependence on population size.
 The constraint $\alpha \in (0, 1)$ is theoretically motivated but not
 always imposed during estimation (see Section "Covariates" below).
 
-**$\beta$ -- elasticity with respect to registration rate.**
+**$\beta$ -- Exposure Elasticity.**
 The parameter $\beta$ captures the association between the auxiliary
 registration rate $(\gamma + n_i / N_i)$ and the observed unauthorized
 count.  A positive $\beta$ indicates that groups with higher auxiliary
@@ -108,7 +168,7 @@ detection rates also tend to have more observed unauthorized migrants.
 This is expected when both sources partially detect the same latent
 population.
 
-**$\gamma$ -- offset for zero auxiliary counts.**
+**$\gamma$ -- baseline detection rate.**
 Many groups may have $n_i = 0$ (no auxiliary detections), which would
 make $\log(n_i / N_i)$ undefined.  The offset $\gamma \geq 0$ ensures
 that the rate term remains positive.  In practice, $\gamma$ is typically

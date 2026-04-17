@@ -18,17 +18,44 @@ links, optional gamma offsets, and moment-based count estimators via the
 
 ## Model
 
-For observation $i$, the expected observed count $m_i$ is modelled as:
+The paper’s theoretical model factors the expected observed count into a
+latent population component and a detection component:
 
-$$E(m_i) = N_i^{\alpha_i}\rho_i, \qquad
-\eta_i = \beta_i \log(\gamma + n_i / N_i)$$
+$$
+\mu_i = E(m_i \mid N_i, n_i) = \xi_i \rho_i,
+$$
+
+where $\xi_i = E(M_i \mid N_i)$ is the theoretical unauthorized
+population size and $\rho_i = E(p_i \mid N_i, n_i)$ is the theoretical
+detection rate.
+
+In the baseline empirical specification implemented by default,
+
+$$
+\xi_i = N_i^{\alpha_i}, \qquad
+\rho_i = \left(\gamma_i + \frac{n_i}{N_i}\right)^{\beta_i},
+$$
 
 where $N_i$ is the reference (total registered) population, $n_i$ is an
-auxiliary count (e.g. police records), and $\gamma \geq 0$ is an
-intercept-like offset. The package supports `link_rho = "power"`,
-`"cloglog"`, and `"logit"` for the detection component $\rho_i$. On the
-log scale, the mean structure remains linear in the power-link case and
-is handled directly for the nonlinear estimators.
+auxiliary count (e.g. police records), and $\gamma_i \geq 0$ is a
+baseline detection offset. This gives
+
+$$
+\mu_i = N_i^{\alpha_i}\left(\gamma_i + \frac{n_i}{N_i}\right)^{\beta_i}.
+$$
+
+The package also supports bounded alternatives for the detection
+component by writing
+
+$$
+\eta_i = \beta_i \log\!\left(\gamma_i + \frac{n_i}{N_i}\right), \qquad
+\rho_i = h(\eta_i),
+$$
+
+with `link_rho = "power"` (the paper’s baseline specification),
+`"cloglog"`, or `"logit"`. On the log scale, the mean structure remains
+linear in the power-link case and is handled directly for the nonlinear
+estimators.
 
 ## Installation
 

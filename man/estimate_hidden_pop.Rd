@@ -157,19 +157,25 @@ supports covariate-varying parameters through interaction formulas.
 \strong{Model specification.}
 For observation \eqn{i}, the expected observed count \eqn{m_i} is modelled as:
 
-\deqn{E(m_i) = \xi_i \rho_i,\qquad \xi_i = N_i^{\alpha_i}}{E(m_i) = xi_i rho_i, xi_i = N_i^alpha_i}
+\deqn{E(m_i) = \xi_i \rho_i}{E(m_i) = xi_i rho_i}
 
-where \eqn{N_i} is the reference (total registered) population,
-\eqn{n_i} is an auxiliary count (e.g., new registrations),
-and \eqn{\gamma \ge 0}{gamma >= 0} is an intercept-like offset. Define
-\eqn{\eta_i = \beta_i \log(\gamma_i + n_i / N_i)}{eta_i = beta_i log(gamma_i + n_i / N_i)}.
-Then \eqn{\rho_i}{rho_i} is linked to \eqn{\eta_i}{eta_i} by one of:
+where \eqn{\xi_i = E(M_i \mid N_i)}{xi_i = E(M_i | N_i)} is the theoretical
+unauthorized population size and
+\eqn{\rho_i = E(p_i \mid N_i, n_i)}{rho_i = E(p_i | N_i, n_i)} is the
+theoretical detection rate. In the baseline empirical specification,
+\eqn{\xi_i = N_i^{\alpha_i}}{xi_i = N_i^alpha_i} and, under the default
+\code{link_rho = "power"},
+\eqn{\rho_i = (\gamma_i + n_i / N_i)^{\beta_i}}{rho_i = (gamma_i + n_i / N_i)^beta_i}.
+More generally, the package writes the detection component as
+\deqn{\eta_i = \beta_i \log(\gamma_i + n_i / N_i), \qquad \rho_i = h(\eta_i)}{eta_i = beta_i log(gamma_i + n_i / N_i), rho_i = h(eta_i)}
+where \eqn{h}{h} is chosen by \code{link_rho}. Supported links are:
 \describe{
 \item{\code{"power"}}{\eqn{\rho_i = \exp(\eta_i)}{rho_i = exp(eta_i)}}
 \item{\code{"cloglog"}}{\eqn{\rho_i = 1 - \exp(-\exp(\eta_i))}{rho_i = 1 - exp(-exp(eta_i))}}
 \item{\code{"logit"}}{\eqn{\rho_i = 1 / (1 + \exp(-\eta_i))}{rho_i = 1 / (1 + exp(-eta_i))}}
 }
-On the log scale,
+The \code{"power"} link reproduces the paper's baseline power-law detection
+model exactly; the bounded links are package extensions. On the log scale,
 
 \deqn{\log E(m_i) = \alpha_i \log N_i + \log(\rho_i)}{log E(m_i) = alpha_i * log(N_i) + log(rho_i)}
 
