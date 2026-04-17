@@ -70,7 +70,7 @@ The package supports three links for $\rho_i = h(\eta_i)$:
 
 - `link_rho = "power"`: $\rho_i = \exp(\eta_i)$,
 - `link_rho = "cloglog"`: $\rho_i = 1 - \exp(-\exp(\eta_i))$,
-- `link_rho = "logistic"`: $\rho_i = (1 + \exp(-\eta_i))^{-1}$.
+- `link_rho = "logit"`: $\rho_i = (1 + \exp(-\eta_i))^{-1}$.
 
 On the log scale, this becomes
 
@@ -179,8 +179,11 @@ $$
 
 ensuring $\alpha_i \in (0, 1)$ and $\beta_i > 0$.  Constrained
 estimation is available for the Poisson and Negative Binomial methods
-(set `constrained = TRUE`).  Coefficients are then reported on the link
-scale; response-scale values are shown by `summary()`.
+(set `constrained = TRUE`). Here the fitted values are
+`alpha_values = plogis(X_alpha %*% alpha_coefs)` and
+`beta_values = exp(X_beta %*% beta_coefs)`, while the stored coefficient
+vectors remain on the transformed scales; response-scale values are shown
+by `summary()`.
 
 ```{r covariates, eval = TRUE}
 ## Alpha and beta varying by sex

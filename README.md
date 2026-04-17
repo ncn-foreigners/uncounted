@@ -9,20 +9,26 @@
 coverage](https://codecov.io/gh/ncn-foreigners/uncounted/graph/badge.svg)](https://app.codecov.io/gh/ncn-foreigners/uncounted)
 <!-- badges: end -->
 
-R package for estimating the size of unauthorised (hidden) populations
+R package for estimating the size of unauthorized migrant populations
 using a power-law model that relates observed counts to reference
-populations and auxiliary detection data.
+populations and auxiliary detection data. Supports OLS, NLS, Poisson,
+Negative Binomial, and iOLS estimation, alternative bounded detection
+links, optional gamma offsets, and moment-based count estimators via the
+`momentfit` package.
 
 ## Model
 
 For observation $i$, the expected observed count $m_i$ is modelled as:
 
-$$E(m_i) = N_i^{\alpha_i} \cdot (\gamma + n_i / N_i)^{\beta_i}$$
+$$E(m_i) = N_i^{\alpha_i}\rho_i, \qquad
+\eta_i = \beta_i \log(\gamma + n_i / N_i)$$
 
 where $N_i$ is the reference (total registered) population, $n_i$ is an
-auxiliary count (e.g. new registrations), and $\gamma \geq 0$ is an
-intercept-like offset. On the log scale the model is linear, enabling
-estimation via OLS, NLS, Poisson PML, or Negative Binomial MLE.
+auxiliary count (e.g. police records), and $\gamma \geq 0$ is an
+intercept-like offset. The package supports `link_rho = "power"`,
+`"cloglog"`, and `"logit"` for the detection component $\rho_i$. On the
+log scale, the mean structure remains linear in the power-link case and
+is handled directly for the nonlinear estimators.
 
 ## Installation
 
@@ -39,6 +45,7 @@ remotes::install_github("ncn-foreigners/uncounted")
 library(uncounted)
 data(irregular_migration)
 irregular_migration$year <- as.factor(irregular_migration$year)
+irregular_migration$ukr <- as.integer(irregular_migration$country_code == "UKR")
 ## Fit Poisson PML with year x UKR interaction in alpha
 fit <- estimate_hidden_pop(
   data = irregular_migration,
@@ -46,7 +53,7 @@ fit <- estimate_hidden_pop(
   auxiliary = ~ n,
   reference_pop = ~ N,
   method = "poisson",
-  cov_alpha = ~ year + sex,
+  cov_alpha = ~ year * ukr + sex,
   cov_beta = ~ year,
   countries = ~ country_code
 )
@@ -55,45 +62,63 @@ summary(fit)
 #> Unauthorized population estimation
 #> Method: POISSON | vcov: HC3 
 #> N obs: 1382 
-#> Gamma: 0.00725 (estimated) 
-#> Log-likelihood: -8217.24 
-#> AIC: 16462.49  BIC: 16535.73 
-#> Deviance: 13831.69 
+#> Gamma: 0.006954 (estimated) 
+#> Log-likelihood: -5738.09 
+#> AIC: 11516.19  BIC: 11620.81 
+#> Deviance: 8873.39 
 #> 
 #> Coefficients:
-#>                     Estimate Std. Error z value  Pr(>|z|)    
-#> alpha:(Intercept)  0.7887405  0.0902787  8.7367 < 2.2e-16 ***
-#> alpha:year2020     0.0014903  0.0958996  0.0155 0.9876014    
-#> alpha:year2021    -0.0171693  0.0871702 -0.1970 0.8438568    
-#> alpha:year2022    -0.0933541  0.1092056 -0.8548 0.3926354    
-#> alpha:year2023    -0.1134401  0.1772828 -0.6399 0.5222492    
-#> alpha:year2024    -0.1690320  0.1611266 -1.0491 0.2941488    
-#> alpha:sexMale      0.0419908  0.0458827  0.9152 0.3600994    
-#> beta:(Intercept)   0.6748933  0.1945975  3.4682 0.0005241 ***
-#> beta:year2020      0.1895758  0.2273090  0.8340 0.4042807    
-#> beta:year2021      0.2339935  0.2123637  1.1019 0.2705257    
-#> beta:year2022      0.0896797  0.2485925  0.3607 0.7182865    
-#> beta:year2023     -0.0516332  0.3783151 -0.1365 0.8914403    
-#> beta:year2024     -0.3222270  0.3182389 -1.0125 0.3112839    
+#>                       Estimate  Std. Error z value  Pr(>|z|)    
+#> alpha:(Intercept)   8.2203e-01  1.4949e-01  5.4989 3.822e-08 ***
+#> alpha:year2020     -1.4497e-02  1.7895e-01 -0.0810   0.93543    
+#> alpha:year2021     -1.7807e-02  1.5228e-01 -0.1169   0.90691    
+#> alpha:year2022     -1.4721e-02  1.4893e-01 -0.0988   0.92126    
+#> alpha:year2023      3.3403e-02  1.5129e-01  0.2208   0.82525    
+#> alpha:year2024      1.1142e-02  1.6500e-01  0.0675   0.94616    
+#> alpha:ukr           7.5122e-03  7.5863e-02  0.0990   0.92112    
+#> alpha:sexMale       1.0979e-02  3.0053e-02  0.3653   0.71487    
+#> alpha:year2020:ukr  9.0019e-03  8.7711e-02  0.1026   0.91826    
+#> alpha:year2021:ukr  6.0173e-05  7.7873e-02  0.0008   0.99938    
+#> alpha:year2022:ukr -7.6404e-02  8.5391e-02 -0.8947   0.37092    
+#> alpha:year2023:ukr -1.5379e-01  8.7395e-02 -1.7597   0.07846 .  
+#> alpha:year2024:ukr -1.7573e-01  1.0221e-01 -1.7192   0.08558 .  
+#> beta:(Intercept)    7.1261e-01  2.9983e-01  2.3767   0.01747 *  
+#> beta:year2020       1.5887e-01  3.5610e-01  0.4461   0.65550    
+#> beta:year2021       2.2779e-01  3.0389e-01  0.7496   0.45350    
+#> beta:year2022       2.0279e-01  2.9758e-01  0.6815   0.49558    
+#> beta:year2023       1.8773e-01  2.9954e-01  0.6267   0.53083    
+#> beta:year2024      -1.1125e-02  3.2368e-01 -0.0344   0.97258    
 #> ---
 #> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 #> 
 #> -----------------------
 #> Population size estimation results:
 #>   (BC = bias-corrected using model-based variance)
-#>                       Observed Estimate Estimate (BC) CI lower CI upper
-#> year=2019, sex=Female    1,535   21,081        21,050    3,403  130,201
-#> year=2019, sex=Male      5,069   59,923        59,840   10,229  350,054
-#> year=2020, sex=Female      698   23,651        23,586    6,023   92,366
-#> year=2020, sex=Male      2,700   66,767        66,576   22,922  193,364
-#> year=2021, sex=Female      483   22,780        22,715    7,267   71,000
-#> year=2021, sex=Male      2,622   65,115        64,921   32,333  130,353
-#> year=2022, sex=Female      317   14,137        14,101    2,478   80,247
-#> year=2022, sex=Male      2,632   32,956        32,878    7,367  146,727
-#> year=2023, sex=Female      523   12,072        12,052      533  272,295
-#> year=2023, sex=Male      3,839   28,853        28,809    1,219  680,842
-#> year=2024, sex=Female      956    7,107         7,100      577   87,433
-#> year=2024, sex=Male      5,731   17,461        17,447    1,177  258,640
+#>                              Observed Estimate Estimate (BC) CI lower CI upper
+#> year=2019, ukr=0, sex=Female      426    9,754         9,735    1,137   83,323
+#> year=2019, ukr=1, sex=Female    1,109   21,953        21,893    1,723  278,181
+#> year=2019, ukr=0, sex=Male      2,177   24,431        24,382    2,297  258,819
+#> year=2019, ukr=1, sex=Male      2,892   40,670        40,572    2,545  646,714
+#> year=2020, ukr=0, sex=Female      193    9,703         9,671    1,821   51,370
+#> year=2020, ukr=1, sex=Female      505   22,809        22,702    2,857  180,413
+#> year=2020, ukr=0, sex=Male      1,158   24,242        24,149    4,242  137,490
+#> year=2020, ukr=1, sex=Male      1,542   41,068        40,875    5,500  303,783
+#> year=2021, ukr=0, sex=Female      144   11,648        11,614    4,350   31,008
+#> year=2021, ukr=1, sex=Female      339   22,486        22,387    5,936   84,433
+#> year=2021, ukr=0, sex=Male      1,337   29,892        29,789   12,296   72,168
+#> year=2021, ukr=1, sex=Male      1,285   40,132        39,953   13,980  114,183
+#> year=2022, ukr=0, sex=Female      211   14,366        14,339    7,110   28,918
+#> year=2022, ukr=1, sex=Female      106   14,062        14,011    2,983   65,817
+#> year=2022, ukr=0, sex=Male      1,903   38,823        38,735   21,717   69,088
+#> year=2022, ukr=1, sex=Male        729   16,379        16,323    3,975   67,040
+#> year=2023, ukr=0, sex=Female      444   24,162        24,128    9,999   58,218
+#> year=2023, ukr=1, sex=Female       79    9,632         9,605    2,051   44,990
+#> year=2023, ukr=0, sex=Male      3,283   70,186        70,070   30,299  162,047
+#> year=2023, ukr=1, sex=Male        556   11,049        11,020    2,642   45,963
+#> year=2024, ukr=0, sex=Female      887   22,442        22,416    5,744   87,473
+#> year=2024, ukr=1, sex=Female       69    5,085         5,075      641   40,157
+#> year=2024, ukr=0, sex=Male      5,041   62,216        62,137   14,156  272,745
+#> year=2024, ukr=1, sex=Male        690    6,192         6,179      759   50,296
 ```
 
 ### Population size estimates
@@ -101,13 +126,13 @@ summary(fit)
 ``` r
 ## By year
 popsize(fit, by = ~ year)
-#>   group observed estimate estimate_bc     lower    upper share_pct
-#> 1  2019     6604 81004.56    80890.35 14302.040 457504.6 21.781061
-#> 2  2020     3398 90418.18    90161.89 30764.863 264235.4 24.312259
-#> 3  2021     3105 87895.64    87636.36 42384.688 181200.6 23.633982
-#> 4  2022     2949 47092.35    46978.74 10365.446 212919.1 12.662513
-#> 5  2023     4362 40925.35    40860.84  1802.407 926321.7 11.004288
-#> 6  2024     6687 24567.57    24547.14  1798.948 334952.4  6.605897
+#>   group observed  estimate estimate_bc     lower     upper share_pct
+#> 1  2019     6604  96808.06    96581.24  8228.355 1133633.1  16.31464
+#> 2  2020     3398  97821.08    97397.04 15271.644  621163.2  16.48536
+#> 3  2021     3105 104157.85   103743.46 38794.612  277427.9  17.55327
+#> 4  2022     2949  83630.32    83407.98 37693.079  184566.8  14.09385
+#> 5  2023     4362 115029.17   114822.64 49241.000  267749.2  19.38537
+#> 6  2024     6687  95935.01    95806.63 23177.438  396027.8  16.16751
 ```
 
 ### Bootstrap confidence intervals
@@ -133,12 +158,16 @@ head(sort(abs(dp), decreasing = TRUE))
 
 ## Features
 
-- **Estimation methods**: OLS, NLS, Poisson PML, Negative Binomial MLE
+- **Estimation methods**: OLS, NLS, Poisson (MLE, GMM, EL), Negative
+  Binomial (MLE, GMM, EL), iOLS
 - **Covariate-varying parameters**: $\alpha$ and $\beta$ via formula
   interface
+- **Detection links**: `power`, `cloglog`, and `logit`
 - **Gamma offset**: estimated, fixed, or excluded
-- **Constrained estimation**: $\alpha \in (0,1)$ via logit, $\beta > 0$
-  via log link
+- **Constrained estimation**: for Poisson/NB fits with
+  `constrained = TRUE`, $\alpha_i = \mathrm{logit}^{-1}(X_{\alpha,i} a)$
+  and $\beta_i = \exp(X_{\beta,i} b)$, so fitted $\alpha_i \in (0,1)$
+  and fitted $\beta_i > 0$
 - **Robust inference**: HC0–HC5, cluster-robust via `sandwich`,
   fractional weighted bootstrap via `fwb`
 - **Population size**: bias-corrected point estimates with delta-method
@@ -150,7 +179,7 @@ head(sort(abs(dp), decreasing = TRUE))
 
 ## Funding
 
-This work is supported by the National Science Centre, OPUS 22 grant no.
+This work is supported by the National Science Centre, OPUS 20 grant no.
 2021/43/B/HS4/00469.
 
 ## References

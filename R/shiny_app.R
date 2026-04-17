@@ -145,8 +145,11 @@ run_app <- function(...) {
           shiny::radioButtons("gamma_opt", "Gamma:",
             choices = c("Estimate" = "estimate", "Fixed" = "fixed", "None" = "none")),
           shiny::uiOutput("gamma_fixed_ui"),
-          shiny::checkboxInput("constrained", "Constrained (alpha in (0,1), beta > 0)",
-                               value = FALSE),
+          shiny::checkboxInput(
+            "constrained",
+            "Constrained (alpha via inverse-logit, beta via exp)",
+            value = FALSE
+          ),
           shiny::selectInput("vcov_type", "Robust SE type:",
             choices = c("HC3", "HC0", "HC1", "HC2", "HC4", "HC5"),
             selected = "HC3"),
@@ -337,12 +340,13 @@ run_app <- function(...) {
   output$link_rho_ui <- shiny::renderUI({
     method_val <- if (is.null(input$method)) "poisson" else input$method
     choices <- if (method_val %in% c("poisson", "nb", "nls")) {
-      c("power", "cloglog", "logistic")
+      c("power", "cloglog", "logit")
     } else {
       c("power")
     }
-    selected <- if (!is.null(input$link_rho) && input$link_rho %in% choices) {
-      input$link_rho
+    input_link <- if (identical(input$link_rho, "logistic")) "logit" else input$link_rho
+    selected <- if (!is.null(input_link) && input_link %in% choices) {
+      input_link
     } else {
       "power"
     }

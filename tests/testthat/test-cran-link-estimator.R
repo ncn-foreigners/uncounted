@@ -3,7 +3,7 @@
 test_that("bounded link_rho choices keep rho in (0, 1) and preserve xi identity", {
   d <- small_data()
 
-  for (link_name in c("cloglog", "logistic")) {
+  for (link_name in c("cloglog", "logit")) {
     fit <- quick_fit(d, method = "poisson", gamma = 0.005, link_rho = link_name)
 
     expect_true(all(fit$rho_values > 0))
@@ -18,10 +18,19 @@ test_that("bounded link_rho choices keep rho in (0, 1) and preserve xi identity"
 
 test_that("predict works with non-power detection links", {
   d <- small_data()
-  fit <- quick_fit(d, method = "poisson", gamma = 0.005, link_rho = "logistic")
+  fit <- quick_fit(d, method = "poisson", gamma = 0.005, link_rho = "logit")
 
   expect_equal(as.numeric(predict(fit)), as.numeric(fit$fitted.values))
   expect_true(all(is.finite(predict(fit, type = "link"))))
+})
+
+test_that("legacy logistic alias is accepted and normalized to logit", {
+  d <- small_data()
+  fit <- quick_fit(d, method = "poisson", gamma = 0.005, link_rho = "logistic")
+
+  expect_identical(fit$link_rho, "logit")
+  expect_true(all(fit$rho_values > 0))
+  expect_true(all(fit$rho_values < 1))
 })
 
 test_that("Poisson GMM fit returns a usable uncounted object", {
@@ -137,14 +146,14 @@ test_that("compare_models warns for mixed estimators and keeps likelihood column
 test_that("update and loo preserve estimator metadata", {
   d <- small_data()
   fit <- quick_fit(d, method = "poisson", gamma = 0.005,
-                   estimator = "gmm", link_rho = "logistic",
+                   estimator = "gmm", link_rho = "logit",
                    countries = ~country)
 
   fit_upd <- update(fit, vcov = "HC0")
   loo_res <- loo(fit, by = "obs")
 
   expect_identical(fit_upd$estimator, "gmm")
-  expect_identical(fit_upd$link_rho, "logistic")
+  expect_identical(fit_upd$link_rho, "logit")
   expect_s3_class(loo_res, "uncounted_loo")
   expect_true(sum(loo_res$converged) > 0)
 })
