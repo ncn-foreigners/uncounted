@@ -48,6 +48,9 @@
 #'     \item A character string specifying the HC type: \code{"HC0"} through
 #'       \code{"HC5"}, or \code{"HC4m"}. Default \code{"HC3"}. When \code{cluster}
 #'       is also provided, this type is passed to \code{sandwich::vcovCL()}.
+#'       For count models fitted with \code{estimator = "gmm"} or
+#'       \code{estimator = "el"}, the default robust covariance is
+#'       \code{"HC1"} and HC2+ requests are downgraded to \code{"HC1"}.
 #'     \item A function that takes the fitted \code{uncounted} object and returns
 #'       a variance-covariance matrix. For example,
 #'       \code{sandwich::vcovHC} or
@@ -167,7 +170,10 @@
 #'       constrained).}
 #'     \item{\code{vcov}}{HC-robust variance-covariance matrix.}
 #'     \item{\code{vcov_model}}{Model-based (homoscedastic) variance-covariance
-#'       matrix, used for bias correction.}
+#'       matrix, used for bias correction. For Poisson and NB count models,
+#'       this is the Fisher-style inverse information for the mean-model
+#'       parameters, evaluated at the fitted coefficients even when
+#'       \code{estimator = "gmm"} or \code{estimator = "el"}.}
 #'     \item{\code{rho_values}}{Per-observation fitted detection component
 #'       \eqn{\hat\rho_i}{rho_hat_i}.}
 #'     \item{\code{fitted.values}}{Fitted values \eqn{\hat{m}_i}{m_hat_i}.}

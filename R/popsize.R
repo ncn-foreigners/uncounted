@@ -3,8 +3,9 @@
 #' Computes the estimated total unauthorized population
 #' \eqn{\hat{\xi} = \sum_{i} N_i^{\hat{\alpha}}} for each group
 #' defined by the covariates in alpha. Includes bias correction via
-#' second-order Taylor expansion and confidence intervals via monotone
-#' transformation of the Wald interval on the link scale.
+#' a multiplicative lognormal adjustment for unconstrained models (and a
+#' second-order Taylor approximation for constrained models), plus confidence
+#' intervals via monotone transformation of the Wald interval on the link scale.
 #'
 #' @details
 #' **Point estimate.** For a group \eqn{g} with reference populations
@@ -36,7 +37,13 @@
 #' (the logistic-normal integral has no closed form), and the bias can be
 #' positive or negative depending on \eqn{\alpha}.
 #' Model-based variance is used for bias correction rather than HC-robust
-#' variance. For iOLS/GPML, the model-based variance is
+#' variance. For Poisson and NB count models this means the Fisher-style
+#' inverse information for the mean-model parameters, evaluated at the fitted
+#' coefficients. This remains true when the coefficients were obtained by
+#' \code{estimator = "gmm"} or \code{estimator = "el"}: the robust HC or FWB
+#' covariance is still used for confidence intervals, but the bias correction
+#' uses the same Fisher-style model variance as in the MLE case, evaluated at
+#' the non-MLE estimate. For iOLS/GPML, the model-based variance is
 #' \eqn{(\mathbf{Z}'\mathbf{Z})^{-1}} (Gamma Fisher information, no
 #' dispersion scaling).
 #'
@@ -61,7 +68,7 @@
 #'
 #' @param object An `"uncounted"` object.
 #' @param level Confidence level for intervals (default 0.95).
-#' @param bias_correction Logical; apply Taylor-expansion bias correction?
+#' @param bias_correction Logical; apply analytical bias correction?
 #'   Default TRUE. Uses model-based variance (not HC-robust) to avoid
 #'   overcorrection from inflated leverage-driven standard errors.
 #' @param total Logical; if \code{TRUE} and multiple groups exist, compute a

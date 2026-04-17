@@ -33,6 +33,18 @@ test_that("no BC when bias_correction=FALSE: estimate_bc is NA", {
   expect_true(all(is.na(ps$estimate_bc)))
 })
 
+test_that("unconstrained BC estimate matches the multiplicative lognormal formula", {
+  d <- small_data()
+  fit <- quick_fit(d, method = "poisson", gamma = 0.005, estimator = "gmm")
+  ps <- popsize(fit, bias_correction = TRUE)
+
+  V_alpha <- fit$vcov_model[seq_len(fit$p_alpha), seq_len(fit$p_alpha), drop = FALSE]
+  xVx <- rowSums((fit$X_alpha %*% V_alpha) * fit$X_alpha)
+  est_bc_expected <- sum(d$N^fit$alpha_values * exp(-0.5 * (log(d$N)^2) * xVx))
+
+  expect_equal(ps$estimate_bc, est_bc_expected, tolerance = 1e-10)
+})
+
 test_that("popsize with covariates gives multiple rows", {
   d <- small_data()
   fit <- quick_fit(d, gamma = 0.005, cov_alpha = ~0 + sex)

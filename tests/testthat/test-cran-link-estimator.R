@@ -77,6 +77,30 @@ test_that("vcovFWB works with a Poisson GMM fit", {
   expect_true(all(diag(V_fwb) > 0))
 })
 
+test_that("Poisson GMM vcov_model uses Fisher-style count-model weights", {
+  d <- small_data()
+  fit <- quick_fit(d, method = "poisson", gamma = 0.005, estimator = "gmm")
+
+  V_expected <- uncounted:::.compute_model_vcov(
+    fit$model_matrix_full,
+    fit$bread_weights
+  )
+
+  expect_equal(as.numeric(fit$vcov_model), as.numeric(V_expected), tolerance = 1e-10)
+})
+
+test_that("NB EL vcov_model uses Fisher-style mean-model weights", {
+  d <- small_data()
+  fit <- quick_fit(d, method = "nb", gamma = 0.005, estimator = "el")
+
+  V_expected <- uncounted:::.compute_model_vcov(
+    fit$model_matrix_full,
+    fit$bread_weights
+  )
+
+  expect_equal(as.numeric(fit$vcov_model), as.numeric(V_expected), tolerance = 1e-10)
+})
+
 test_that("plug-in xi does not depend on the covariance choice for GMM fits", {
   d <- small_data()
   fit_hc0 <- quick_fit(d, method = "poisson", gamma = 0.005,

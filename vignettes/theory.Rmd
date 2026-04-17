@@ -264,7 +264,9 @@ For the Poisson and Negative Binomial count models, the package can also use
 `estimator = "gmm"` or `estimator = "el"`. In those cases the same
 per-observation score equations are treated as moment conditions and fitted
 with `momentfit`. The model for $\mu_i$ is unchanged; only the estimating
-criterion differs.
+criterion differs. For these moment-based count fits the default robust
+covariance is HC1 rather than HC3, because leverage-based HC2/HC3
+adjustments are not available generically in that setting.
 
 ### Negative Binomial ML
 
@@ -375,9 +377,12 @@ are adjusted residuals.  The adjustment depends on the HC variant:
 | HC5     | $\tilde{e}_i = e_i / (1 - h_{ii})^{\min(\delta_i, h_{\max})/2}$ |
 
 Here $h_{ii}$ are the hat-matrix diagonal elements (leverages) and
-$\delta_i$ is a data-dependent exponent.  HC3 (the default) is
-recommended for moderate sample sizes as it provides a good balance
-between finite-sample bias correction and stability.
+$\delta_i$ is a data-dependent exponent. HC3 is the default for OLS,
+NLS, Poisson MLE, NB MLE, and iOLS, and is recommended for moderate
+sample sizes as it provides a good balance between finite-sample bias
+correction and stability. For the moment-based count estimators
+(`estimator = "gmm"` and `estimator = "el"`), the default robust
+covariance is HC1.
 
 ### Delta-method confidence intervals for population size
 
@@ -416,9 +421,34 @@ approximation to ensure positivity.
 ### Bias correction
 
 Because $\xi(\alpha) = \sum_i N_i^\alpha$ is convex in $\alpha$ for
-$N_i > 1$, Jensen's inequality implies $E[\hat\xi] \geq \xi$.  A
-second-order Taylor expansion of $h(\alpha) = \sum_i N_i^\alpha$ around
-the true $\alpha$ gives the approximate bias:
+$N_i > 1$, Jensen's inequality implies $E[\hat\xi] \geq \xi$. Writing
+$N_i^{\hat\alpha_i} = \exp(\hat\alpha_i \log N_i)$ and treating
+$\hat{\boldsymbol{\alpha}}$ as approximately normal gives
+
+$$
+E[N_i^{\hat\alpha_i}] \approx N_i^{\alpha_i}
+  \exp\!\left\{\frac{1}{2}(\log N_i)^2
+  \mathbf{x}_i^\top \mathbf{V}_{\mathrm{model}} \mathbf{x}_i\right\}.
+$$
+
+Inverting this yields the multiplicative lognormal correction used by
+the package for unconstrained models:
+
+$$
+\hat\xi^{BC} =
+  \sum_{i=1}^{n}
+  N_i^{\hat\alpha_i}
+  \exp\!\left(
+    -\frac{1}{2}(\log N_i)^2
+    \mathbf{x}_i^\top \mathbf{V}_{\mathrm{model}} \mathbf{x}_i
+  \right).
+$$
+
+This correction is strictly positive and exact under the Gaussian
+approximation for the linear predictor. For constrained fits, where
+$\alpha_i = \operatorname{logit}^{-1}(\eta_i)$, the corresponding
+logistic-normal integral has no closed form, so the package falls back
+to a second-order Taylor approximation on the link scale:
 
 $$
 \mathrm{Bias}(\hat\xi) \;\approx\;
@@ -427,16 +457,17 @@ $$
 $$
 
 where $\mathbf{V}_{\mathrm{model}}$ is the model-based (homoscedastic)
-variance--covariance matrix.  The bias-corrected estimator is
-
-$$
-\hat\xi^{BC} = \hat\xi - \widehat{\mathrm{Bias}}.
-$$
+variance--covariance matrix.
 
 Model-based variance is used rather than the HC-robust variance, because
 the latter can be inflated by high-leverage observations in skewed data,
-leading to overcorrection.  Bias correction is also applied to the CI
-bounds, evaluated at their respective $\alpha$ values.
+leading to overcorrection. For Poisson and NB fits, `vcov_model` is the
+Fisher-style inverse information for the mean-model parameters. This
+remains true when the coefficients are obtained by `estimator = "gmm"`
+or `estimator = "el"`: the package evaluates the same Fisher-style model
+variance at the non-MLE estimate and reserves the robust HC or FWB
+covariance for interval estimation. Bias correction is also applied to
+the CI bounds, evaluated at their respective $\alpha$ values.
 
 ### Fractional weighted bootstrap
 

@@ -170,13 +170,23 @@
 }
 
 #' @noRd
-.moment_model_vcov_par <- function(fit, estimator) {
-  vcov_method <- methods::selectMethod("vcov", class(fit))
-  if (identical(estimator, "gmm")) {
-    return(tryCatch(vcov_method(fit, sandwich = FALSE),
-                    error = function(e) vcov_method(fit)))
+.moment_model_vcov_count <- function(Z, bread_weights) {
+  .compute_model_vcov(Z, bread_weights)
+}
+
+#' @noRd
+.embed_mean_model_vcov <- function(mean_vcov, full_vcov, mean_idx) {
+  if (is.null(full_vcov)) {
+    return(mean_vcov)
   }
-  .moment_vcov_par(fit, estimator)
+  out <- matrix(0, nrow = nrow(full_vcov), ncol = ncol(full_vcov),
+                dimnames = dimnames(full_vcov))
+  out[mean_idx, mean_idx] <- mean_vcov
+  other_idx <- setdiff(seq_len(nrow(full_vcov)), mean_idx)
+  if (length(other_idx) > 0) {
+    out[other_idx, other_idx] <- full_vcov[other_idx, other_idx, drop = FALSE]
+  }
+  out
 }
 
 #' @noRd
@@ -264,7 +274,8 @@
                    if (!is.null(jac$gamma)) colnames(X_gamma))
 
   vcov_full_backend <- .moment_vcov_par(fit, estimator)
-  vcov_model_backend <- .moment_model_vcov_par(fit, estimator)
+  bread_weights <- weights * state$mu
+  vcov_model_backend <- .moment_model_vcov_count(Z, bread_weights)
   coef_idx <- seq_len(ncol(Z))
 
   list(
@@ -284,7 +295,7 @@
     backend_vcov_full = vcov_full_backend,
     backend_vcov_model_full = vcov_model_backend,
     model_matrix_full = Z,
-    bread_weights = weights * state$mu,
+    bread_weights = bread_weights,
     score_residuals = weights * (m - state$mu),
     n_obs = n_obs,
     df.residual = n_obs - length(theta0),
@@ -391,9 +402,15 @@
   }
 
   vcov_full_backend <- .moment_vcov_par(fit, estimator)
-  vcov_model_backend <- .moment_model_vcov_par(fit, estimator)
+  bread_weights <- weights * state$mu * state$theta / (state$theta + state$mu)
   p_ab <- p_alpha + p_beta
   coef_idx <- c(seq_len(p_ab), if (estimate_gamma) p_ab + 1L + seq_len(p_gamma))
+  vcov_model_mean <- .moment_model_vcov_count(Z, bread_weights)
+  vcov_model_backend <- .embed_mean_model_vcov(
+    mean_vcov = vcov_model_mean,
+    full_vcov = vcov_full_backend,
+    mean_idx = coef_idx
+  )
 
   theta_idx <- p_ab + 1L
   theta_se <- state$theta * sqrt(max(0, vcov_full_backend[theta_idx, theta_idx]))
@@ -410,12 +427,12 @@
     residuals = m - state$mu,
     log_mu = state$log_mu,
     vcov = vcov_full_backend[coef_idx, coef_idx, drop = FALSE],
-    vcov_model = vcov_model_backend[coef_idx, coef_idx, drop = FALSE],
+    vcov_model = vcov_model_mean,
     vcov_full = vcov_full_backend[coef_idx, coef_idx, drop = FALSE],
     backend_vcov_full = vcov_full_backend,
     backend_vcov_model_full = vcov_model_backend,
     model_matrix_full = Z,
-    bread_weights = weights * state$mu * state$theta / (state$theta + state$mu),
+    bread_weights = bread_weights,
     score_residuals = nb_score_factor,
     score_full = score_full,
     theta_se = theta_se,
