@@ -4,7 +4,7 @@
 \alias{vcovHC.uncounted}
 \title{Heteroskedasticity-consistent covariance for uncounted models}
 \usage{
-vcovHC.uncounted(
+\method{vcovHC}{uncounted}(
   x,
   type = c("HC3", "const", "HC", "HC0", "HC1", "HC2", "HC4", "HC4m", "HC5"),
   omega = NULL,

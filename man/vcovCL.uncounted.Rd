@@ -4,14 +4,7 @@
 \alias{vcovCL.uncounted}
 \title{Cluster-robust covariance for uncounted models}
 \usage{
-vcovCL.uncounted(
-  x,
-  cluster = NULL,
-  type = NULL,
-  sandwich = TRUE,
-  fix = FALSE,
-  ...
-)
+\method{vcovCL}{uncounted}(x, cluster = NULL, type = NULL, sandwich = TRUE, fix = FALSE, ...)
 }
 \arguments{
 \item{x}{An uncounted object}

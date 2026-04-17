@@ -8,8 +8,9 @@
 #   residuals.uncounted   -> diagnostics.R (includes type = "working")
 #   vcov.uncounted        -> estimate_hidden_pop.R
 
-#' @importFrom sandwich bread estfun
-#' @importFrom stats nobs residuals hatvalues model.matrix weights dfbeta
+#' @importFrom sandwich bread estfun vcovCL vcovHC
+#' @importFrom methods selectMethod
+#' @importFrom stats coef nobs residuals hatvalues model.matrix weights dfbeta
 #'   cor deviance dnbinom dpois lm lm.fit lm.wfit logLik median optim
 #'   optimize pchisq pnbinom pnorm ppois printCoefmat pt qnorm qqline
 #'   qqnorm quantile sd AIC BIC vcov terms model.frame .getXlevels qt
@@ -89,11 +90,13 @@ estfun.uncounted <- function(x, ...) {
 }
 
 #' Heteroskedasticity-consistent covariance for uncounted models
+#'
+#' @method vcovHC uncounted
 #' @param x An uncounted object
 #' @param type HC type
 #' @param omega Optional omega function passed to \code{sandwich::meatHC()}
 #' @param ... Ignored
-#' @exportS3Method sandwich::vcovHC
+#' @export
 vcovHC.uncounted <- function(x,
                              type = c("HC3", "const", "HC", "HC0", "HC1",
                                       "HC2", "HC4", "HC4m", "HC5"),
@@ -107,13 +110,15 @@ vcovHC.uncounted <- function(x,
 }
 
 #' Cluster-robust covariance for uncounted models
+#'
+#' @method vcovCL uncounted
 #' @param x An uncounted object
 #' @param cluster Clustering variable
 #' @param type HC type
 #' @param sandwich Return the full sandwich when \code{TRUE}
 #' @param fix Passed to \code{sandwich::meatCL()}
 #' @param ... Ignored
-#' @exportS3Method sandwich::vcovCL
+#' @export
 vcovCL.uncounted <- function(x, cluster = NULL, type = NULL,
                              sandwich = TRUE, fix = FALSE, ...) {
   if (is.null(type)) {

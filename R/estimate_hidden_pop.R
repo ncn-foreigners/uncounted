@@ -717,7 +717,7 @@ print.uncounted <- function(x, ...) {
   if (!is.null(x$theta)) {
     cat("Theta (NB dispersion):", round(x$theta, 4), "\n")
   }
-  if (is.finite(x$loglik)) {
+  if (!is.null(x$loglik) && length(x$loglik) == 1 && is.finite(x$loglik)) {
     cat("Log-likelihood:", round(x$loglik, 2), "\n")
   }
   if (isTRUE(x$constrained)) {
@@ -810,10 +810,12 @@ summary.uncounted <- function(object, total = FALSE, ...) {
   if (!is.null(object$theta)) {
     cat("Theta (NB dispersion):", round(object$theta, 4), "\n")
   }
-  if (is.finite(object$loglik)) {
+  if (!is.null(object$loglik) && length(object$loglik) == 1 &&
+      is.finite(object$loglik)) {
     cat("Log-likelihood:", round(object$loglik, 2), "\n")
   }
-  if (is.finite(object$loglik)) {
+  if (!is.null(object$loglik) && length(object$loglik) == 1 &&
+      is.finite(object$loglik)) {
     n_par <- .count_params(object)
     aic <- -2 * object$loglik + 2 * n_par
     bic <- -2 * object$loglik + log(object$n_obs) * n_par
