@@ -98,14 +98,14 @@ df$m <- rpois(30, lambda = df$N^0.5 * (df$n / df$N)^0.8)
 
 fit_po <- estimate_hidden_pop(data = df, observed = ~m, auxiliary = ~n,
                               reference_pop = ~N, method = "poisson")
-#> Warning: Some alpha values < 0 (min = -1.279). Consider using constrained = TRUE.
+#> Warning: Some alpha values < 0 (min = -1.28). Consider using constrained = TRUE.
 fit_nb <- estimate_hidden_pop(data = df, observed = ~m, auxiliary = ~n,
                               reference_pop = ~N, method = "nb")
 #> Warning: Some alpha values < 0 (min = -1.244). Consider using constrained = TRUE.
 
 comp <- compare_models(Poisson = fit_po, NB = fit_nb, sort_by = "AIC")
-#> Warning: Some alpha values < 0 (min = -1.279). Consider using constrained = TRUE.
-#> Warning: Some alpha values < 0 (min = -1.276). Consider using constrained = TRUE.
+#> Warning: Some alpha values < 0 (min = -1.28). Consider using constrained = TRUE.
+#> Warning: Some alpha values < 0 (min = -1.28). Consider using constrained = TRUE.
 comp
 #> Model comparison
 #> ------------------------------------------------------------ 

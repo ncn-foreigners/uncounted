@@ -394,7 +394,7 @@ summary(fit_pois)
 #> Coefficients:
 #>         Estimate Std. Error z value Pr(>|z|)    
 #> alpha   0.559800   0.066707  8.3919   <2e-16 ***
-#> beta    3.113112 221.225019  0.0141   0.9888    
+#> beta    3.113112 221.225021  0.0141   0.9888    
 #> ---
 #> Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
 #> 
@@ -447,8 +447,8 @@ summary(fit_constr)
 #> 
 #> Coefficients (link scale: logit for alpha, log for beta):
 #>        Estimate Std. Error z value Pr(>|z|)
-#> alpha  0.229433   0.263415  0.8710   0.3838
-#> beta  -0.025825   0.230377 -0.1121   0.9107
+#> alpha  0.229427   0.263416  0.8710   0.3838
+#> beta  -0.025829   0.230379 -0.1121   0.9107
 #> 
 #> Response-scale fitted parameters (alpha_values in (0,1), beta_values > 0):
 #>   Alpha (response scale):

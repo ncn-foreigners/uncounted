@@ -955,9 +955,9 @@ print(comp_loo)
 #> Top 15 most influential (by max |%change|):
 #>  label             dxi_Poisson pct_Poisson dxi_NB     pct_NB max_abs_pct
 #>  Ukraine            70779.94    24.36      -705761.52 -56.03 56.03      
-#>  Georgia           -93728.57   -32.25      -140401.95 -11.15 32.25      
+#>  Georgia           -93728.58   -32.25      -140401.95 -11.15 32.25      
 #>  unknown/stateless  -2348.09    -0.81       229311.58  18.21 18.21      
-#>  Belarus           -39385.05   -13.55        54858.16   4.36 13.55      
+#>  Belarus           -39385.05   -13.55        54858.15   4.36 13.55      
 #>  Mauritius            604.17     0.21       144755.46  11.49 11.49      
 #>  Burkina Faso         485.49     0.17       136859.62  10.87 10.87      
 #>  Colombia           13949.58     4.80      -136731.30 -10.86 10.86      
