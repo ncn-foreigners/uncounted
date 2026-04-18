@@ -21,9 +21,7 @@ links, optional gamma offsets, and moment-based count estimators via the
 The paper’s theoretical model factors the expected observed count into a
 latent population component and a detection component:
 
-$$
-\mu_i = E(m_i \mid N_i, n_i) = \xi_i \rho_i,
-$$
+$$\mu_i = E(m_i \mid N_i, n_i) = \xi_i \rho_i,$$
 
 where $\xi_i = E(M_i \mid N_i)$ is the theoretical unauthorized
 population size and $\rho_i = E(p_i \mid N_i, n_i)$ is the theoretical
@@ -31,26 +29,20 @@ detection rate.
 
 In the baseline empirical specification implemented by default,
 
-$$
-\xi_i = N_i^{\alpha_i}, \qquad
-\rho_i = \left(\gamma_i + \frac{n_i}{N_i}\right)^{\beta_i},
-$$
+$$\xi_i = N_i^{\alpha_i}, \qquad
+\rho_i = \left(\gamma_i + \frac{n_i}{N_i}\right)^{\beta_i},$$
 
 where $N_i$ is the reference (total registered) population, $n_i$ is an
 auxiliary count (e.g. police records), and $\gamma_i \geq 0$ is a
 baseline detection offset. This gives
 
-$$
-\mu_i = N_i^{\alpha_i}\left(\gamma_i + \frac{n_i}{N_i}\right)^{\beta_i}.
-$$
+$$\mu_i = N_i^{\alpha_i}\left(\gamma_i + \frac{n_i}{N_i}\right)^{\beta_i}.$$
 
 The package also supports bounded alternatives for the detection
 component by writing
 
-$$
-\eta_i = \beta_i \log\!\left(\gamma_i + \frac{n_i}{N_i}\right), \qquad
-\rho_i = h(\eta_i),
-$$
+$$\eta_i = \beta_i \log\left(\gamma_i + \frac{n_i}{N_i}\right), \qquad
+\rho_i = h(\eta_i),$$
 
 with `link_rho = "power"` (the paper’s baseline specification),
 `"cloglog"`, `"logit"`, or `"probit"`. On the log scale, the mean
