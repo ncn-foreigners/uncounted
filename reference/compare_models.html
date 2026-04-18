@@ -140,14 +140,14 @@ these families.</p>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="va">fit_po</span> <span class="op">&lt;-</span> <span class="fu"><a href="estimate_hidden_pop.html">estimate_hidden_pop</a></span><span class="op">(</span>data <span class="op">=</span> <span class="va">df</span>, observed <span class="op">=</span> <span class="op">~</span><span class="va">m</span>, auxiliary <span class="op">=</span> <span class="op">~</span><span class="va">n</span>,</span></span>
 <span class="r-in"><span>                              reference_pop <span class="op">=</span> <span class="op">~</span><span class="va">N</span>, method <span class="op">=</span> <span class="st">"poisson"</span><span class="op">)</span></span></span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Some alpha values &lt; 0 (min = -1.28). Consider using constrained = TRUE.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Some alpha values &lt; 0 (min = -1.279). Consider using constrained = TRUE.</span>
 <span class="r-in"><span><span class="va">fit_nb</span> <span class="op">&lt;-</span> <span class="fu"><a href="estimate_hidden_pop.html">estimate_hidden_pop</a></span><span class="op">(</span>data <span class="op">=</span> <span class="va">df</span>, observed <span class="op">=</span> <span class="op">~</span><span class="va">m</span>, auxiliary <span class="op">=</span> <span class="op">~</span><span class="va">n</span>,</span></span>
 <span class="r-in"><span>                              reference_pop <span class="op">=</span> <span class="op">~</span><span class="va">N</span>, method <span class="op">=</span> <span class="st">"nb"</span><span class="op">)</span></span></span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Some alpha values &lt; 0 (min = -1.244). Consider using constrained = TRUE.</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="va">comp</span> <span class="op">&lt;-</span> <span class="fu">compare_models</span><span class="op">(</span>Poisson <span class="op">=</span> <span class="va">fit_po</span>, NB <span class="op">=</span> <span class="va">fit_nb</span>, sort_by <span class="op">=</span> <span class="st">"AIC"</span><span class="op">)</span></span></span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Some alpha values &lt; 0 (min = -1.28). Consider using constrained = TRUE.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Some alpha values &lt; 0 (min = -1.28). Consider using constrained = TRUE.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Some alpha values &lt; 0 (min = -1.279). Consider using constrained = TRUE.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Some alpha values &lt; 0 (min = -1.276). Consider using constrained = TRUE.</span>
 <span class="r-in"><span><span class="va">comp</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Model comparison</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ------------------------------------------------------------ </span>

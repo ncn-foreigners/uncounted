@@ -32,7 +32,7 @@ $$\mu_{i} = N_{i}^{\alpha_{i}}\left( \gamma_{i} + \frac{n_{i}}{N_{i}} \right)^{\
 The package also supports bounded alternatives for the detection
 component by writing
 
-$$\eta_{i} = \beta_{i}\log\!\left( \gamma_{i} + \frac{n_{i}}{N_{i}} \right),\qquad\rho_{i} = h\left( \eta_{i} \right),$$
+$$\eta_{i} = \beta_{i}\log\left( \gamma_{i} + \frac{n_{i}}{N_{i}} \right),\qquad\rho_{i} = h\left( \eta_{i} \right),$$
 
 with `link_rho = "power"` (the paper’s baseline specification),
 `"cloglog"`, `"logit"`, or `"probit"`. On the log scale, the mean
