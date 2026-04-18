@@ -21,7 +21,9 @@ links, optional gamma offsets, and moment-based count estimators via the
 The paper’s theoretical model factors the expected observed count into a
 latent population component and a detection component:
 
-$$\mu_i = E(m_i \mid N_i, n_i) = \xi_i \rho_i,$$
+$$
+\mu_i = E(m_i \mid N_i, n_i) = \xi_i \rho_i,
+$$
 
 where $\xi_i = E(M_i \mid N_i)$ is the theoretical unauthorized
 population size and $\rho_i = E(p_i \mid N_i, n_i)$ is the theoretical
@@ -29,20 +31,26 @@ detection rate.
 
 In the baseline empirical specification implemented by default,
 
-$$\xi_i = N_i^{\alpha_i}, \qquad
-\rho_i = \left(\gamma_i + \frac{n_i}{N_i}\right)^{\beta_i},$$
+$$
+\xi_i = N_i^{\alpha_i}, \qquad
+\rho_i = \left(\gamma_i + \frac{n_i}{N_i}\right)^{\beta_i},
+$$
 
 where $N_i$ is the reference (total registered) population, $n_i$ is an
 auxiliary count (e.g. police records), and $\gamma_i \geq 0$ is a
 baseline detection offset. This gives
 
-$$\mu_i = N_i^{\alpha_i}\left(\gamma_i + \frac{n_i}{N_i}\right)^{\beta_i}.$$
+$$
+\mu_i = N_i^{\alpha_i}\left(\gamma_i + \frac{n_i}{N_i}\right)^{\beta_i}.
+$$
 
 The package also supports bounded alternatives for the detection
 component by writing
 
-$$\eta_i = \beta_i \log\left(\gamma_i + \frac{n_i}{N_i}\right), \qquad
-\rho_i = h(\eta_i),$$
+$$
+\eta_i = \beta_i \log\left(\gamma_i + \frac{n_i}{N_i}\right), \qquad
+\rho_i = h(\eta_i),
+$$
 
 with `link_rho = "power"` (the paper’s baseline specification),
 `"cloglog"`, `"logit"`, or `"probit"`. On the log scale, the mean
@@ -79,7 +87,7 @@ fit <- estimate_hidden_pop(
 
 summary(fit)
 #> Unauthorized population estimation
-#> Method: POISSON | vcov: HC3 
+#> Method: POISSON | estimator: MLE | link_rho: power | vcov: HC3 
 #> N obs: 1382 
 #> Gamma: 0.006954 (estimated) 
 #> Log-likelihood: -5738.09 
@@ -164,6 +172,44 @@ boot <- bootstrap_popsize(fit, R = 499,
 boot
 ```
 
+### Dependence and threshold diagnostics
+
+``` r
+## Identification bounds for residual dependence between xi and detection
+bounds <- dependence_bounds(fit, Gamma = c(1, 1.1, 1.25, 1.5))
+bounds
+
+## Moving-xi profile under a parametric dependence offset
+prof_dep <- profile_dependence(
+  fit,
+  delta_grid = seq(-0.5, 0.5, length.out = 9),
+  plot = FALSE
+)
+head(prof_dep)
+
+## Smallest dependence strength needed to cross a target
+robustness_dependence(prof_dep, threshold = 500000)
+
+## Bootstrap tail area for threshold questions
+boot_total <- bootstrap_popsize(
+  fit,
+  R = 199,
+  cluster = ~ country_code,
+  total = TRUE,
+  verbose = FALSE
+)
+exceedance_popsize(boot_total, threshold = 500000)
+
+## Omitted-frailty sensitivity for grouped Xi
+frailty_sensitivity(
+  fit,
+  by = ~ year,
+  r2_d = c(0, 0.05, 0.10),
+  r2_y = c(0, 0.05, 0.10),
+  plot = FALSE
+)
+```
+
 ### Diagnostics
 
 ``` r
@@ -192,7 +238,8 @@ head(sort(abs(dp), decreasing = TRUE))
 - **Population size**: bias-corrected point estimates with delta-method
   or bootstrap CIs
 - **Diagnostics**: `dfbeta()`, `dfpopsize()`, `loo()`, `rootogram()`,
-  `profile_gamma()`, residual plots
+  `profile_gamma()`, `dependence_bounds()`, `profile_dependence()`,
+  `robustness_dependence()`, `exceedance_popsize()`, residual plots
 - **Model comparison**: AIC/BIC, pseudo-$R^2$, likelihood ratio tests
 - **Interactive app**: `run_app()` launches a Shiny dashboard
 

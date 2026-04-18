@@ -398,6 +398,140 @@ bootstrap_popsize <- function(object, R = 199, cluster = NULL,
 }
 
 
+#' Bootstrap Exceedance Probability for Population Size
+#'
+#' Computes the empirical bootstrap tail area for a threshold question such as
+#' \dQuote{What fraction of bootstrap replications imply \eqn{\xi} above a
+#' given number?}
+#'
+#' @param object An \code{"uncounted_boot"} object returned by
+#'   \code{\link{bootstrap_popsize}}.
+#' @param threshold A single finite numeric threshold.
+#' @param group Optional group label. When \code{NULL} (default), the helper
+#'   uses the total bootstrap distribution if available; otherwise it uses the
+#'   only group when the bootstrap object contains a single group.
+#' @param direction Which tail area to compute: \code{"above"} for
+#'   \code{P^*(\xi > c)} or \code{"below"} for \code{P^*(\xi < c)}.
+#'
+#' @details
+#' The reported value is an empirical bootstrap exceedance probability, i.e. a
+#' sample proportion over finite bootstrap draws. It is useful for threshold
+#' questions, but it is not a Bayesian posterior probability.
+#'
+#' For multi-group bootstrap objects with \code{total = TRUE},
+#' \code{exceedance_popsize()} reconstructs the total bootstrap distribution by
+#' summing the per-replicate group estimates in \code{object$t}. This preserves
+#' the within-replicate dependence across groups.
+#'
+#' @return An object of class \code{"uncounted_popsize_exceedance"} with
+#'   components \code{group}, \code{threshold}, \code{direction},
+#'   \code{n_boot}, \code{n_finite}, \code{estimate}, \code{count}, and
+#'   \code{distribution_summary}.
+#'
+#' @examples
+#' \donttest{
+#' set.seed(42)
+#' n_obs <- 15
+#' sim_data <- data.frame(
+#'   country = rep(paste0("C", 1:5), each = 3),
+#'   year    = rep(2018:2020, 5),
+#'   N       = round(exp(rnorm(n_obs, mean = 13, sd = 0.2)))
+#' )
+#' sim_data$n <- rpois(n_obs, lambda = pmax(1, 0.003 * sim_data$N))
+#' sim_data$m <- rpois(n_obs, lambda = sim_data$N^0.6 *
+#'   (0.005 + sim_data$n / sim_data$N)^0.8)
+#'
+#' fit <- estimate_hidden_pop(
+#'   data = sim_data, observed = ~m, auxiliary = ~n,
+#'   reference_pop = ~N, method = "poisson",
+#'   countries = ~country
+#' )
+#'
+#' if (requireNamespace("fwb", quietly = TRUE)) {
+#'   boot <- bootstrap_popsize(
+#'     fit, R = 49, cluster = ~country, seed = 123,
+#'     total = TRUE, verbose = FALSE
+#'   )
+#'   exceedance_popsize(boot, threshold = 2000)
+#' }
+#' }
+#'
+#' @export
+exceedance_popsize <- function(object, threshold, group = NULL,
+                               direction = c("above", "below")) {
+  direction <- match.arg(direction)
+
+  if (!inherits(object, "uncounted_boot")) {
+    stop("'object' must inherit from class 'uncounted_boot'.", call. = FALSE)
+  }
+  if (!is.numeric(threshold) || length(threshold) != 1L || is.na(threshold) ||
+      !is.finite(threshold)) {
+    stop("'threshold' must be a single finite numeric value.", call. = FALSE)
+  }
+  if (!is.null(group) &&
+      (!is.character(group) || length(group) != 1L || is.na(group))) {
+    stop("'group' must be NULL or a single character string.", call. = FALSE)
+  }
+
+  dist_info <- .bootstrap_popsize_distribution(object, group = group)
+  dist <- dist_info$distribution
+  n_boot <- length(dist)
+  finite <- is.finite(dist)
+  n_finite <- sum(finite)
+
+  if (n_finite < 10L) {
+    stop("At least 10 finite bootstrap draws are required for exceedance calculations.",
+         call. = FALSE)
+  }
+
+  dist_finite <- dist[finite]
+  count <- if (identical(direction, "above")) {
+    sum(dist_finite > threshold)
+  } else {
+    sum(dist_finite < threshold)
+  }
+  estimate <- count / n_finite
+
+  distribution_summary <- c(
+    mean = mean(dist_finite),
+    median = stats::median(dist_finite),
+    sd = stats::sd(dist_finite),
+    q025 = as.numeric(stats::quantile(dist_finite, 0.025)),
+    q975 = as.numeric(stats::quantile(dist_finite, 0.975))
+  )
+
+  out <- list(
+    group = dist_info$group,
+    threshold = threshold,
+    direction = direction,
+    n_boot = n_boot,
+    n_finite = n_finite,
+    estimate = estimate,
+    count = count,
+    distribution_summary = distribution_summary
+  )
+  class(out) <- "uncounted_popsize_exceedance"
+  out
+}
+
+#' @rdname exceedance_popsize
+#' @export
+print.uncounted_popsize_exceedance <- function(x, ...) {
+  relation <- if (identical(x$direction, "above")) ">" else "<"
+
+  cat("Bootstrap exceedance probability\n")
+  cat("Group:", x$group, "\n")
+  cat("P*(xi ", relation, " ", format(x$threshold, trim = TRUE), ") = ",
+      format(round(x$estimate, 4), nsmall = 4), " (",
+      x$count, "/", x$n_finite, " finite draws)\n", sep = "")
+  cat("Bootstrap draws:", x$n_boot, "\n")
+  cat("Distribution summary:\n")
+  print(round(x$distribution_summary, 3))
+
+  invisible(x)
+}
+
+
 # ---- S3 methods ----
 
 #' Print Bootstrap Population Size Results
@@ -539,4 +673,29 @@ summary.uncounted_boot <- function(object, ...) {
   )
   cat(sprintf("  Point estimate: %s | CI: bootstrap %s\n", pe_label, ci_label))
   print(tab)
+}
+
+#' Extract a bootstrap population-size distribution for exceedance summaries
+#' @noRd
+.bootstrap_popsize_distribution <- function(object, group = NULL) {
+  valid_groups <- setdiff(object$popsize$group, "Total")
+
+  if (is.null(group)) {
+    if (!is.null(object$total) || "Total" %in% object$popsize$group) {
+      return(list(group = "Total", distribution = rowSums(object$t)))
+    }
+    if (length(valid_groups) == 1L) {
+      return(list(group = valid_groups[1], distribution = object$t[, 1]))
+    }
+    stop("When multiple groups are present, use bootstrap_popsize(..., total = TRUE) ",
+         "or specify 'group'.", call. = FALSE)
+  }
+
+  if (!(group %in% valid_groups)) {
+    stop("'group' must match one of the non-total bootstrap groups.",
+         call. = FALSE)
+  }
+
+  idx <- match(group, valid_groups)
+  list(group = group, distribution = object$t[, idx])
 }

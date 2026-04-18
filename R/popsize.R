@@ -176,29 +176,7 @@ popsize.uncounted <- function(object, by = NULL, level = 0.95,
   alpha_all <- if (is_constr) .inv_logit(alpha_all_eta) else alpha_all_eta
 
   # Define groups
-  if (!is.null(by)) {
-    # Stratified by user-specified variables
-    by_vars <- all.vars(by)
-    if (!all(by_vars %in% names(object$data))) {
-      missing <- setdiff(by_vars, names(object$data))
-      stop("Variables not found in data: ", paste(missing, collapse = ", "))
-    }
-    by_data <- object$data[, by_vars, drop = FALSE]
-    group_factor <- interaction(by_data, drop = TRUE, sep = ", ")
-    group_labels <- levels(group_factor)
-    group_idx <- lapply(group_labels, function(lev) which(group_factor == lev))
-    names(group_idx) <- group_labels
-  } else {
-    # Default: group by unique cov_alpha patterns
-    X_key <- apply(X_alpha, 1, paste, collapse = "|")
-    unique_keys <- unique(X_key)
-    group_idx <- lapply(unique_keys, function(key) which(X_key == key))
-    # Labels from covariate values
-    group_labels <- vapply(group_idx, function(idx) {
-      .make_group_label(idx[1], object$cov_alpha_vars)
-    }, character(1))
-    names(group_idx) <- group_labels
-  }
+  group_idx <- .popsize_group_index(object, by = by)
 
   # Compute per-group estimates
   results <- vector("list", length(group_idx))
@@ -496,4 +474,38 @@ xi <- function(object, ...) {
     paste0(nm, "=", as.character(v))
   }, character(1))
   paste(parts, collapse = ", ")
+}
+
+#' Resolve population-size grouping indices
+#' @noRd
+.popsize_group_index <- function(object, by = NULL) {
+  X_alpha <- object$X_alpha
+
+  if (!is.null(by)) {
+    by_vars <- all.vars(by)
+    if (length(by_vars) == 0L) {
+      out <- list(seq_len(nrow(object$data)))
+      names(out) <- "(all)"
+      return(out)
+    }
+    if (!all(by_vars %in% names(object$data))) {
+      missing <- setdiff(by_vars, names(object$data))
+      stop("Variables not found in data: ", paste(missing, collapse = ", "))
+    }
+    by_data <- object$data[, by_vars, drop = FALSE]
+    group_factor <- interaction(by_data, drop = TRUE, sep = ", ")
+    group_labels <- levels(group_factor)
+    out <- lapply(group_labels, function(lev) which(group_factor == lev))
+    names(out) <- group_labels
+    return(out)
+  }
+
+  X_key <- apply(X_alpha, 1, paste, collapse = "|")
+  unique_keys <- unique(X_key)
+  out <- lapply(unique_keys, function(key) which(X_key == key))
+  group_labels <- vapply(out, function(idx) {
+    .make_group_label(idx[1], object$cov_alpha_vars)
+  }, character(1))
+  names(out) <- group_labels
+  out
 }

@@ -1,3 +1,66 @@
+# uncounted 1.4.0
+
+## New features
+
+* **`frailty_sensitivity()`**: New omitted-frailty identification
+  sensitivity analysis for Poisson and NB MLE fits. The method linearizes the
+  fitted count model with its IRLS working response, indexes omitted shared
+  frailty with weighted partial-`R^2` parameters, and reports how the grouped
+  hidden-population estimand `Xi` changes under first-order bias formulas.
+
+* **Grouped `Xi_t` support in omitted-frailty sensitivity**:
+  `frailty_sensitivity()` mirrors `popsize(by = ...)` group construction so
+  users can study yearly or subgroup hidden-population targets with the same
+  aggregation logic as the main population-size output.
+
+## Documentation
+
+* **Theory-rich manual page for omitted-frailty sensitivity**: The new
+  `frailty_sensitivity()` help page documents the full model setup
+  `mu = xi * rho`, the omitted-frailty relaxation, IRLS linearization,
+  weighted partial-`R^2` sensitivity parameters, bias formulas, delta-method
+  conversion to `Xi`, robustness values, interpretation, and limitations.
+
+* **Diagnostics and theory vignette updates**: The diagnostics vignette now
+  includes a compact omitted-frailty workflow, and the theory vignette
+  distinguishes fixed-center dependence bounds, moving-`Xi` dependence
+  profiles, bootstrap threshold summaries, and the new IRLS-based
+  omitted-frailty diagnostic.
+
+# uncounted 1.3.0
+
+## New features
+
+* **`dependence_bounds()`**: New fixed-center identification envelope for the
+  separability assumption underlying `E(m_i | N_i, n_i) = xi_i * rho_i`.
+  Reports lower and upper total-population bounds over user-supplied `Gamma`
+  values and optionally computes a tipping-point `gamma_star`.
+
+* **`sensitivity_dependence()` deprecation**: Kept as a backward-compatible
+  wrapper to `dependence_bounds()` and now emits a deprecation warning.
+
+* **`profile_dependence()`**: New moving-`xi` dependence profile for Poisson
+  and NB MLE fits. Refits the model over a grid of fixed dependence offsets
+  `delta`, returning `delta`, `kappa = exp(delta)`, the plug-in total
+  population-size estimate, and the corresponding log-likelihood.
+
+* **`robustness_dependence()`**: New one-dimensional robustness-value summary
+  built on top of the dependence profile. Reports the smallest dependence
+  strength needed for the profiled total population-size estimate to cross a
+  user-specified threshold or relative target.
+
+* **`exceedance_popsize()`**: New bootstrap threshold helper that computes the
+  empirical bootstrap tail area `P*(xi > c)` or `P*(xi < c)` from an
+  `uncounted_boot` object, using per-replicate totals when available.
+
+## Documentation
+
+* **Dependence diagnostics workflow**: The README, diagnostics vignette, and
+  theory vignette now distinguish fixed-center bounds, moving-`xi` profiles,
+  robustness-value summaries, and bootstrap exceedance probabilities. The new
+  examples use simulated data where auxiliary counts scale with the reference
+  population, matching the real-data structure more closely.
+
 # uncounted 1.1.0
 
 ## New features

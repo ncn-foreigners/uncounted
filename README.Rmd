@@ -113,6 +113,44 @@ boot <- bootstrap_popsize(fit, R = 499,
 boot
 ```
 
+### Dependence and threshold diagnostics
+
+```{r dependence-diagnostics, eval = FALSE}
+## Identification bounds for residual dependence between xi and detection
+bounds <- dependence_bounds(fit, Gamma = c(1, 1.1, 1.25, 1.5))
+bounds
+
+## Moving-xi profile under a parametric dependence offset
+prof_dep <- profile_dependence(
+  fit,
+  delta_grid = seq(-0.5, 0.5, length.out = 9),
+  plot = FALSE
+)
+head(prof_dep)
+
+## Smallest dependence strength needed to cross a target
+robustness_dependence(prof_dep, threshold = 500000)
+
+## Bootstrap tail area for threshold questions
+boot_total <- bootstrap_popsize(
+  fit,
+  R = 199,
+  cluster = ~ country_code,
+  total = TRUE,
+  verbose = FALSE
+)
+exceedance_popsize(boot_total, threshold = 500000)
+
+## Omitted-frailty sensitivity for grouped Xi
+frailty_sensitivity(
+  fit,
+  by = ~ year,
+  r2_d = c(0, 0.05, 0.10),
+  r2_y = c(0, 0.05, 0.10),
+  plot = FALSE
+)
+```
+
 ### Diagnostics
 
 ```{r diagnostics, eval = F}
@@ -139,7 +177,8 @@ head(sort(abs(dp), decreasing = TRUE))
 - **Population size**: bias-corrected point estimates with delta-method or
   bootstrap CIs
 - **Diagnostics**: `dfbeta()`, `dfpopsize()`, `loo()`, `rootogram()`,
-  `profile_gamma()`, residual plots
+  `profile_gamma()`, `dependence_bounds()`, `profile_dependence()`,
+  `robustness_dependence()`, `exceedance_popsize()`, residual plots
 - **Model comparison**: AIC/BIC, pseudo-$R^2$, likelihood ratio tests
 - **Interactive app**: `run_app()` launches a Shiny dashboard
 
