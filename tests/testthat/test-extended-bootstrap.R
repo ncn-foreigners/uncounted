@@ -1,5 +1,7 @@
 # ---- Bootstrap tests (extended, skip on CRAN) ----
 
+skip_on_cran()
+
 test_that("bootstrap R=199 on full data", {
   skip_on_cran()
   skip_if_not_installed("fwb")

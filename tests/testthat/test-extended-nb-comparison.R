@@ -1,5 +1,7 @@
 # ---- NB vs MASS::glm.nb comparison (extended, skip on CRAN) ----
 
+skip_on_cran()
+
 test_that("NB coefficients close to MASS::glm.nb", {
   skip_on_cran()
   d <- positive_data()

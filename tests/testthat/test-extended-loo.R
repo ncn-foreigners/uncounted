@@ -1,5 +1,7 @@
 # ---- LOO tests (extended, skip on CRAN) ----
 
+skip_on_cran()
+
 test_that("LOO by obs on full data (200 refits)", {
   skip_on_cran()
   fit <- quick_fit(testdata, gamma = 0.005, countries = ~country)

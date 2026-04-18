@@ -1,5 +1,7 @@
 # ---- Diagnostics on full data (extended, skip on CRAN) ----
 
+skip_on_cran()
+
 test_that("dfbeta returns correct dimensions on full data", {
   skip_on_cran()
   fit <- quick_fit(testdata, gamma = 0.005)
