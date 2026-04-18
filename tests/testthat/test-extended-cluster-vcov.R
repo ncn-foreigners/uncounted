@@ -1,5 +1,7 @@
 # ---- Cluster-robust vcov on real data (extended, skip on CRAN) ----
 
+skip_on_cran()
+
 test_that("cluster-robust SEs differ from observation-level HC3", {
   skip_on_cran()
   data(irregular_migration)

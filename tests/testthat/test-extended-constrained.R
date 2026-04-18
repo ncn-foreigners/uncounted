@@ -1,5 +1,7 @@
 # ---- Constrained estimation on full data (extended, skip on CRAN) ----
 
+skip_on_cran()
+
 test_that("constrained Poisson on full data: alpha in (0,1)", {
   skip_on_cran()
   fit <- quick_fit(testdata, gamma = 0.005, constrained = TRUE)

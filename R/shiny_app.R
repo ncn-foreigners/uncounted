@@ -92,6 +92,37 @@ run_app <- function(...) {
   stop("No finite comparison metric available for plotting.", call. = FALSE)
 }
 
+.shiny_link_choices <- function(method) {
+  if (is.null(method)) method <- "poisson"
+  if (method %in% c("poisson", "nb", "nls")) {
+    c("power", "cloglog", "logit", "probit")
+  } else {
+    c("power")
+  }
+}
+
+.shiny_estimator_choices <- function(method) {
+  if (is.null(method)) method <- "poisson"
+  if (method %in% c("poisson", "nb")) {
+    c("mle", "gmm", "el")
+  } else {
+    c("mle")
+  }
+}
+
+.shiny_select_default <- function(selected, choices, default) {
+  if (!is.null(selected) && selected %in% choices) {
+    selected
+  } else {
+    default
+  }
+}
+
+.formula_missing_vars <- function(formula, data_names) {
+  if (is.null(formula)) return(character(0))
+  setdiff(all.vars(formula), data_names)
+}
+
 # ── UI ───────────────────────────────────────────────────────────────────────
 
 .app_ui <- function() {
@@ -338,34 +369,16 @@ run_app <- function(...) {
   })
 
   output$link_rho_ui <- shiny::renderUI({
-    method_val <- if (is.null(input$method)) "poisson" else input$method
-    choices <- if (method_val %in% c("poisson", "nb", "nls")) {
-      c("power", "cloglog", "logit", "probit")
-    } else {
-      c("power")
-    }
+    choices <- .shiny_link_choices(input$method)
     input_link <- if (identical(input$link_rho, "logistic")) "logit" else input$link_rho
-    selected <- if (!is.null(input_link) && input_link %in% choices) {
-      input_link
-    } else {
-      "power"
-    }
+    selected <- .shiny_select_default(input_link, choices, "power")
     shiny::selectInput("link_rho", "Detection link:", choices = choices,
                        selected = selected)
   })
 
   output$estimator_ui <- shiny::renderUI({
-    method_val <- if (is.null(input$method)) "poisson" else input$method
-    choices <- if (method_val %in% c("poisson", "nb")) {
-      c("mle", "gmm", "el")
-    } else {
-      c("mle")
-    }
-    selected <- if (!is.null(input$estimator) && input$estimator %in% choices) {
-      input$estimator
-    } else {
-      "mle"
-    }
+    choices <- .shiny_estimator_choices(input$method)
+    selected <- .shiny_select_default(input$estimator, choices, "mle")
     shiny::selectInput("estimator", "Estimator:", choices = choices,
                        selected = selected)
   })
@@ -434,8 +447,7 @@ run_app <- function(...) {
     ## Validate that formula variables exist in data
     check_vars <- function(f, label) {
       if (is.null(f)) return(TRUE)
-      vars <- all.vars(f)
-      missing <- setdiff(vars, names(processed_data()))
+      missing <- .formula_missing_vars(f, names(processed_data()))
       if (length(missing) > 0) {
         shiny::showNotification(
           paste0(label, ": variable(s) not in data: ", paste(missing, collapse = ", ")),

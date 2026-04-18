@@ -7,6 +7,8 @@ test_that("bread method returns correct dimensions", {
   p <- length(coef(fit))
   expect_equal(dim(B), c(p, p))
   expect_true(all(is.finite(B)))
+  expect_equal(model.matrix(fit), fit$model_matrix_full)
+  expect_equal(B, bread(fit), tolerance = 1e-12)
 })
 
 test_that("estfun method returns correct dimensions", {
@@ -48,6 +50,15 @@ test_that("sandwich::vcovCL works with cluster", {
   V_cl <- sandwich::vcovCL(fit, cluster = d$country, type = "HC1")
   expect_equal(dim(V_cl), rep(length(coef(fit)), 2))
   expect_true(all(diag(V_cl) > 0))
+})
+
+test_that("sandwich::vcovCL can return the meat matrix only", {
+  d <- small_data()
+  fit <- quick_fit(d, gamma = 0.005, countries = ~country)
+  meat <- sandwich::vcovCL(fit, cluster = d$country, type = "HC1",
+                           sandwich = FALSE, fix = FALSE)
+  expect_equal(dim(meat), rep(length(coef(fit)), 2))
+  expect_true(all(is.finite(meat)))
 })
 
 test_that("cluster parameter in estimate_hidden_pop works", {
@@ -98,6 +109,20 @@ test_that("vcov as function with vcovCL works", {
   expect_true(all(diag(fit$vcov) > 0))
 })
 
+test_that("GMM covariance wrappers default to HC1", {
+  d <- small_data()
+  fit <- quick_fit(d, method = "poisson", gamma = 0.005, estimator = "gmm")
+  V_cl_default <- sandwich::vcovCL(fit, cluster = d$country)
+
+  expect_equal(
+    sandwich::vcovHC(fit),
+    sandwich::vcovHC(fit, type = "HC1"),
+    tolerance = 1e-10
+  )
+  expect_equal(dim(V_cl_default), rep(length(coef(fit)), 2))
+  expect_true(all(is.finite(V_cl_default)))
+})
+
 test_that("HC0 and HC3 produce different SE", {
   d <- small_data()
   fit_hc0 <- quick_fit(d, gamma = 0.005, vcov = "HC0")
@@ -145,4 +170,19 @@ test_that("fwb::vcovFWB works with uncounted objects", {
   V_fwb <- fwb::vcovFWB(fit, R = 30)
   expect_equal(dim(V_fwb), rep(length(coef(fit)), 2))
   expect_true(all(diag(V_fwb) > 0))
+})
+
+test_that("vcov_nb warns and returns stored backend covariance for non-MLE NB fits", {
+  d <- small_data()
+  fit <- quick_fit(d, method = "nb", gamma = 0.005, estimator = "el")
+
+  expect_warning(
+    V_full <- vcov_nb(fit, vcov_type = "HC0", cluster = d$country),
+    "ignored"
+  )
+  expect_equal(
+    V_full,
+    fit$backend_vcov_full,
+    tolerance = 1e-10
+  )
 })

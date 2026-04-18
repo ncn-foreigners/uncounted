@@ -179,3 +179,14 @@ test_that("vcov_nb() returns vcov() for non-NB models", {
   fit <- quick_fit(d, method = "poisson", gamma = 0.005)
   expect_equal(vcov_nb(fit), vcov(fit))
 })
+
+test_that("vcov_nb() validates inputs and falls back when full NB state is absent", {
+  expect_error(vcov_nb(list()), "must be of class 'uncounted'")
+
+  d <- small_data()
+  fit <- quick_fit(d, method = "nb", gamma = 0.005)
+  fit$hessian_nll <- NULL
+  fit$score_full <- NULL
+
+  expect_equal(vcov_nb(fit), vcov(fit), tolerance = 1e-10)
+})

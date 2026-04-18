@@ -1,5 +1,7 @@
 # ---- iOLS extended tests (skip on CRAN) ----
 
+skip_on_cran()
+
 # ---- Full data: basic fit and convergence ----
 
 test_that("iOLS on full testdata converges", {

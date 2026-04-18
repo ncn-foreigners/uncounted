@@ -18,6 +18,23 @@ positive_data <- function(data = testdata) {
   data[data$m > 0 & data$n > 0, ]
 }
 
+single_cluster_data <- function(data = small_data()) {
+  data$one_cluster <- "A"
+  data
+}
+
+rank_deficient_country_data <- function() {
+  d <- small_data()
+  d$is_special <- as.integer(d$country == d$country[1])
+  d
+}
+
+cov_gamma_data <- function() {
+  d <- small_data()
+  d$z <- rep(c(0, 1), length.out = nrow(d))
+  d
+}
+
 # ---- Convenience wrapper ----
 
 quick_fit <- function(data = small_data(), method = "poisson", gamma = 0.005, ...) {

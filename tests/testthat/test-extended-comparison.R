@@ -1,5 +1,7 @@
 # ---- compare_loo tests (extended, skip on CRAN) ----
 
+skip_on_cran()
+
 test_that("compare_loo returns correct class", {
   skip_on_cran()
   d <- small_data()

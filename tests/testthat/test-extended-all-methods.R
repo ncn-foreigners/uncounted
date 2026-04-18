@@ -1,5 +1,7 @@
 # ---- All methods on full data (extended, skip on CRAN) ----
 
+skip_on_cran()
+
 test_that("all methods with estimated gamma on full data", {
   skip_on_cran()
   for (method in c("ols", "poisson", "nb")) {
