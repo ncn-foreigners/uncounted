@@ -673,23 +673,28 @@ profile_beta <- function(object, coef_index = 1, grid = NULL,
 #' Profile Likelihood for Uncounted Models
 #'
 #' S3 method for \code{\link[stats]{profile}} that dispatches to
-#' \code{\link{profile_gamma}}, \code{\link{profile_alpha}}, or
-#' \code{\link{profile_beta}} depending on \code{param}.
+#' \code{\link{profile_gamma}}, \code{\link{profile_alpha}},
+#' \code{\link{profile_beta}}, or \code{\link{profile_dependence}}
+#' depending on \code{param}.
 #'
 #' @param fitted An \code{"uncounted"} object.
 #' @param param Character: which parameter to profile. One of
-#'   \code{"gamma"}, \code{"alpha"}, or \code{"beta"}.
+#'   \code{"gamma"}, \code{"alpha"}, \code{"beta"}, or
+#'   \code{"dependence"}.
 #' @param ... Additional arguments passed to the specific profile function.
 #'
 #' @return Invisibly, a data frame from the dispatched function.
 #'
 #' @importFrom stats profile
 #' @export
-profile.uncounted <- function(fitted, param = c("gamma", "alpha", "beta"), ...) {
+profile.uncounted <- function(fitted,
+                              param = c("gamma", "alpha", "beta", "dependence"),
+                              ...) {
   param <- match.arg(param)
   switch(param,
     gamma = profile_gamma(fitted, ...),
     alpha = profile_alpha(fitted, ...),
-    beta  = profile_beta(fitted, ...)
+    beta = profile_beta(fitted, ...),
+    dependence = profile_dependence(fitted, ...)
   )
 }

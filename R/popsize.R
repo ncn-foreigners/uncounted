@@ -176,32 +176,14 @@ popsize.uncounted <- function(object, by = NULL, level = 0.95,
   alpha_all <- if (is_constr) .inv_logit(alpha_all_eta) else alpha_all_eta
 
   # Define groups
-  if (!is.null(by)) {
-    # Stratified by user-specified variables
-    by_vars <- all.vars(by)
-    if (!all(by_vars %in% names(object$data))) {
-      missing <- setdiff(by_vars, names(object$data))
-      stop("Variables not found in data: ", paste(missing, collapse = ", "))
-    }
-    by_data <- object$data[, by_vars, drop = FALSE]
-    group_factor <- interaction(by_data, drop = TRUE, sep = ", ")
-    group_labels <- levels(group_factor)
-    group_idx <- lapply(group_labels, function(lev) which(group_factor == lev))
-    names(group_idx) <- group_labels
-  } else {
-    # Default: group by unique cov_alpha patterns
-    X_key <- apply(X_alpha, 1, paste, collapse = "|")
-    unique_keys <- unique(X_key)
-    group_idx <- lapply(unique_keys, function(key) which(X_key == key))
-    # Labels from covariate values
-    group_labels <- vapply(group_idx, function(idx) {
-      .make_group_label(idx[1], object$cov_alpha_vars)
-    }, character(1))
-    names(group_idx) <- group_labels
-  }
+  group_info <- .popsize_group_info(object, by = by)
+  group_idx <- group_info$index
 
   # Compute per-group estimates
   results <- vector("list", length(group_idx))
+  gradients <- matrix(NA_real_, nrow = length(group_idx), ncol = p_alpha,
+                      dimnames = list(names(group_idx), colnames(X_alpha)))
+  bc_scale <- rep(NA_real_, length(group_idx))
 
   for (k in seq_along(group_idx)) {
     idx <- group_idx[[k]]
@@ -226,6 +208,7 @@ popsize.uncounted <- function(object, by = NULL, level = 0.95,
 
     var_xi <- as.numeric(t(g_vec) %*% V_alpha %*% g_vec)
     se_xi <- sqrt(max(var_xi, 0))
+    gradients[k, ] <- g_vec
 
     # Log-normal CI for positivity
     if (isTRUE(se_xi > 0) && isTRUE(est > 0)) {
@@ -256,10 +239,13 @@ popsize.uncounted <- function(object, by = NULL, level = 0.95,
         est_bc <- est - bias
         # Clamp only to positive (bias can go either direction for constrained)
         if (est_bc <= 0) est_bc <- est
-        if (!is.na(ci_lower) && isTRUE(est > 0) && isTRUE(est_bc > 0)) {
+        if (isTRUE(est > 0) && isTRUE(est_bc > 0)) {
           bc_ratio <- est_bc / est
-          ci_lower_bc <- ci_lower * bc_ratio
-          ci_upper_bc <- ci_upper * bc_ratio
+          bc_scale[k] <- bc_ratio
+          if (!is.na(ci_lower)) {
+            ci_lower_bc <- ci_lower * bc_ratio
+            ci_upper_bc <- ci_upper * bc_ratio
+          }
         }
       } else {
         # Unconstrained: multiplicative lognormal correction (exact under normality)
@@ -268,10 +254,13 @@ popsize.uncounted <- function(object, by = NULL, level = 0.95,
         # Always positive. More accurate than subtractive Taylor approx.
         correction <- exp(-0.5 * log_N2 * xVx)
         est_bc <- sum(N_g^alpha_g * correction)
-        if (!is.na(ci_lower) && isTRUE(est > 0)) {
+        if (isTRUE(est > 0)) {
           bc_ratio <- est_bc / est
-          ci_lower_bc <- ci_lower * bc_ratio
-          ci_upper_bc <- ci_upper * bc_ratio
+          bc_scale[k] <- bc_ratio
+          if (!is.na(ci_lower)) {
+            ci_lower_bc <- ci_lower * bc_ratio
+            ci_upper_bc <- ci_upper * bc_ratio
+          }
         }
       }
     }
@@ -290,6 +279,15 @@ popsize.uncounted <- function(object, by = NULL, level = 0.95,
   ps <- do.call(rbind, results)
   rownames(ps) <- NULL
   ps$share_pct <- ps$estimate / sum(ps$estimate) * 100
+
+  vcov_estimate <- gradients %*% V_alpha %*% t(gradients)
+  rownames(vcov_estimate) <- colnames(vcov_estimate) <- ps$group
+  vcov_estimate_bc <- vcov_estimate
+  if (bias_correction && all(is.finite(bc_scale))) {
+    vcov_estimate_bc <- vcov_estimate * tcrossprod(bc_scale, bc_scale)
+  } else {
+    vcov_estimate_bc[,] <- NA_real_
+  }
 
   # Total with delta-method CI
   if (total && nrow(ps) > 1) {
@@ -323,6 +321,9 @@ popsize.uncounted <- function(object, by = NULL, level = 0.95,
     )
   }
 
+  attr(ps, "groups") <- group_info$groups
+  attr(ps, "vcov_estimate") <- vcov_estimate
+  attr(ps, "vcov_estimate_bc") <- vcov_estimate_bc
   class(ps) <- c("uncounted_popsize", "data.frame")
   ps
 }
@@ -496,4 +497,70 @@ xi <- function(object, ...) {
     paste0(nm, "=", as.character(v))
   }, character(1))
   paste(parts, collapse = ", ")
+}
+
+#' Resolve population-size grouping indices
+#' @noRd
+.popsize_group_index <- function(object, by = NULL) {
+  .popsize_group_info(object, by = by)$index
+}
+
+#' Resolve population-size grouping indices and metadata
+#' @noRd
+.popsize_group_info <- function(object, by = NULL) {
+  X_alpha <- object$X_alpha
+
+  if (!is.null(by)) {
+    by_vars <- all.vars(by)
+    if (length(by_vars) == 0L) {
+      out <- list(seq_len(nrow(object$data)))
+      names(out) <- "(all)"
+      groups <- data.frame(.group = "(all)", group = "(all)",
+                           stringsAsFactors = FALSE)
+      return(list(index = out, groups = groups))
+    }
+    if (!all(by_vars %in% names(object$data))) {
+      missing <- setdiff(by_vars, names(object$data))
+      stop("Variables not found in data: ", paste(missing, collapse = ", "))
+    }
+    by_data <- object$data[, by_vars, drop = FALSE]
+    group_factor <- interaction(by_data, drop = TRUE, sep = ", ")
+    group_labels <- levels(group_factor)
+    out <- lapply(group_labels, function(lev) which(group_factor == lev))
+    names(out) <- group_labels
+    groups <- do.call(rbind, lapply(seq_along(out), function(i) {
+      row <- by_data[out[[i]][1], , drop = FALSE]
+      row$.group <- group_labels[i]
+      row
+    }))
+    rownames(groups) <- NULL
+    groups <- groups[, c(".group", by_vars), drop = FALSE]
+    if (!("group" %in% names(groups))) {
+      groups$group <- groups$.group
+    }
+    return(list(index = out, groups = groups))
+  }
+
+  X_key <- apply(X_alpha, 1, paste, collapse = "|")
+  unique_keys <- unique(X_key)
+  out <- lapply(unique_keys, function(key) which(X_key == key))
+  group_labels <- vapply(out, function(idx) {
+    .make_group_label(idx[1], object$cov_alpha_vars)
+  }, character(1))
+  names(out) <- group_labels
+  if (!is.null(object$cov_alpha_vars) && ncol(object$cov_alpha_vars) > 0) {
+    groups <- do.call(rbind, lapply(seq_along(out), function(i) {
+      row <- object$cov_alpha_vars[out[[i]][1], , drop = FALSE]
+      row$.group <- group_labels[i]
+      row
+    }))
+    rownames(groups) <- NULL
+    groups <- groups[, c(".group", names(object$cov_alpha_vars)), drop = FALSE]
+  } else {
+    groups <- data.frame(.group = group_labels, stringsAsFactors = FALSE)
+  }
+  if (!("group" %in% names(groups))) {
+    groups$group <- groups$.group
+  }
+  list(index = out, groups = groups)
 }

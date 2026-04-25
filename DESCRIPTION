@@ -1,6 +1,6 @@
 Package: uncounted
 Title: Estimation of Unauthorized Migrant Populations
-Version: 1.1.0
+Version: 2.1.0
 Authors@R: c(
     person("Maciej", "Beresewicz", , "maciej.beresewicz@ue.poznan.pl", role = c("aut", "cre"),
            comment = c(ORCID = "0000-0002-8281-4301")),
@@ -10,14 +10,18 @@ Description: Estimates the size of unauthorized migrant populations using
     a power-law model that relates observed counts to reference populations
     and auxiliary detection data. Supports OLS, NLS, Poisson, and Negative
     Binomial estimation, alternative bounded detection links, optional gamma
-    offsets, and moment-based count estimators via the 'momentfit' package.
+    offsets, moment-based count estimators via the 'momentfit' package, and
+    Bayesian Poisson and negative binomial workflows through optional 'brms'
+    and 'rstan' integrations.
 License: MIT + file LICENSE
-URL: https://ncn-foreigners.github.io/uncounted/,
+URL: https://ncn-foreigners.ue.poznan.pl/uncounted/,
     https://github.com/ncn-foreigners/uncounted
 BugReports: https://github.com/ncn-foreigners/uncounted/issues
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.3
+Depends:
+    R (>= 3.5.0)
 Imports:
     stats,
     methods,
@@ -35,6 +39,11 @@ Suggests:
     rmarkdown,
     shiny,
     DT,
-    bslib
+    bslib,
+    brms,
+    rstan,
+    posterior,
+    loo,
+    bayesplot
 VignetteBuilder: knitr
 Config/testthat/edition: 3

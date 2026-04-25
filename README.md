@@ -13,15 +13,18 @@ R package for estimating the size of unauthorized migrant populations
 using a power-law model that relates observed counts to reference
 populations and auxiliary detection data. Supports OLS, NLS, Poisson,
 Negative Binomial, and iOLS estimation, alternative bounded detection
-links, optional gamma offsets, and moment-based count estimators via the
-`momentfit` package.
+links, optional gamma offsets, moment-based count estimators via the
+`momentfit` package, formal population-size hypothesis tests, and
+Bayesian Poisson/NB workflows through `brms` and Stan.
 
 ## Model
 
 The paper’s theoretical model factors the expected observed count into a
 latent population component and a detection component:
 
-$$\mu_i = E(m_i \mid N_i, n_i) = \xi_i \rho_i,$$
+$$
+\mu_i = E(m_i \mid N_i, n_i) = \xi_i \rho_i,
+$$
 
 where $\xi_i = E(M_i \mid N_i)$ is the theoretical unauthorized
 population size and $\rho_i = E(p_i \mid N_i, n_i)$ is the theoretical
@@ -29,20 +32,26 @@ detection rate.
 
 In the baseline empirical specification implemented by default,
 
-$$\xi_i = N_i^{\alpha_i}, \qquad
-\rho_i = \left(\gamma_i + \frac{n_i}{N_i}\right)^{\beta_i},$$
+$$
+\xi_i = N_i^{\alpha_i}, \qquad
+\rho_i = \left(\gamma_i + \frac{n_i}{N_i}\right)^{\beta_i},
+$$
 
 where $N_i$ is the reference (total registered) population, $n_i$ is an
 auxiliary count (e.g. police records), and $\gamma_i \geq 0$ is a
 baseline detection offset. This gives
 
-$$\mu_i = N_i^{\alpha_i}\left(\gamma_i + \frac{n_i}{N_i}\right)^{\beta_i}.$$
+$$
+\mu_i = N_i^{\alpha_i}\left(\gamma_i + \frac{n_i}{N_i}\right)^{\beta_i}.
+$$
 
 The package also supports bounded alternatives for the detection
 component by writing
 
-$$\eta_i = \beta_i \log\left(\gamma_i + \frac{n_i}{N_i}\right), \qquad
-\rho_i = h(\eta_i),$$
+$$
+\eta_i = \beta_i \log\left(\gamma_i + \frac{n_i}{N_i}\right), \qquad
+\rho_i = h(\eta_i),
+$$
 
 with `link_rho = "power"` (the paper’s baseline specification),
 `"cloglog"`, `"logit"`, or `"probit"`. On the log scale, the mean
@@ -154,6 +163,55 @@ popsize(fit, by = ~ year)
 #> 6  2024     6687  95935.01    95806.63 23177.438  396027.8  16.16751
 ```
 
+### Hypothesis tests for population size
+
+`hypotheses_popsize()` tests threshold and contrast statements about
+grouped population-size estimates. The expression uses explicit
+`xi[...]` filters, so the target is unambiguous.
+
+``` r
+ps_year <- popsize(fit, by = ~ year)
+
+## H0: xi[2024] <= 200,000
+## H1: xi[2024] > 200,000
+hypotheses_popsize(
+  ps_year,
+  "xi[year == 2024] > 200000",
+  estimate = "estimate_bc"
+)
+
+## H0: xi[2024] - xi[2019] <= 0
+## H1: xi[2024] - xi[2019] > 0
+hypotheses_popsize(
+  ps_year,
+  "xi[year == 2024] - xi[year == 2019] > 0",
+  estimate = "estimate_bc"
+)
+```
+
+The same syntax works with fractional weighted bootstrap results:
+
+``` r
+boot_year <- bootstrap_popsize(
+  fit,
+  R = 499,
+  cluster = ~ country_code,
+  by = ~ year,
+  verbose = FALSE
+)
+
+hypotheses_popsize(
+  boot_year,
+  "xi[year == 2024] > 200000",
+  estimate = "boot_median"
+)
+```
+
+For frequentist `popsize()` and `bootstrap_popsize()` objects, the
+helper reports Wald-style statistics and p values. Use
+`exceedance_popsize()` when you want an empirical bootstrap tail area
+instead.
+
 ### Bootstrap confidence intervals
 
 ``` r
@@ -162,6 +220,94 @@ boot <- bootstrap_popsize(fit, R = 499,
                           cluster = ~ country_code,
                           by = ~ year)
 boot
+```
+
+### Bayesian brms/Stan workflow
+
+Bayesian models use `brms` as the modelling interface and Stan as the
+sampler backend. The default backend is `rstan`; `cmdstanr` can also be
+used if it is installed.
+
+``` r
+fit_bayes <- estimate_hidden_pop_bayes(
+  data = irregular_migration,
+  observed = ~ m,
+  auxiliary = ~ n,
+  reference_pop = ~ N,
+  method = "poisson",
+  cov_alpha = ~ year * ukr + sex,
+  cov_beta = ~ year,
+  gamma = 0.005,
+  backend = "rstan",
+  chains = 4,
+  cores = min(4, parallel::detectCores()),
+  iter = 4000,
+  warmup = 2000,
+  control = list(adapt_delta = 0.95, max_treedepth = 12),
+  seed = 20260425
+)
+
+summary(fit_bayes, total = TRUE)
+
+ps_bayes_year <- popsize(fit_bayes, by = ~ year, total = TRUE)
+
+hypotheses_popsize(
+  ps_bayes_year,
+  "xi[year == 2024] > 200000"
+)
+```
+
+For Bayesian `popsize()` objects, directional hypotheses are posterior
+propositions. The output reports quantities such as `Pr(H1 | data)`,
+`Pr(H0 | data)`, posterior odds, and credible intervals, not frequentist
+p values.
+
+The underlying `brmsfit` is available for diagnostics:
+
+``` r
+bfit <- as_brmsfit(fit_bayes)
+
+plot(bfit)
+brms::pp_check(bfit, type = "rootogram", ndraws = 100)
+brms::loo(bfit)
+```
+
+### Dependence and threshold diagnostics
+
+``` r
+## Identification bounds for residual dependence between xi and detection
+bounds <- dependence_bounds(fit, Gamma = c(1, 1.1, 1.25, 1.5))
+bounds
+
+## Moving-xi profile under a parametric dependence offset
+prof_dep <- profile_dependence(
+  fit,
+  delta_grid = seq(-0.5, 0.5, length.out = 9),
+  plot = FALSE
+)
+head(prof_dep)
+
+## Smallest dependence strength needed to cross a target
+robustness_dependence(prof_dep, threshold = 500000)
+
+## Bootstrap tail area for threshold questions
+boot_total <- bootstrap_popsize(
+  fit,
+  R = 199,
+  cluster = ~ country_code,
+  total = TRUE,
+  verbose = FALSE
+)
+exceedance_popsize(boot_total, threshold = 500000)
+
+## Omitted-frailty sensitivity for grouped Xi
+frailty_sensitivity(
+  fit,
+  by = ~ year,
+  r2_d = c(0, 0.05, 0.10),
+  r2_y = c(0, 0.05, 0.10),
+  plot = FALSE
+)
 ```
 
 ### Diagnostics
@@ -179,6 +325,8 @@ head(sort(abs(dp), decreasing = TRUE))
 
 - **Estimation methods**: OLS, NLS, Poisson (MLE, GMM, EL), Negative
   Binomial (MLE, GMM, EL), iOLS
+- **Bayesian workflows**: Poisson/NB models via `brms` and Stan, with
+  posterior population-size summaries and chain diagnostics
 - **Covariate-varying parameters**: $\alpha$ and $\beta$ via formula
   interface
 - **Detection links**: `power`, `cloglog`, `logit`, and `probit`
@@ -191,8 +339,12 @@ head(sort(abs(dp), decreasing = TRUE))
   fractional weighted bootstrap via `fwb`
 - **Population size**: bias-corrected point estimates with delta-method
   or bootstrap CIs
+- **Hypotheses for $\xi$**: threshold, change-over-time, grouped,
+  bootstrap, and Bayesian posterior-proposition tests with explicit
+  `xi[...]` syntax
 - **Diagnostics**: `dfbeta()`, `dfpopsize()`, `loo()`, `rootogram()`,
-  `profile_gamma()`, residual plots
+  `profile_gamma()`, `dependence_bounds()`, `profile_dependence()`,
+  `robustness_dependence()`, `exceedance_popsize()`, residual plots
 - **Model comparison**: AIC/BIC, pseudo-$R^2$, likelihood ratio tests
 - **Interactive app**: `run_app()` launches a Shiny dashboard
 

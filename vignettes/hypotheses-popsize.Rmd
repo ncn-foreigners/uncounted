@@ -1,0 +1,288 @@
+---
+title: "Hypothesis Tests for Population Size"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Hypothesis Tests for Population Size}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+## Goal
+
+The `hypotheses_popsize()` function tests statements about estimated
+population sizes, denoted here by $\xi$. It is designed for questions such as:
+
+- Is the estimated population size in 2024 larger than 200,000?
+- Did the estimated population size increase between 2019 and 2024?
+- Is a custom contrast of several grouped population-size estimates equal to
+  zero?
+
+The function uses an explicit quantity-indexed syntax:
+
+```r
+xi[year == 2024]
+xi[year == 2024] - xi[year == 2019]
+```
+
+This avoids ambiguous bare labels and leaves room for future extensions to
+other quantities, such as `alpha[...]`.
+
+```{r load-package}
+library(uncounted)
+data(irregular_migration)
+```
+
+## Fit A Model
+
+For a compact example, fit a Poisson model with a fixed gamma offset and then
+compute population size by year.
+
+```{r fit}
+fit <- estimate_hidden_pop(
+  data = irregular_migration,
+  observed = ~ m,
+  auxiliary = ~ n,
+  reference_pop = ~ N,
+  method = "poisson",
+  gamma = 0.005,
+  countries = ~ country
+)
+
+ps_year <- popsize(fit, by = ~ year)
+ps_year
+```
+
+The examples below use the bias-corrected estimate explicitly. The
+`estimate` argument is required so that the tested estimand is never chosen
+silently.
+
+By default, directional character hypotheses are interpreted as the
+alternative hypothesis. For example, `"xi[year == 2024] > 200000"` tests
+
+\[
+H_0: \xi_{2024} \le 200000
+\quad\text{against}\quad
+H_1: \xi_{2024} > 200000.
+\]
+
+The returned table includes explicit `null_hypothesis` and
+`alternative_hypothesis` columns. If you want the character expression to be
+the null hypothesis instead, use `hypothesis_side = "null"`.
+
+## Threshold Tests
+
+To test whether the 2024 population size is larger than 200,000:
+
+```{r threshold}
+hypotheses_popsize(
+  ps_year,
+  "xi[year == 2024] > 200000",
+  estimate = "estimate_bc"
+)
+```
+
+This is a one-sided Wald test. The contrast is
+
+\[
+\hat\xi_{2024} - 200000.
+\]
+
+A positive statistic supports the alternative that $\xi_{2024}$ is larger than
+the threshold.
+
+To treat the same directional statement as the null hypothesis, write:
+
+```{r threshold-null}
+hypotheses_popsize(
+  ps_year,
+  "xi[year == 2024] > 200000",
+  estimate = "estimate_bc",
+  hypothesis_side = "null"
+)
+```
+
+This asks whether there is evidence against
+$H_0: \xi_{2024} \ge 200000$ in favor of
+$H_1: \xi_{2024} < 200000$.
+
+The compact form also works when there is exactly one grouping variable:
+
+```{r compact}
+hypotheses_popsize(
+  ps_year,
+  "xi[2024] > 200000",
+  estimate = "estimate_bc"
+)
+```
+
+## Change Over Time
+
+To test whether the estimated population size increased between 2019 and 2024:
+
+```{r increase}
+hypotheses_popsize(
+  ps_year,
+  "xi[year == 2024] - xi[year == 2019] > 0",
+  estimate = "estimate_bc"
+)
+```
+
+The standard error uses the full covariance matrix of the two estimates. This
+matters because year-specific estimates are functions of the same fitted model
+parameters and are generally dependent.
+
+Two-sided equality tests use `=` or `==`:
+
+```{r equality}
+hypotheses_popsize(
+  ps_year,
+  "xi[year == 2024] = xi[year == 2019]",
+  estimate = "estimate_bc"
+)
+```
+
+## Multiple Groups
+
+Filters can match more than one row. In that case, `xi[...]` is the sum of the
+matching population-size estimates, with covariance handled before testing.
+
+```{r multi-row}
+ps_year_sex <- popsize(fit, by = ~ year + sex)
+
+hypotheses_popsize(
+  ps_year_sex,
+  "xi[year == 2024] - xi[year == 2019] > 0",
+  estimate = "estimate_bc"
+)
+```
+
+Custom functions are useful when the contrast is easier to write in R code.
+The function receives a named vector of xi estimates and, optionally, the group
+metadata.
+
+```{r function}
+hypotheses_popsize(
+  ps_year,
+  function(x, groups) {
+    c(change_2024_2019 = unname(x["2024"] - x["2019"]))
+  },
+  estimate = "estimate_bc"
+)
+```
+
+## Statistical Theory
+
+For analytical `popsize()` results, `hypotheses_popsize()` uses Wald inference
+for nonlinear functions of fitted model parameters.
+
+Let $\theta$ denote the fitted alpha coefficients. Under standard large-sample
+regularity conditions,
+
+\[
+\hat\theta \approx N(\theta, \widehat V_\theta).
+\]
+
+Population size is a nonlinear function of those parameters:
+
+\[
+\xi = h(\theta) = \sum_i N_i^{\alpha_i}.
+\]
+
+The delta method gives the approximate sampling variance:
+
+\[
+\widehat{\mathrm{Var}}(\hat\xi)
+  =
+  \nabla h(\hat\theta)'
+  \widehat V_\theta
+  \nabla h(\hat\theta).
+\]
+
+For a threshold hypothesis such as
+
+\[
+H_0: \xi_{2024} \le c
+\quad\text{against}\quad
+H_1: \xi_{2024} > c,
+\]
+
+the reported statistic is
+
+\[
+z = \frac{\hat\xi_{2024} - c}{SE(\hat\xi_{2024})}.
+\]
+
+For an increase hypothesis,
+
+\[
+H_0: \xi_{2024} - \xi_{2019} \le 0
+\quad\text{against}\quad
+H_1: \xi_{2024} - \xi_{2019} > 0,
+\]
+
+the statistic is
+
+\[
+z =
+\frac{\hat\xi_{2024} - \hat\xi_{2019}}
+     {SE(\hat\xi_{2024} - \hat\xi_{2019})}.
+\]
+
+The default reference distribution is standard normal. If you supply a finite
+`df`, the function uses a t distribution instead.
+
+## Bootstrap Tests
+
+For objects returned by `bootstrap_popsize()`, the same contrast is evaluated
+inside every fractional weighted bootstrap draw. For example, for an increase
+test:
+
+\[
+d^* = \xi^*_{2024} - \xi^*_{2019}.
+\]
+
+The bootstrap standard error is `sd(d*)`, and the function reports a Wald
+statistic using that standard error.
+
+```{r bootstrap, eval = requireNamespace("fwb", quietly = TRUE)}
+boot_year <- bootstrap_popsize(
+  fit,
+  R = 19,
+  cluster = ~ country_code,
+  seed = 2025,
+  by = ~ year,
+  verbose = FALSE
+)
+
+hypotheses_popsize(
+  boot_year,
+  "xi[year == 2024] - xi[year == 2019] > 0",
+  estimate = "boot_median"
+)
+```
+
+This Wald p value is different from an empirical bootstrap exceedance
+probability such as `mean(xi_star > 200000)`. Use
+`exceedance_popsize()` for those direct bootstrap tail summaries.
+
+## Power And Limitations
+
+The power of these tests depends on the size of the contrast, the standard
+error, the number and quality of observations, clustering or panel dependence,
+model specification, and bootstrap stability. A small p value is easier to
+obtain when the estimated contrast is large relative to its standard error.
+
+The helper reports the estimate, contrast, standard error, Wald statistic,
+p value, S value, and confidence interval. It does not guarantee that a
+scientifically important change will be detected with high probability.
+
+Formal power analysis should be simulation-based: choose a data-generating
+process, simulate many datasets under the alternative of interest, refit the
+model, apply the hypothesis test, and estimate the rejection rate.

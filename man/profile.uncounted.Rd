@@ -4,13 +4,14 @@
 \alias{profile.uncounted}
 \title{Profile Likelihood for Uncounted Models}
 \usage{
-\method{profile}{uncounted}(fitted, param = c("gamma", "alpha", "beta"), ...)
+\method{profile}{uncounted}(fitted, param = c("gamma", "alpha", "beta", "dependence"), ...)
 }
 \arguments{
 \item{fitted}{An \code{"uncounted"} object.}
 
 \item{param}{Character: which parameter to profile. One of
-\code{"gamma"}, \code{"alpha"}, or \code{"beta"}.}
+\code{"gamma"}, \code{"alpha"}, \code{"beta"}, or
+\code{"dependence"}.}
 
 \item{...}{Additional arguments passed to the specific profile function.}
 }
@@ -19,6 +20,7 @@ Invisibly, a data frame from the dispatched function.
 }
 \description{
 S3 method for \code{\link[stats]{profile}} that dispatches to
-\code{\link{profile_gamma}}, \code{\link{profile_alpha}}, or
-\code{\link{profile_beta}} depending on \code{param}.
+\code{\link{profile_gamma}}, \code{\link{profile_alpha}},
+\code{\link{profile_beta}}, or \code{\link{profile_dependence}}
+depending on \code{param}.
 }

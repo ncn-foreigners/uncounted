@@ -32,6 +32,32 @@
   match.arg(link_rho, c("power", "cloglog", "logit", "probit"))
 }
 
+# ---- Internal dependence-offset state ----
+
+#' Internal state for dependence diagnostics
+#' @noRd
+.uncounted_internal <- local({
+  env <- new.env(parent = emptyenv())
+  env$dependence_offset <- 0
+  env
+})
+
+#' Current fixed dependence offset used in refits
+#' @noRd
+.current_dependence_offset <- function() {
+  val <- get0("dependence_offset", envir = .uncounted_internal, ifnotfound = 0)
+  if (is.null(val)) 0 else val
+}
+
+#' Evaluate an expression under a temporary dependence offset
+#' @noRd
+.with_dependence_offset <- function(offset, expr) {
+  old <- .current_dependence_offset()
+  .uncounted_internal$dependence_offset <- offset
+  on.exit(.uncounted_internal$dependence_offset <- old, add = TRUE)
+  force(expr)
+}
+
 #' Compute rate term gamma + n/N
 #' @noRd
 .rate_from_gamma <- function(ratio, gamma_values = NULL) {
@@ -95,9 +121,19 @@
 #' Compute log(mu) from alpha, beta, rate, and link choice
 #' @noRd
 .compute_log_mu <- function(alpha_values, log_N, beta_values, rate_values,
-                            link_rho = "power") {
+                            link_rho = "power",
+                            dependence_offset = NULL) {
+  if (is.null(dependence_offset)) {
+    dependence_offset <- .current_dependence_offset()
+  }
+  if (!(length(dependence_offset) %in% c(1L, length(log_N)))) {
+    stop("'dependence_offset' must have length 1 or match 'log_N'.",
+         call. = FALSE)
+  }
   eta_values <- .eta_from_rate(beta_values, rate_values)
-  alpha_values * log_N + .log_rho_from_eta(eta_values, link_rho = link_rho)
+  alpha_values * log_N +
+    .log_rho_from_eta(eta_values, link_rho = link_rho) +
+    dependence_offset
 }
 
 #' Normalize requested covariance type for moment estimators
