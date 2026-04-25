@@ -20,7 +20,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">uncounted</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2.1.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -33,7 +33,9 @@
 <li class="active nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
-<li><a class="dropdown-item" href="../articles/diagnostics.html">Model Diagnostics and Comparison</a></li>
+<li><a class="dropdown-item" href="../articles/bayesian.html">Bayesian hidden-population models</a></li>
+    <li><a class="dropdown-item" href="../articles/diagnostics.html">Model Diagnostics and Comparison</a></li>
+    <li><a class="dropdown-item" href="../articles/hypotheses-popsize.html">Hypothesis Tests for Population Size</a></li>
     <li><a class="dropdown-item" href="../articles/iols.html">iOLS: Iterated OLS for Gamma Pseudo-Maximum Likelihood</a></li>
     <li><a class="dropdown-item" href="../articles/model-comparison.html">Model Comparison and Reporting</a></li>
     <li><a class="dropdown-item" href="../articles/shiny-app.html">Interactive Shiny Application</a></li>
@@ -82,7 +84,7 @@ appropriate and whether the population-size estimates are robust.</p>
 package. Two models are fitted—Poisson and Negative Binomial—with year
 and sex covariates on alpha and year covariates on beta.</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ncn-foreigners.github.io/uncounted/">uncounted</a></span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ncn-foreigners.ue.poznan.pl/uncounted/" class="external-link">uncounted</a></span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">irregular_migration</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">fit_po</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/estimate_hidden_pop.html">estimate_hidden_pop</a></span><span class="op">(</span></span>
@@ -540,6 +542,161 @@ the gamma range.</p>
 <span><span class="co">#&gt; 4 0.07903158 1892342.5 -2631.701</span></span>
 <span><span class="co">#&gt; 5 0.10534211 1984163.6 -2635.659</span></span>
 <span><span class="co">#&gt; 6 0.13165263 2035597.4 -2638.698</span></span></code></pre></div>
+</div>
+<div class="section level2">
+<h2 id="dependence-and-threshold-diagnostics">8. Dependence and threshold diagnostics<a class="anchor" aria-label="anchor" href="#dependence-and-threshold-diagnostics"></a>
+</h2>
+<p>The factorization
+<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>E</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>m</mi><mi>i</mi></msub><mo>∣</mo><msub><mi>N</mi><mi>i</mi></msub><mo>,</mo><msub><mi>n</mi><mi>i</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><msub><mi>ξ</mi><mi>i</mi></msub><msub><mi>ρ</mi><mi>i</mi></msub></mrow><annotation encoding="application/x-tex">
+E(m_i \mid N_i, n_i) = \xi_i \rho_i
+</annotation></semantics></math> is an identifying assumption, not
+something the observed aggregated data can test directly. The package
+therefore keeps four related diagnostics separate:</p>
+<ul>
+<li>
+<code><a href="../reference/dependence_bounds.html">dependence_bounds()</a></code>: fixed-center identification
+envelope.</li>
+<li>
+<code><a href="../reference/profile_dependence.html">profile_dependence()</a></code>: model-based
+moving-<code>\xi</code> profile.</li>
+<li>
+<code><a href="../reference/robustness_dependence.html">robustness_dependence()</a></code>: smallest dependence strength
+needed to cross a target.</li>
+<li>
+<code><a href="../reference/exceedance_popsize.html">exceedance_popsize()</a></code>: empirical bootstrap tail area for
+threshold questions.</li>
+</ul>
+<div class="section level3">
+<h3 id="fixed-center-identification-bounds">8.1 Fixed-center identification bounds<a class="anchor" aria-label="anchor" href="#fixed-center-identification-bounds"></a>
+</h3>
+<p>Under the bounded sensitivity model,
+<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>μ</mi><mi>i</mi></msub><mo>=</mo><msub><mi>ξ</mi><mi>i</mi></msub><msub><mi>ρ</mi><mi>i</mi></msub><msub><mi>κ</mi><mi>i</mi></msub><mo>,</mo><mspace width="2.0em"></mspace><mn>1</mn><mi>/</mi><mi>Γ</mi><mo>≤</mo><msub><mi>κ</mi><mi>i</mi></msub><mo>≤</mo><mi>Γ</mi><mo>,</mo></mrow><annotation encoding="application/x-tex">
+\mu_i = \xi_i \rho_i \kappa_i,
+\qquad
+1 / \Gamma \le \kappa_i \le \Gamma,
+</annotation></semantics></math> the case <code>Gamma = 1</code>
+reproduces the baseline estimate and larger values of <code>Gamma</code>
+widen the admissible range for the total <code>xi</code>.</p>
+<div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">sens</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/dependence_bounds.html">dependence_bounds</a></span><span class="op">(</span><span class="va">fit_nb</span>, Gamma <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">1.1</span>, <span class="fl">1.25</span>, <span class="fl">1.5</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">sens</span></span>
+<span><span class="co">#&gt; Dependence bounds analysis</span></span>
+<span><span class="co">#&gt; Baseline total: 1,182,125 </span></span>
+<span><span class="co">#&gt; Interpretation: bounds reflect identification sensitivity, not sampling uncertainty.</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt;  Gamma estimate     lower   upper pct_change_lower pct_change_upper</span></span>
+<span><span class="co">#&gt;   1.00  1182125 1182124.8 1182125         0.000000                0</span></span>
+<span><span class="co">#&gt;   1.10  1182125 1074658.9 1300337        -9.090909               10</span></span>
+<span><span class="co">#&gt;   1.25  1182125  945699.8 1477656       -20.000000               25</span></span>
+<span><span class="co">#&gt;   1.50  1182125  788083.2 1773187       -33.333333               50</span></span></code></pre></div>
+<p>The table keeps the baseline estimate fixed and reports lower and
+upper bounds under progressively stronger departures from the
+separability assumption. These bounds are useful when the substantive
+question is whether the headline estimate would remain above or below a
+policy-relevant threshold under moderate departures from
+independence.</p>
+</div>
+<div class="section level3">
+<h3 id="moving-xi-dependence-profile">8.2 Moving-<code>\xi</code> dependence profile<a class="anchor" aria-label="anchor" href="#moving-xi-dependence-profile"></a>
+</h3>
+<p><code><a href="../reference/profile_dependence.html">profile_dependence()</a></code> instead treats dependence as a
+parametric offset
+<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>μ</mi><mi>i</mi></msub><mrow><mo stretchy="true" form="prefix">(</mo><mi>δ</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mo>exp</mo><mrow><mo stretchy="true" form="prefix">(</mo><mi>δ</mi><mo stretchy="true" form="postfix">)</mo></mrow><mspace width="0.167em"></mspace><msub><mi>ξ</mi><mi>i</mi></msub><msub><mi>ρ</mi><mi>i</mi></msub><mo>,</mo></mrow><annotation encoding="application/x-tex">
+\mu_i(\delta) = \exp(\delta)\,\xi_i \rho_i,
+</annotation></semantics></math> refits the model for each fixed
+<code>delta</code>, and reports the resulting plug-in total
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mover><mi>ξ</mi><mo accent="true">̂</mo></mover><mrow><mo stretchy="true" form="prefix">(</mo><mi>δ</mi><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\hat\xi(\delta)</annotation></semantics></math>.</p>
+<div class="sourceCode" id="cb25"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">prof_dep</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/profile_dependence.html">profile_dependence</a></span><span class="op">(</span></span>
+<span>  <span class="va">fit_nb</span>,</span>
+<span>  delta_grid <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="op">-</span><span class="fl">0.4</span>, <span class="fl">0.4</span>, length.out <span class="op">=</span> <span class="fl">7</span><span class="op">)</span>,</span>
+<span>  plot <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span><span class="op">)</span></span>
+<span><span class="va">prof_dep</span></span>
+<span><span class="co">#&gt;        delta     kappa      xi    loglik</span></span>
+<span><span class="co">#&gt; 1 -0.4000000 0.6703200 1279294 -2621.590</span></span>
+<span><span class="co">#&gt; 2 -0.2666667 0.7659283 1285023 -2621.250</span></span>
+<span><span class="co">#&gt; 3 -0.1333333 0.8751733 1291357 -2621.098</span></span>
+<span><span class="co">#&gt; 4  0.0000000 1.0000000 1306134 -2621.116</span></span>
+<span><span class="co">#&gt; 5  0.1333333 1.1426308 1316081 -2621.291</span></span>
+<span><span class="co">#&gt; 6  0.2666667 1.3056052 1333202 -2621.607</span></span>
+<span><span class="co">#&gt; 7  0.4000000 1.4918247 1347375 -2622.051</span></span></code></pre></div>
+<p>Unlike <code><a href="../reference/dependence_bounds.html">dependence_bounds()</a></code>, the estimate is allowed to
+move because the model is re-fit at each grid point. This makes the
+profile more model-dependent, but it answers a different question: how
+much does the headline estimate shift under a structured departure from
+separability?</p>
+</div>
+<div class="section level3">
+<h3 id="robustness-value-for-a-target-crossing">8.3 Robustness value for a target crossing<a class="anchor" aria-label="anchor" href="#robustness-value-for-a-target-crossing"></a>
+</h3>
+<p>The profile can be summarised by the smallest absolute
+<code>delta</code> needed to push the total estimate across a threshold
+or relative target.</p>
+<div class="sourceCode" id="cb26"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/robustness_dependence.html">robustness_dependence</a></span><span class="op">(</span></span>
+<span>  <span class="va">prof_dep</span>,</span>
+<span>  threshold <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/attr.html" class="external-link">attr</a></span><span class="op">(</span><span class="fu"><a href="../reference/popsize.html">popsize</a></span><span class="op">(</span><span class="va">fit_nb</span>, total <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>, <span class="st">"total"</span><span class="op">)</span><span class="op">$</span><span class="va">estimate</span> <span class="op">*</span> <span class="fl">0.9</span>,</span>
+<span>  direction <span class="op">=</span> <span class="st">"decrease"</span></span>
+<span><span class="op">)</span></span>
+<span><span class="co">#&gt; Dependence robustness analysis</span></span>
+<span><span class="co">#&gt; Baseline xi: 1,306,134 </span></span>
+<span><span class="co">#&gt; Target xi: 1,174,162 </span></span>
+<span><span class="co">#&gt; Target not reached on supplied delta grid.</span></span></code></pre></div>
+<p>This is the one-dimensional analogue of a robustness value: the
+smaller the reported <code>rv_Gamma</code>, the less dependence is
+needed to overturn the chosen substantive conclusion.</p>
+</div>
+<div class="section level3">
+<h3 id="bootstrap-threshold-probabilities">8.4 Bootstrap threshold probabilities<a class="anchor" aria-label="anchor" href="#bootstrap-threshold-probabilities"></a>
+</h3>
+<p>When the question is explicitly threshold-based, the bootstrap can be
+summarised as an empirical tail area rather than an interval.</p>
+<div class="sourceCode" id="cb27"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">boot_dep</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/bootstrap_popsize.html">bootstrap_popsize</a></span><span class="op">(</span></span>
+<span>  <span class="va">fit_nb</span>,</span>
+<span>  R <span class="op">=</span> <span class="fl">99</span>,</span>
+<span>  cluster <span class="op">=</span> <span class="op">~</span> <span class="va">country_code</span>,</span>
+<span>  total <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  verbose <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="../reference/exceedance_popsize.html">exceedance_popsize</a></span><span class="op">(</span><span class="va">boot_dep</span>, threshold <span class="op">=</span> <span class="fl">500000</span><span class="op">)</span></span></code></pre></div>
+<p><code><a href="../reference/exceedance_popsize.html">exceedance_popsize()</a></code> reports a bootstrap exceedance
+probability, not a Bayesian posterior probability. It is most useful for
+statements such as “what fraction of bootstrap replications exceed
+500,000?” rather than for constructing another confidence interval.</p>
+</div>
+<div class="section level3">
+<h3 id="omitted-frailty-sensitivity-for-xi">8.5 Omitted-frailty sensitivity for <code>Xi</code><a class="anchor" aria-label="anchor" href="#omitted-frailty-sensitivity-for-xi"></a>
+</h3>
+<p>The previous diagnostics either keep the baseline estimate fixed
+(<code><a href="../reference/dependence_bounds.html">dependence_bounds()</a></code>), move it through a parametric
+dependence offset (<code><a href="../reference/profile_dependence.html">profile_dependence()</a></code>), or summarize the
+bootstrap distribution (<code><a href="../reference/exceedance_popsize.html">exceedance_popsize()</a></code>). A different
+question is whether an omitted shared frailty could jointly affect
+hidden stock and detection in a way that changes the grouped
+hidden-population estimate itself.</p>
+<p><code><a href="../reference/frailty_sensitivity.html">frailty_sensitivity()</a></code> addresses that question by
+linearizing the fitted Poisson/NB mean model with its IRLS working
+response, indexing the omitted frailty by weighted
+partial-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>R</mi><mn>2</mn></msup><annotation encoding="application/x-tex">R^2</annotation></semantics></math>
+values, and mapping the resulting first-order bias into the target
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mover><mi>Ξ</mi><mo accent="true">̂</mo></mover><mi>t</mi></msub><annotation encoding="application/x-tex">\hat\Xi_t</annotation></semantics></math>.</p>
+<div class="sourceCode" id="cb28"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/frailty_sensitivity.html">frailty_sensitivity</a></span><span class="op">(</span></span>
+<span>  <span class="va">fit_nb</span>,</span>
+<span>  by <span class="op">=</span> <span class="op">~</span> <span class="va">year</span>,</span>
+<span>  r2_d <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">0.05</span>, <span class="fl">0.10</span><span class="op">)</span>,</span>
+<span>  r2_y <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">0.05</span>, <span class="fl">0.10</span><span class="op">)</span>,</span>
+<span>  plot <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<p>The output reports a grouped sensitivity surface for
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>Ξ</mi><mi>t</mi></msub><annotation encoding="application/x-tex">\Xi_t</annotation></semantics></math>
+together with robustness values for threshold or percentage-change
+questions. The full derivation is documented in
+<code><a href="../reference/frailty_sensitivity.html">?frailty_sensitivity</a></code>.</p>
+</div>
 </div>
 <div class="section level2">
 <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a>

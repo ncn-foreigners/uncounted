@@ -4,8 +4,9 @@ R package for estimating the size of unauthorized migrant populations
 using a power-law model that relates observed counts to reference
 populations and auxiliary detection data. Supports OLS, NLS, Poisson,
 Negative Binomial, and iOLS estimation, alternative bounded detection
-links, optional gamma offsets, and moment-based count estimators via the
-`momentfit` package.
+links, optional gamma offsets, moment-based count estimators via the
+`momentfit` package, formal population-size hypothesis tests, and
+Bayesian Poisson/NB workflows through `brms` and Stan.
 
 ## Model
 
@@ -144,6 +145,59 @@ popsize(fit, by = ~ year)
 #> 6  2024     6687  95935.01    95806.63 23177.438  396027.8  16.16751
 ```
 
+### Hypothesis tests for population size
+
+[`hypotheses_popsize()`](https://ncn-foreigners.github.io/uncounted/reference/hypotheses_popsize.md)
+tests threshold and contrast statements about grouped population-size
+estimates. The expression uses explicit `xi[...]` filters, so the target
+is unambiguous.
+
+``` r
+ps_year <- popsize(fit, by = ~ year)
+
+## H0: xi[2024] <= 200,000
+## H1: xi[2024] > 200,000
+hypotheses_popsize(
+  ps_year,
+  "xi[year == 2024] > 200000",
+  estimate = "estimate_bc"
+)
+
+## H0: xi[2024] - xi[2019] <= 0
+## H1: xi[2024] - xi[2019] > 0
+hypotheses_popsize(
+  ps_year,
+  "xi[year == 2024] - xi[year == 2019] > 0",
+  estimate = "estimate_bc"
+)
+```
+
+The same syntax works with fractional weighted bootstrap results:
+
+``` r
+boot_year <- bootstrap_popsize(
+  fit,
+  R = 499,
+  cluster = ~ country_code,
+  by = ~ year,
+  verbose = FALSE
+)
+
+hypotheses_popsize(
+  boot_year,
+  "xi[year == 2024] > 200000",
+  estimate = "boot_median"
+)
+```
+
+For frequentist
+[`popsize()`](https://ncn-foreigners.github.io/uncounted/reference/popsize.md)
+and
+[`bootstrap_popsize()`](https://ncn-foreigners.github.io/uncounted/reference/bootstrap_popsize.md)
+objects, the helper reports Wald-style statistics and p values. Use
+[`exceedance_popsize()`](https://ncn-foreigners.github.io/uncounted/reference/exceedance_popsize.md)
+when you want an empirical bootstrap tail area instead.
+
 ### Bootstrap confidence intervals
 
 ``` r
@@ -152,6 +206,95 @@ boot <- bootstrap_popsize(fit, R = 499,
                           cluster = ~ country_code,
                           by = ~ year)
 boot
+```
+
+### Bayesian brms/Stan workflow
+
+Bayesian models use `brms` as the modelling interface and Stan as the
+sampler backend. The default backend is `rstan`; `cmdstanr` can also be
+used if it is installed.
+
+``` r
+fit_bayes <- estimate_hidden_pop_bayes(
+  data = irregular_migration,
+  observed = ~ m,
+  auxiliary = ~ n,
+  reference_pop = ~ N,
+  method = "poisson",
+  cov_alpha = ~ year * ukr + sex,
+  cov_beta = ~ year,
+  gamma = 0.005,
+  backend = "rstan",
+  chains = 4,
+  cores = min(4, parallel::detectCores()),
+  iter = 4000,
+  warmup = 2000,
+  control = list(adapt_delta = 0.95, max_treedepth = 12),
+  seed = 20260425
+)
+
+summary(fit_bayes, total = TRUE)
+
+ps_bayes_year <- popsize(fit_bayes, by = ~ year, total = TRUE)
+
+hypotheses_popsize(
+  ps_bayes_year,
+  "xi[year == 2024] > 200000"
+)
+```
+
+For Bayesian
+[`popsize()`](https://ncn-foreigners.github.io/uncounted/reference/popsize.md)
+objects, directional hypotheses are posterior propositions. The output
+reports quantities such as `Pr(H1 | data)`, `Pr(H0 | data)`, posterior
+odds, and credible intervals, not frequentist p values.
+
+The underlying `brmsfit` is available for diagnostics:
+
+``` r
+bfit <- as_brmsfit(fit_bayes)
+
+plot(bfit)
+brms::pp_check(bfit, type = "rootogram", ndraws = 100)
+brms::loo(bfit)
+```
+
+### Dependence and threshold diagnostics
+
+``` r
+## Identification bounds for residual dependence between xi and detection
+bounds <- dependence_bounds(fit, Gamma = c(1, 1.1, 1.25, 1.5))
+bounds
+
+## Moving-xi profile under a parametric dependence offset
+prof_dep <- profile_dependence(
+  fit,
+  delta_grid = seq(-0.5, 0.5, length.out = 9),
+  plot = FALSE
+)
+head(prof_dep)
+
+## Smallest dependence strength needed to cross a target
+robustness_dependence(prof_dep, threshold = 500000)
+
+## Bootstrap tail area for threshold questions
+boot_total <- bootstrap_popsize(
+  fit,
+  R = 199,
+  cluster = ~ country_code,
+  total = TRUE,
+  verbose = FALSE
+)
+exceedance_popsize(boot_total, threshold = 500000)
+
+## Omitted-frailty sensitivity for grouped Xi
+frailty_sensitivity(
+  fit,
+  by = ~ year,
+  r2_d = c(0, 0.05, 0.10),
+  r2_y = c(0, 0.05, 0.10),
+  plot = FALSE
+)
 ```
 
 ### Diagnostics
@@ -169,6 +312,8 @@ head(sort(abs(dp), decreasing = TRUE))
 
 - **Estimation methods**: OLS, NLS, Poisson (MLE, GMM, EL), Negative
   Binomial (MLE, GMM, EL), iOLS
+- **Bayesian workflows**: Poisson/NB models via `brms` and Stan, with
+  posterior population-size summaries and chain diagnostics
 - **Covariate-varying parameters**: $\alpha$ and $\beta$ via formula
   interface
 - **Detection links**: `power`, `cloglog`, `logit`, and `probit`
@@ -182,12 +327,19 @@ head(sort(abs(dp), decreasing = TRUE))
   fractional weighted bootstrap via `fwb`
 - **Population size**: bias-corrected point estimates with delta-method
   or bootstrap CIs
+- **Hypotheses for $\xi$**: threshold, change-over-time, grouped,
+  bootstrap, and Bayesian posterior-proposition tests with explicit
+  `xi[...]` syntax
 - **Diagnostics**:
   [`dfbeta()`](https://rdrr.io/r/stats/influence.measures.html),
   [`dfpopsize()`](https://ncn-foreigners.github.io/uncounted/reference/dfpopsize.md),
   [`loo()`](https://ncn-foreigners.github.io/uncounted/reference/loo.md),
   [`rootogram()`](https://ncn-foreigners.github.io/uncounted/reference/rootogram.md),
   [`profile_gamma()`](https://ncn-foreigners.github.io/uncounted/reference/profile_gamma.md),
+  [`dependence_bounds()`](https://ncn-foreigners.github.io/uncounted/reference/dependence_bounds.md),
+  [`profile_dependence()`](https://ncn-foreigners.github.io/uncounted/reference/profile_dependence.md),
+  [`robustness_dependence()`](https://ncn-foreigners.github.io/uncounted/reference/robustness_dependence.md),
+  [`exceedance_popsize()`](https://ncn-foreigners.github.io/uncounted/reference/exceedance_popsize.md),
   residual plots
 - **Model comparison**: AIC/BIC, pseudo-$R^{2}$, likelihood ratio tests
 - **Interactive app**:
@@ -215,6 +367,17 @@ This work is supported by the National Science Centre, OPUS 20 grant no.
 
 ## All functions
 
+- [`as_brmsfit()`](https://ncn-foreigners.github.io/uncounted/reference/as_brmsfit.md)
+  : Extract the brmsfit from a Bayesian uncounted Model
+- [`summary(`*`<uncounted_bayes>`*`)`](https://ncn-foreigners.github.io/uncounted/reference/bayes_methods.md)
+  [`coef(`*`<uncounted_bayes>`*`)`](https://ncn-foreigners.github.io/uncounted/reference/bayes_methods.md)
+  [`fitted(`*`<uncounted_bayes>`*`)`](https://ncn-foreigners.github.io/uncounted/reference/bayes_methods.md)
+  [`predict(`*`<uncounted_bayes>`*`)`](https://ncn-foreigners.github.io/uncounted/reference/bayes_methods.md)
+  [`residuals(`*`<uncounted_bayes>`*`)`](https://ncn-foreigners.github.io/uncounted/reference/bayes_methods.md)
+  [`loo(`*`<uncounted_bayes>`*`)`](https://ncn-foreigners.github.io/uncounted/reference/bayes_methods.md)
+  [`tidy(`*`<uncounted_bayes>`*`)`](https://ncn-foreigners.github.io/uncounted/reference/bayes_methods.md)
+  [`glance(`*`<uncounted_bayes>`*`)`](https://ncn-foreigners.github.io/uncounted/reference/bayes_methods.md)
+  : Methods for Bayesian Hidden-Population Models
 - [`bootstrap_popsize()`](https://ncn-foreigners.github.io/uncounted/reference/bootstrap_popsize.md)
   : Bootstrap Confidence Intervals for Population Size
 - [`bread(`*`<uncounted>`*`)`](https://ncn-foreigners.github.io/uncounted/reference/bread.uncounted.md)
@@ -225,6 +388,13 @@ This work is supported by the National Science Centre, OPUS 20 grant no.
   : Compare multiple uncounted models
 - [`compare_popsize()`](https://ncn-foreigners.github.io/uncounted/reference/compare_popsize.md)
   : Compare Population Size Across Models
+- [`default_priors_uncounted_bayes()`](https://ncn-foreigners.github.io/uncounted/reference/default_priors_uncounted_bayes.md)
+  : Default Priors for Bayesian Hidden-Population Models
+- [`dependence_bounds()`](https://ncn-foreigners.github.io/uncounted/reference/dependence_bounds.md)
+  [`sensitivity_dependence()`](https://ncn-foreigners.github.io/uncounted/reference/dependence_bounds.md)
+  [`print(`*`<uncounted_dependence_bounds>`*`)`](https://ncn-foreigners.github.io/uncounted/reference/dependence_bounds.md)
+  [`print(`*`<uncounted_sensitivity>`*`)`](https://ncn-foreigners.github.io/uncounted/reference/dependence_bounds.md)
+  : Dependence Bounds for Total Population Size
 - [`deviance(`*`<uncounted>`*`)`](https://ncn-foreigners.github.io/uncounted/reference/deviance.uncounted.md)
   : Deviance for uncounted models
 - [`dfbeta(`*`<uncounted>`*`)`](https://ncn-foreigners.github.io/uncounted/reference/dfbeta.uncounted.md)
@@ -235,10 +405,21 @@ This work is supported by the National Science Centre, OPUS 20 grant no.
   : Empirical estimating functions (score contributions)
 - [`estimate_hidden_pop()`](https://ncn-foreigners.github.io/uncounted/reference/estimate_hidden_pop.md)
   : Estimate the Size of an Unauthorized Migrant Population
+- [`estimate_hidden_pop_bayes()`](https://ncn-foreigners.github.io/uncounted/reference/estimate_hidden_pop_bayes.md)
+  : Bayesian Hidden-Population Models via brms
+- [`exceedance_popsize()`](https://ncn-foreigners.github.io/uncounted/reference/exceedance_popsize.md)
+  [`print(`*`<uncounted_popsize_exceedance>`*`)`](https://ncn-foreigners.github.io/uncounted/reference/exceedance_popsize.md)
+  : Bootstrap Exceedance Probability for Population Size
+- [`frailty_sensitivity()`](https://ncn-foreigners.github.io/uncounted/reference/frailty_sensitivity.md)
+  [`print(`*`<uncounted_frailty_sensitivity>`*`)`](https://ncn-foreigners.github.io/uncounted/reference/frailty_sensitivity.md)
+  [`plot(`*`<uncounted_frailty_sensitivity>`*`)`](https://ncn-foreigners.github.io/uncounted/reference/frailty_sensitivity.md)
+  : Omitted-Frailty Sensitivity Analysis for Hidden Population Size
 - [`glance(`*`<uncounted>`*`)`](https://ncn-foreigners.github.io/uncounted/reference/glance.uncounted.md)
   : Glance at an uncounted model
 - [`hatvalues(`*`<uncounted>`*`)`](https://ncn-foreigners.github.io/uncounted/reference/hatvalues.uncounted.md)
   : Hat values (leverage)
+- [`hypotheses_popsize()`](https://ncn-foreigners.github.io/uncounted/reference/hypotheses_popsize.md)
+  : Hypothesis Tests for Population Size Estimates
 - [`irregular_migration`](https://ncn-foreigners.github.io/uncounted/reference/irregular_migration.md)
   : Irregular migration data for Poland (2019–2024)
 - [`logLik(`*`<uncounted>`*`)`](https://ncn-foreigners.github.io/uncounted/reference/logLik.uncounted.md)
@@ -263,6 +444,8 @@ This work is supported by the National Science Centre, OPUS 20 grant no.
   : Exploratory plots for the power-law model
 - [`popsize()`](https://ncn-foreigners.github.io/uncounted/reference/popsize.md)
   : Estimated Population Size
+- [`posterior_popsize_draws()`](https://ncn-foreigners.github.io/uncounted/reference/posterior_popsize_draws.md)
+  : Extract Posterior Population-Size Draws
 - [`predict(`*`<uncounted>`*`)`](https://ncn-foreigners.github.io/uncounted/reference/predict.uncounted.md)
   : Predict from an uncounted model
 - [`print(`*`<uncounted_boot>`*`)`](https://ncn-foreigners.github.io/uncounted/reference/print.uncounted_boot.md)
@@ -277,10 +460,15 @@ This work is supported by the National Science Centre, OPUS 20 grant no.
   : Profile Likelihood for Alpha Coefficients
 - [`profile_beta()`](https://ncn-foreigners.github.io/uncounted/reference/profile_beta.md)
   : Profile Likelihood for Beta Coefficients
+- [`profile_dependence()`](https://ncn-foreigners.github.io/uncounted/reference/profile_dependence.md)
+  : Profile Dependence Sensitivity for Population Size
 - [`profile_gamma()`](https://ncn-foreigners.github.io/uncounted/reference/profile_gamma.md)
   : Gamma Profile: Population Size as a Function of Gamma
 - [`residuals(`*`<uncounted>`*`)`](https://ncn-foreigners.github.io/uncounted/reference/residuals.uncounted.md)
   : Residuals for uncounted models
+- [`robustness_dependence()`](https://ncn-foreigners.github.io/uncounted/reference/robustness_dependence.md)
+  [`print(`*`<uncounted_dependence_robustness>`*`)`](https://ncn-foreigners.github.io/uncounted/reference/robustness_dependence.md)
+  : Dependence Robustness Value for Population Size
 - [`rootogram()`](https://ncn-foreigners.github.io/uncounted/reference/rootogram.md)
   : Rootogram for count model diagnostics
 - [`run_app()`](https://ncn-foreigners.github.io/uncounted/reference/run_app.md)
@@ -306,8 +494,12 @@ This work is supported by the National Science Centre, OPUS 20 grant no.
 
 ### All vignettes
 
+- [Bayesian hidden-population
+  models](https://ncn-foreigners.github.io/uncounted/articles/bayesian.md):
 - [Model Diagnostics and
   Comparison](https://ncn-foreigners.github.io/uncounted/articles/diagnostics.md):
+- [Hypothesis Tests for Population
+  Size](https://ncn-foreigners.github.io/uncounted/articles/hypotheses-popsize.md):
 - [iOLS: Iterated OLS for Gamma Pseudo-Maximum
   Likelihood](https://ncn-foreigners.github.io/uncounted/articles/iols.md):
 - [Model Comparison and

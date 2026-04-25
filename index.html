@@ -11,8 +11,8 @@
 <script src="deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
 <script src="deps/headroom-0.11.0/headroom.min.js"></script><script src="deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="deps/search-1.0.0/fuse.min.js"></script><script src="deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="pkgdown.js"></script><meta property="og:title" content="Estimation of Unauthorized Migrant Populations">
-<meta name="description" content="Estimates the size of unauthorized migrant populations using a power-law model that relates observed counts to reference populations and auxiliary detection data. Supports OLS, NLS, Poisson, and Negative Binomial estimation, alternative bounded detection links, optional gamma offsets, and moment-based count estimators via the momentfit package.">
-<meta property="og:description" content="Estimates the size of unauthorized migrant populations using a power-law model that relates observed counts to reference populations and auxiliary detection data. Supports OLS, NLS, Poisson, and Negative Binomial estimation, alternative bounded detection links, optional gamma offsets, and moment-based count estimators via the momentfit package.">
+<meta name="description" content="Estimates the size of unauthorized migrant populations using a power-law model that relates observed counts to reference populations and auxiliary detection data. Supports OLS, NLS, Poisson, and Negative Binomial estimation, alternative bounded detection links, optional gamma offsets, moment-based count estimators via the momentfit package, and Bayesian Poisson and negative binomial workflows through optional brms and rstan integrations.">
+<meta property="og:description" content="Estimates the size of unauthorized migrant populations using a power-law model that relates observed counts to reference populations and auxiliary detection data. Supports OLS, NLS, Poisson, and Negative Binomial estimation, alternative bounded detection links, optional gamma offsets, moment-based count estimators via the momentfit package, and Bayesian Poisson and negative binomial workflows through optional brms and rstan integrations.">
 <meta property="og:image" content="https://ncn-foreigners.github.io/uncounted/logo.png">
 </head>
 <body>
@@ -23,7 +23,7 @@
 
     <a class="navbar-brand me-2" href="index.html">uncounted</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2.1.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -36,7 +36,9 @@
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
-<li><a class="dropdown-item" href="articles/diagnostics.html">Model Diagnostics and Comparison</a></li>
+<li><a class="dropdown-item" href="articles/bayesian.html">Bayesian hidden-population models</a></li>
+    <li><a class="dropdown-item" href="articles/diagnostics.html">Model Diagnostics and Comparison</a></li>
+    <li><a class="dropdown-item" href="articles/hypotheses-popsize.html">Hypothesis Tests for Population Size</a></li>
     <li><a class="dropdown-item" href="articles/iols.html">iOLS: Iterated OLS for Gamma Pseudo-Maximum Likelihood</a></li>
     <li><a class="dropdown-item" href="articles/model-comparison.html">Model Comparison and Reporting</a></li>
     <li><a class="dropdown-item" href="articles/shiny-app.html">Interactive Shiny Application</a></li>
@@ -65,21 +67,29 @@
 </div>
 <!-- badges: start -->
 
-<p>R package for estimating the size of unauthorized migrant populations using a power-law model that relates observed counts to reference populations and auxiliary detection data. Supports OLS, NLS, Poisson, Negative Binomial, and iOLS estimation, alternative bounded detection links, optional gamma offsets, and moment-based count estimators via the <code>momentfit</code> package.</p>
+<p>R package for estimating the size of unauthorized migrant populations using a power-law model that relates observed counts to reference populations and auxiliary detection data. Supports OLS, NLS, Poisson, Negative Binomial, and iOLS estimation, alternative bounded detection links, optional gamma offsets, moment-based count estimators via the <code>momentfit</code> package, formal population-size hypothesis tests, and Bayesian Poisson/NB workflows through <code>brms</code> and Stan.</p>
 <div class="section level2">
 <h2 id="model">Model<a class="anchor" aria-label="anchor" href="#model"></a>
 </h2>
 <p>The paper’s theoretical model factors the expected observed count into a latent population component and a detection component:</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>μ</mi><mi>i</mi></msub><mo>=</mo><mi>E</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>m</mi><mi>i</mi></msub><mo>∣</mo><msub><mi>N</mi><mi>i</mi></msub><mo>,</mo><msub><mi>n</mi><mi>i</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><msub><mi>ξ</mi><mi>i</mi></msub><msub><mi>ρ</mi><mi>i</mi></msub><mo>,</mo></mrow><annotation encoding="application/x-tex">\mu_i = E(m_i \mid N_i, n_i) = \xi_i \rho_i,</annotation></semantics></math></p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>μ</mi><mi>i</mi></msub><mo>=</mo><mi>E</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>m</mi><mi>i</mi></msub><mo>∣</mo><msub><mi>N</mi><mi>i</mi></msub><mo>,</mo><msub><mi>n</mi><mi>i</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><msub><mi>ξ</mi><mi>i</mi></msub><msub><mi>ρ</mi><mi>i</mi></msub><mo>,</mo></mrow><annotation encoding="application/x-tex">
+\mu_i = E(m_i \mid N_i, n_i) = \xi_i \rho_i,
+</annotation></semantics></math></p>
 <p>where <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>ξ</mi><mi>i</mi></msub><mo>=</mo><mi>E</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>M</mi><mi>i</mi></msub><mo>∣</mo><msub><mi>N</mi><mi>i</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\xi_i = E(M_i \mid N_i)</annotation></semantics></math> is the theoretical unauthorized population size and <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>ρ</mi><mi>i</mi></msub><mo>=</mo><mi>E</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>p</mi><mi>i</mi></msub><mo>∣</mo><msub><mi>N</mi><mi>i</mi></msub><mo>,</mo><msub><mi>n</mi><mi>i</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\rho_i = E(p_i \mid N_i, n_i)</annotation></semantics></math> is the theoretical detection rate.</p>
 <p>In the baseline empirical specification implemented by default,</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>ξ</mi><mi>i</mi></msub><mo>=</mo><msubsup><mi>N</mi><mi>i</mi><msub><mi>α</mi><mi>i</mi></msub></msubsup><mo>,</mo><mspace width="2.0em"></mspace><msub><mi>ρ</mi><mi>i</mi></msub><mo>=</mo><msup><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>γ</mi><mi>i</mi></msub><mo>+</mo><mfrac><msub><mi>n</mi><mi>i</mi></msub><msub><mi>N</mi><mi>i</mi></msub></mfrac><mo stretchy="true" form="postfix">)</mo></mrow><msub><mi>β</mi><mi>i</mi></msub></msup><mo>,</mo></mrow><annotation encoding="application/x-tex">\xi_i = N_i^{\alpha_i}, \qquad
-\rho_i = \left(\gamma_i + \frac{n_i}{N_i}\right)^{\beta_i},</annotation></semantics></math></p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>ξ</mi><mi>i</mi></msub><mo>=</mo><msubsup><mi>N</mi><mi>i</mi><msub><mi>α</mi><mi>i</mi></msub></msubsup><mo>,</mo><mspace width="2.0em"></mspace><msub><mi>ρ</mi><mi>i</mi></msub><mo>=</mo><msup><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>γ</mi><mi>i</mi></msub><mo>+</mo><mfrac><msub><mi>n</mi><mi>i</mi></msub><msub><mi>N</mi><mi>i</mi></msub></mfrac><mo stretchy="true" form="postfix">)</mo></mrow><msub><mi>β</mi><mi>i</mi></msub></msup><mo>,</mo></mrow><annotation encoding="application/x-tex">
+\xi_i = N_i^{\alpha_i}, \qquad
+\rho_i = \left(\gamma_i + \frac{n_i}{N_i}\right)^{\beta_i},
+</annotation></semantics></math></p>
 <p>where <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>N</mi><mi>i</mi></msub><annotation encoding="application/x-tex">N_i</annotation></semantics></math> is the reference (total registered) population, <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>n</mi><mi>i</mi></msub><annotation encoding="application/x-tex">n_i</annotation></semantics></math> is an auxiliary count (e.g. police records), and <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>γ</mi><mi>i</mi></msub><mo>≥</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">\gamma_i \geq 0</annotation></semantics></math> is a baseline detection offset. This gives</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>μ</mi><mi>i</mi></msub><mo>=</mo><msubsup><mi>N</mi><mi>i</mi><msub><mi>α</mi><mi>i</mi></msub></msubsup><msup><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>γ</mi><mi>i</mi></msub><mo>+</mo><mfrac><msub><mi>n</mi><mi>i</mi></msub><msub><mi>N</mi><mi>i</mi></msub></mfrac><mo stretchy="true" form="postfix">)</mo></mrow><msub><mi>β</mi><mi>i</mi></msub></msup><mi>.</mi></mrow><annotation encoding="application/x-tex">\mu_i = N_i^{\alpha_i}\left(\gamma_i + \frac{n_i}{N_i}\right)^{\beta_i}.</annotation></semantics></math></p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>μ</mi><mi>i</mi></msub><mo>=</mo><msubsup><mi>N</mi><mi>i</mi><msub><mi>α</mi><mi>i</mi></msub></msubsup><msup><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>γ</mi><mi>i</mi></msub><mo>+</mo><mfrac><msub><mi>n</mi><mi>i</mi></msub><msub><mi>N</mi><mi>i</mi></msub></mfrac><mo stretchy="true" form="postfix">)</mo></mrow><msub><mi>β</mi><mi>i</mi></msub></msup><mi>.</mi></mrow><annotation encoding="application/x-tex">
+\mu_i = N_i^{\alpha_i}\left(\gamma_i + \frac{n_i}{N_i}\right)^{\beta_i}.
+</annotation></semantics></math></p>
 <p>The package also supports bounded alternatives for the detection component by writing</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>η</mi><mi>i</mi></msub><mo>=</mo><msub><mi>β</mi><mi>i</mi></msub><mo>log</mo><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>γ</mi><mi>i</mi></msub><mo>+</mo><mfrac><msub><mi>n</mi><mi>i</mi></msub><msub><mi>N</mi><mi>i</mi></msub></mfrac><mo stretchy="true" form="postfix">)</mo></mrow><mo>,</mo><mspace width="2.0em"></mspace><msub><mi>ρ</mi><mi>i</mi></msub><mo>=</mo><mi>h</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>η</mi><mi>i</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>,</mo></mrow><annotation encoding="application/x-tex">\eta_i = \beta_i \log\left(\gamma_i + \frac{n_i}{N_i}\right), \qquad
-\rho_i = h(\eta_i),</annotation></semantics></math></p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>η</mi><mi>i</mi></msub><mo>=</mo><msub><mi>β</mi><mi>i</mi></msub><mo>log</mo><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>γ</mi><mi>i</mi></msub><mo>+</mo><mfrac><msub><mi>n</mi><mi>i</mi></msub><msub><mi>N</mi><mi>i</mi></msub></mfrac><mo stretchy="true" form="postfix">)</mo></mrow><mo>,</mo><mspace width="2.0em"></mspace><msub><mi>ρ</mi><mi>i</mi></msub><mo>=</mo><mi>h</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>η</mi><mi>i</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>,</mo></mrow><annotation encoding="application/x-tex">
+\eta_i = \beta_i \log\left(\gamma_i + \frac{n_i}{N_i}\right), \qquad
+\rho_i = h(\eta_i),
+</annotation></semantics></math></p>
 <p>with <code>link_rho = "power"</code> (the paper’s baseline specification), <code>"cloglog"</code>, <code>"logit"</code>, or <code>"probit"</code>. On the log scale, the mean structure remains linear in the power-link case and is handled directly for the nonlinear estimators.</p>
 </div>
 <div class="section level2">
@@ -94,7 +104,7 @@
 <h2 id="quick-start">Quick start<a class="anchor" aria-label="anchor" href="#quick-start"></a>
 </h2>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ncn-foreigners.github.io/uncounted/">uncounted</a></span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ncn-foreigners.ue.poznan.pl/uncounted/" class="external-link">uncounted</a></span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">irregular_migration</span><span class="op">)</span></span>
 <span><span class="va">irregular_migration</span><span class="op">$</span><span class="va">year</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">as.factor</a></span><span class="op">(</span><span class="va">irregular_migration</span><span class="op">$</span><span class="va">year</span><span class="op">)</span></span>
 <span><span class="va">irregular_migration</span><span class="op">$</span><span class="va">ukr</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/integer.html" class="external-link">as.integer</a></span><span class="op">(</span><span class="va">irregular_migration</span><span class="op">$</span><span class="va">country_code</span> <span class="op">==</span> <span class="st">"UKR"</span><span class="op">)</span></span>
@@ -186,9 +196,48 @@
 <span><span class="co">#&gt; 6  2024     6687  95935.01    95806.63 23177.438  396027.8  16.16751</span></span></code></pre></div>
 </div>
 <div class="section level3">
+<h3 id="hypothesis-tests-for-population-size">Hypothesis tests for population size<a class="anchor" aria-label="anchor" href="#hypothesis-tests-for-population-size"></a>
+</h3>
+<p><code><a href="reference/hypotheses_popsize.html">hypotheses_popsize()</a></code> tests threshold and contrast statements about grouped population-size estimates. The expression uses explicit <code>xi[...]</code> filters, so the target is unambiguous.</p>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">ps_year</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/popsize.html">popsize</a></span><span class="op">(</span><span class="va">fit</span>, by <span class="op">=</span> <span class="op">~</span> <span class="va">year</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co">## H0: xi[2024] &lt;= 200,000</span></span>
+<span><span class="co">## H1: xi[2024] &gt; 200,000</span></span>
+<span><span class="fu"><a href="reference/hypotheses_popsize.html">hypotheses_popsize</a></span><span class="op">(</span></span>
+<span>  <span class="va">ps_year</span>,</span>
+<span>  <span class="st">"xi[year == 2024] &gt; 200000"</span>,</span>
+<span>  estimate <span class="op">=</span> <span class="st">"estimate_bc"</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="co">## H0: xi[2024] - xi[2019] &lt;= 0</span></span>
+<span><span class="co">## H1: xi[2024] - xi[2019] &gt; 0</span></span>
+<span><span class="fu"><a href="reference/hypotheses_popsize.html">hypotheses_popsize</a></span><span class="op">(</span></span>
+<span>  <span class="va">ps_year</span>,</span>
+<span>  <span class="st">"xi[year == 2024] - xi[year == 2019] &gt; 0"</span>,</span>
+<span>  estimate <span class="op">=</span> <span class="st">"estimate_bc"</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<p>The same syntax works with fractional weighted bootstrap results:</p>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">boot_year</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/bootstrap_popsize.html">bootstrap_popsize</a></span><span class="op">(</span></span>
+<span>  <span class="va">fit</span>,</span>
+<span>  R <span class="op">=</span> <span class="fl">499</span>,</span>
+<span>  cluster <span class="op">=</span> <span class="op">~</span> <span class="va">country_code</span>,</span>
+<span>  by <span class="op">=</span> <span class="op">~</span> <span class="va">year</span>,</span>
+<span>  verbose <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="reference/hypotheses_popsize.html">hypotheses_popsize</a></span><span class="op">(</span></span>
+<span>  <span class="va">boot_year</span>,</span>
+<span>  <span class="st">"xi[year == 2024] &gt; 200000"</span>,</span>
+<span>  estimate <span class="op">=</span> <span class="st">"boot_median"</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<p>For frequentist <code><a href="reference/popsize.html">popsize()</a></code> and <code><a href="reference/bootstrap_popsize.html">bootstrap_popsize()</a></code> objects, the helper reports Wald-style statistics and p values. Use <code><a href="reference/exceedance_popsize.html">exceedance_popsize()</a></code> when you want an empirical bootstrap tail area instead.</p>
+</div>
+<div class="section level3">
 <h3 id="bootstrap-confidence-intervals">Bootstrap confidence intervals<a class="anchor" aria-label="anchor" href="#bootstrap-confidence-intervals"></a>
 </h3>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co">## Cluster FWB bootstrap (by country)</span></span>
 <span><span class="va">boot</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/bootstrap_popsize.html">bootstrap_popsize</a></span><span class="op">(</span><span class="va">fit</span>, R <span class="op">=</span> <span class="fl">499</span>,</span>
 <span>                          cluster <span class="op">=</span> <span class="op">~</span> <span class="va">country_code</span>,</span>
@@ -196,9 +245,87 @@
 <span><span class="va">boot</span></span></code></pre></div>
 </div>
 <div class="section level3">
+<h3 id="bayesian-brmsstan-workflow">Bayesian brms/Stan workflow<a class="anchor" aria-label="anchor" href="#bayesian-brmsstan-workflow"></a>
+</h3>
+<p>Bayesian models use <code>brms</code> as the modelling interface and Stan as the sampler backend. The default backend is <code>rstan</code>; <code>cmdstanr</code> can also be used if it is installed.</p>
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">fit_bayes</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/estimate_hidden_pop_bayes.html">estimate_hidden_pop_bayes</a></span><span class="op">(</span></span>
+<span>  data <span class="op">=</span> <span class="va">irregular_migration</span>,</span>
+<span>  observed <span class="op">=</span> <span class="op">~</span> <span class="va">m</span>,</span>
+<span>  auxiliary <span class="op">=</span> <span class="op">~</span> <span class="va">n</span>,</span>
+<span>  reference_pop <span class="op">=</span> <span class="op">~</span> <span class="va">N</span>,</span>
+<span>  method <span class="op">=</span> <span class="st">"poisson"</span>,</span>
+<span>  cov_alpha <span class="op">=</span> <span class="op">~</span> <span class="va">year</span> <span class="op">*</span> <span class="va">ukr</span> <span class="op">+</span> <span class="va">sex</span>,</span>
+<span>  cov_beta <span class="op">=</span> <span class="op">~</span> <span class="va">year</span>,</span>
+<span>  gamma <span class="op">=</span> <span class="fl">0.005</span>,</span>
+<span>  backend <span class="op">=</span> <span class="st">"rstan"</span>,</span>
+<span>  chains <span class="op">=</span> <span class="fl">4</span>,</span>
+<span>  cores <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">min</a></span><span class="op">(</span><span class="fl">4</span>, <span class="fu">parallel</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/r/parallel/detectCores.html" class="external-link">detectCores</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>  iter <span class="op">=</span> <span class="fl">4000</span>,</span>
+<span>  warmup <span class="op">=</span> <span class="fl">2000</span>,</span>
+<span>  control <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>adapt_delta <span class="op">=</span> <span class="fl">0.95</span>, max_treedepth <span class="op">=</span> <span class="fl">12</span><span class="op">)</span>,</span>
+<span>  seed <span class="op">=</span> <span class="fl">20260425</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">fit_bayes</span>, total <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">ps_bayes_year</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/popsize.html">popsize</a></span><span class="op">(</span><span class="va">fit_bayes</span>, by <span class="op">=</span> <span class="op">~</span> <span class="va">year</span>, total <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="reference/hypotheses_popsize.html">hypotheses_popsize</a></span><span class="op">(</span></span>
+<span>  <span class="va">ps_bayes_year</span>,</span>
+<span>  <span class="st">"xi[year == 2024] &gt; 200000"</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<p>For Bayesian <code><a href="reference/popsize.html">popsize()</a></code> objects, directional hypotheses are posterior propositions. The output reports quantities such as <code>Pr(H1 | data)</code>, <code>Pr(H0 | data)</code>, posterior odds, and credible intervals, not frequentist p values.</p>
+<p>The underlying <code>brmsfit</code> is available for diagnostics:</p>
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">bfit</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/as_brmsfit.html">as_brmsfit</a></span><span class="op">(</span><span class="va">fit_bayes</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">bfit</span><span class="op">)</span></span>
+<span><span class="fu">brms</span><span class="fu">::</span><span class="fu"><a href="https://mc-stan.org/bayesplot/reference/pp_check.html" class="external-link">pp_check</a></span><span class="op">(</span><span class="va">bfit</span>, type <span class="op">=</span> <span class="st">"rootogram"</span>, ndraws <span class="op">=</span> <span class="fl">100</span><span class="op">)</span></span>
+<span><span class="fu">brms</span><span class="fu">::</span><span class="fu"><a href="https://mc-stan.org/loo/reference/loo.html" class="external-link">loo</a></span><span class="op">(</span><span class="va">bfit</span><span class="op">)</span></span></code></pre></div>
+</div>
+<div class="section level3">
+<h3 id="dependence-and-threshold-diagnostics">Dependence and threshold diagnostics<a class="anchor" aria-label="anchor" href="#dependence-and-threshold-diagnostics"></a>
+</h3>
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co">## Identification bounds for residual dependence between xi and detection</span></span>
+<span><span class="va">bounds</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/dependence_bounds.html">dependence_bounds</a></span><span class="op">(</span><span class="va">fit</span>, Gamma <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">1.1</span>, <span class="fl">1.25</span>, <span class="fl">1.5</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">bounds</span></span>
+<span></span>
+<span><span class="co">## Moving-xi profile under a parametric dependence offset</span></span>
+<span><span class="va">prof_dep</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/profile_dependence.html">profile_dependence</a></span><span class="op">(</span></span>
+<span>  <span class="va">fit</span>,</span>
+<span>  delta_grid <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="op">-</span><span class="fl">0.5</span>, <span class="fl">0.5</span>, length.out <span class="op">=</span> <span class="fl">9</span><span class="op">)</span>,</span>
+<span>  plot <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">prof_dep</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co">## Smallest dependence strength needed to cross a target</span></span>
+<span><span class="fu"><a href="reference/robustness_dependence.html">robustness_dependence</a></span><span class="op">(</span><span class="va">prof_dep</span>, threshold <span class="op">=</span> <span class="fl">500000</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co">## Bootstrap tail area for threshold questions</span></span>
+<span><span class="va">boot_total</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/bootstrap_popsize.html">bootstrap_popsize</a></span><span class="op">(</span></span>
+<span>  <span class="va">fit</span>,</span>
+<span>  R <span class="op">=</span> <span class="fl">199</span>,</span>
+<span>  cluster <span class="op">=</span> <span class="op">~</span> <span class="va">country_code</span>,</span>
+<span>  total <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  verbose <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span><span class="op">)</span></span>
+<span><span class="fu"><a href="reference/exceedance_popsize.html">exceedance_popsize</a></span><span class="op">(</span><span class="va">boot_total</span>, threshold <span class="op">=</span> <span class="fl">500000</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co">## Omitted-frailty sensitivity for grouped Xi</span></span>
+<span><span class="fu"><a href="reference/frailty_sensitivity.html">frailty_sensitivity</a></span><span class="op">(</span></span>
+<span>  <span class="va">fit</span>,</span>
+<span>  by <span class="op">=</span> <span class="op">~</span> <span class="va">year</span>,</span>
+<span>  r2_d <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">0.05</span>, <span class="fl">0.10</span><span class="op">)</span>,</span>
+<span>  r2_y <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">0.05</span>, <span class="fl">0.10</span><span class="op">)</span>,</span>
+<span>  plot <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+</div>
+<div class="section level3">
 <h3 id="diagnostics">Diagnostics<a class="anchor" aria-label="anchor" href="#diagnostics"></a>
 </h3>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co">## Leave-one-out influence</span></span>
 <span><span class="va">db</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/influence.measures.html" class="external-link">dfbeta</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span></span>
 <span><span class="va">dp</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/dfpopsize.html">dfpopsize</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span></span>
@@ -213,6 +340,8 @@
 <ul>
 <li>
 <strong>Estimation methods</strong>: OLS, NLS, Poisson (MLE, GMM, EL), Negative Binomial (MLE, GMM, EL), iOLS</li>
+<li>
+<strong>Bayesian workflows</strong>: Poisson/NB models via <code>brms</code> and Stan, with posterior population-size summaries and chain diagnostics</li>
 <li>
 <strong>Covariate-varying parameters</strong>: <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>α</mi><annotation encoding="application/x-tex">\alpha</annotation></semantics></math> and <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>β</mi><annotation encoding="application/x-tex">\beta</annotation></semantics></math> via formula interface</li>
 <li>
@@ -229,7 +358,9 @@
 <li>
 <strong>Population size</strong>: bias-corrected point estimates with delta-method or bootstrap CIs</li>
 <li>
-<strong>Diagnostics</strong>: <code><a href="https://rdrr.io/r/stats/influence.measures.html" class="external-link">dfbeta()</a></code>, <code><a href="reference/dfpopsize.html">dfpopsize()</a></code>, <code><a href="reference/loo.html">loo()</a></code>, <code><a href="reference/rootogram.html">rootogram()</a></code>, <code><a href="reference/profile_gamma.html">profile_gamma()</a></code>, residual plots</li>
+<strong>Hypotheses for <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>ξ</mi><annotation encoding="application/x-tex">\xi</annotation></semantics></math></strong>: threshold, change-over-time, grouped, bootstrap, and Bayesian posterior-proposition tests with explicit <code>xi[...]</code> syntax</li>
+<li>
+<strong>Diagnostics</strong>: <code><a href="https://rdrr.io/r/stats/influence.measures.html" class="external-link">dfbeta()</a></code>, <code><a href="reference/dfpopsize.html">dfpopsize()</a></code>, <code><a href="reference/loo.html">loo()</a></code>, <code><a href="reference/rootogram.html">rootogram()</a></code>, <code><a href="reference/profile_gamma.html">profile_gamma()</a></code>, <code><a href="reference/dependence_bounds.html">dependence_bounds()</a></code>, <code><a href="reference/profile_dependence.html">profile_dependence()</a></code>, <code><a href="reference/robustness_dependence.html">robustness_dependence()</a></code>, <code><a href="reference/exceedance_popsize.html">exceedance_popsize()</a></code>, residual plots</li>
 <li>
 <strong>Model comparison</strong>: AIC/BIC, pseudo-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>R</mi><mn>2</mn></msup><annotation encoding="application/x-tex">R^2</annotation></semantics></math>, likelihood ratio tests</li>
 <li>

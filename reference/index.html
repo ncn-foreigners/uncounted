@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">uncounted</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2.1.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -18,7 +18,9 @@
       <ul class="navbar-nav me-auto"><li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
-  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/diagnostics.html">Model Diagnostics and Comparison</a></li>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/bayesian.html">Bayesian hidden-population models</a></li>
+    <li><a class="dropdown-item" href="../articles/diagnostics.html">Model Diagnostics and Comparison</a></li>
+    <li><a class="dropdown-item" href="../articles/hypotheses-popsize.html">Hypothesis Tests for Population Size</a></li>
     <li><a class="dropdown-item" href="../articles/iols.html">iOLS: Iterated OLS for Gamma Pseudo-Maximum Likelihood</a></li>
     <li><a class="dropdown-item" href="../articles/model-comparison.html">Model Comparison and Reporting</a></li>
     <li><a class="dropdown-item" href="../articles/shiny-app.html">Interactive Shiny Application</a></li>
@@ -50,6 +52,20 @@
 
 
       <dl><dt>
+
+          <code><a href="as_brmsfit.html">as_brmsfit()</a></code>
+
+        </dt>
+        <dd>Extract the brmsfit from a Bayesian uncounted Model</dd>
+
+        <dt>
+
+          <code><a href="bayes_methods.html">summary(<i>&lt;uncounted_bayes&gt;</i>)</a></code> <code><a href="bayes_methods.html">coef(<i>&lt;uncounted_bayes&gt;</i>)</a></code> <code><a href="bayes_methods.html">fitted(<i>&lt;uncounted_bayes&gt;</i>)</a></code> <code><a href="bayes_methods.html">predict(<i>&lt;uncounted_bayes&gt;</i>)</a></code> <code><a href="bayes_methods.html">residuals(<i>&lt;uncounted_bayes&gt;</i>)</a></code> <code><a href="bayes_methods.html">loo(<i>&lt;uncounted_bayes&gt;</i>)</a></code> <code><a href="bayes_methods.html">tidy(<i>&lt;uncounted_bayes&gt;</i>)</a></code> <code><a href="bayes_methods.html">glance(<i>&lt;uncounted_bayes&gt;</i>)</a></code>
+
+        </dt>
+        <dd>Methods for Bayesian Hidden-Population Models</dd>
+
+        <dt>
 
           <code><a href="bootstrap_popsize.html">bootstrap_popsize()</a></code>
 
@@ -83,6 +99,20 @@
 
         </dt>
         <dd>Compare Population Size Across Models</dd>
+
+        <dt>
+
+          <code><a href="default_priors_uncounted_bayes.html">default_priors_uncounted_bayes()</a></code>
+
+        </dt>
+        <dd>Default Priors for Bayesian Hidden-Population Models</dd>
+
+        <dt>
+
+          <code><a href="dependence_bounds.html">dependence_bounds()</a></code> <code><a href="dependence_bounds.html">sensitivity_dependence()</a></code> <code><a href="dependence_bounds.html">print(<i>&lt;uncounted_dependence_bounds&gt;</i>)</a></code> <code><a href="dependence_bounds.html">print(<i>&lt;uncounted_sensitivity&gt;</i>)</a></code>
+
+        </dt>
+        <dd>Dependence Bounds for Total Population Size</dd>
 
         <dt>
 
@@ -121,6 +151,27 @@
 
         <dt>
 
+          <code><a href="estimate_hidden_pop_bayes.html">estimate_hidden_pop_bayes()</a></code>
+
+        </dt>
+        <dd>Bayesian Hidden-Population Models via brms</dd>
+
+        <dt>
+
+          <code><a href="exceedance_popsize.html">exceedance_popsize()</a></code> <code><a href="exceedance_popsize.html">print(<i>&lt;uncounted_popsize_exceedance&gt;</i>)</a></code>
+
+        </dt>
+        <dd>Bootstrap Exceedance Probability for Population Size</dd>
+
+        <dt>
+
+          <code><a href="frailty_sensitivity.html">frailty_sensitivity()</a></code> <code><a href="frailty_sensitivity.html">print(<i>&lt;uncounted_frailty_sensitivity&gt;</i>)</a></code> <code><a href="frailty_sensitivity.html">plot(<i>&lt;uncounted_frailty_sensitivity&gt;</i>)</a></code>
+
+        </dt>
+        <dd>Omitted-Frailty Sensitivity Analysis for Hidden Population Size</dd>
+
+        <dt>
+
           <code><a href="glance.uncounted.html">glance(<i>&lt;uncounted&gt;</i>)</a></code>
 
         </dt>
@@ -132,6 +183,13 @@
 
         </dt>
         <dd>Hat values (leverage)</dd>
+
+        <dt>
+
+          <code><a href="hypotheses_popsize.html">hypotheses_popsize()</a></code>
+
+        </dt>
+        <dd>Hypothesis Tests for Population Size Estimates</dd>
 
         <dt>
 
@@ -219,6 +277,13 @@
 
         <dt>
 
+          <code><a href="posterior_popsize_draws.html">posterior_popsize_draws()</a></code>
+
+        </dt>
+        <dd>Extract Posterior Population-Size Draws</dd>
+
+        <dt>
+
           <code><a href="predict.uncounted.html">predict(<i>&lt;uncounted&gt;</i>)</a></code>
 
         </dt>
@@ -268,6 +333,13 @@
 
         <dt>
 
+          <code><a href="profile_dependence.html">profile_dependence()</a></code>
+
+        </dt>
+        <dd>Profile Dependence Sensitivity for Population Size</dd>
+
+        <dt>
+
           <code><a href="profile_gamma.html">profile_gamma()</a></code>
 
         </dt>
@@ -279,6 +351,13 @@
 
         </dt>
         <dd>Residuals for uncounted models</dd>
+
+        <dt>
+
+          <code><a href="robustness_dependence.html">robustness_dependence()</a></code> <code><a href="robustness_dependence.html">print(<i>&lt;uncounted_dependence_robustness&gt;</i>)</a></code>
+
+        </dt>
+        <dd>Dependence Robustness Value for Population Size</dd>
 
         <dt>
 

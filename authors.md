@@ -13,13 +13,13 @@ Source:
 [`DESCRIPTION`](https://github.com/ncn-foreigners/uncounted/blob/main/DESCRIPTION)
 
 Beresewicz M, Czerniawska A (2026). *uncounted: Estimation of
-Unauthorized Migrant Populations*. R package version 1.1.0,
-<https://ncn-foreigners.github.io/uncounted/>.
+Unauthorized Migrant Populations*. R package version 2.1.0,
+<https://ncn-foreigners.ue.poznan.pl/uncounted/>.
 
     @Manual{,
       title = {uncounted: Estimation of Unauthorized Migrant Populations},
       author = {Maciej Beresewicz and Aniela Czerniawska},
       year = {2026},
-      note = {R package version 1.1.0},
-      url = {https://ncn-foreigners.github.io/uncounted/},
+      note = {R package version 2.1.0},
+      url = {https://ncn-foreigners.ue.poznan.pl/uncounted/},
     }

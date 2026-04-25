@@ -618,6 +618,68 @@ boot_result$popsize_full
 #> 1 (all) 290597.5  290498.3    330466.8  388022.4 185961.5 741945.3
 ```
 
+### Dependence diagnostics
+
+The decomposition $$\mu_{i} = \xi_{i}\rho_{i}$$ is an identifying
+assumption. Aggregated observed counts do not test that separability
+directly, so the package treats sensitivity analysis as a separate
+diagnostic layer rather than as part of the ordinary confidence
+interval.
+
+Two complementary tools are available:
+
+- [`dependence_bounds()`](https://ncn-foreigners.github.io/uncounted/reference/dependence_bounds.md)
+  keeps the baseline estimate fixed and reports an identification
+  envelope under
+  $$\mu_{i} = \xi_{i}\rho_{i}\kappa_{i},\qquad 1/\Gamma \leq \kappa_{i} \leq \Gamma.$$
+- [`profile_dependence()`](https://ncn-foreigners.github.io/uncounted/reference/profile_dependence.md)
+  imposes a parametric offset
+  $$\mu_{i}(\delta) = \exp(\delta)\,\xi_{i}\rho_{i}$$ and refits the
+  model, so the plug-in estimate $\widehat{\xi}(\delta)$ can move with
+  the sensitivity parameter.
+
+``` r
+bounds <- dependence_bounds(fit, Gamma = c(1, 1.1, 1.25, 1.5))
+prof_dep <- profile_dependence(
+  fit,
+  delta_grid = seq(-0.5, 0.5, length.out = 9),
+  plot = FALSE
+)
+robustness_dependence(prof_dep, threshold = 500000)
+```
+
+For threshold questions on the bootstrap distribution, use
+[`exceedance_popsize()`](https://ncn-foreigners.github.io/uncounted/reference/exceedance_popsize.md)
+on the result of
+[`bootstrap_popsize()`](https://ncn-foreigners.github.io/uncounted/reference/bootstrap_popsize.md)
+to obtain an empirical bootstrap tail area.
+
+A third diagnostic,
+[`frailty_sensitivity()`](https://ncn-foreigners.github.io/uncounted/reference/frailty_sensitivity.md),
+targets the identifying assumption more directly. It treats residual
+dependence between hidden stock and detection as an omitted shared
+frailty, linearizes the fitted Poisson/NB mean model with its IRLS
+working response, and indexes that omitted factor by weighted
+partial-$R^{2}$ parameters. The resulting first-order bias is then
+mapped into the grouped hidden-population estimand $\Xi$, so the output
+is on the same scale as `popsize(by = ...)` rather than on the raw
+coefficient scale.
+
+``` r
+frailty_sensitivity(
+  fit,
+  by = ~ year,
+  r2_d = c(0, 0.05, 0.10),
+  r2_y = c(0, 0.05, 0.10),
+  plot = FALSE
+)
+```
+
+The full derivation, including the omitted-frailty model, IRLS
+linearization, weighted bias formulas, and robustness-value definitions,
+is documented in
+[`?frailty_sensitivity`](https://ncn-foreigners.github.io/uncounted/reference/frailty_sensitivity.md).
+
 ## References
 
 - Beręsewicz, M., & Pawlukiewicz, K. (2020). Estimation of the number of

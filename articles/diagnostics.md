@@ -473,6 +473,159 @@ head(prof)
 #> 6 0.13165263 2035597.4 -2638.698
 ```
 
+## 8. Dependence and threshold diagnostics
+
+The factorization
+$$E\left( m_{i} \mid N_{i},n_{i} \right) = \xi_{i}\rho_{i}$$ is an
+identifying assumption, not something the observed aggregated data can
+test directly. The package therefore keeps four related diagnostics
+separate:
+
+- [`dependence_bounds()`](https://ncn-foreigners.github.io/uncounted/reference/dependence_bounds.md):
+  fixed-center identification envelope.
+- [`profile_dependence()`](https://ncn-foreigners.github.io/uncounted/reference/profile_dependence.md):
+  model-based moving-`\xi` profile.
+- [`robustness_dependence()`](https://ncn-foreigners.github.io/uncounted/reference/robustness_dependence.md):
+  smallest dependence strength needed to cross a target.
+- [`exceedance_popsize()`](https://ncn-foreigners.github.io/uncounted/reference/exceedance_popsize.md):
+  empirical bootstrap tail area for threshold questions.
+
+### 8.1 Fixed-center identification bounds
+
+Under the bounded sensitivity model,
+$$\mu_{i} = \xi_{i}\rho_{i}\kappa_{i},\qquad 1/\Gamma \leq \kappa_{i} \leq \Gamma,$$
+the case `Gamma = 1` reproduces the baseline estimate and larger values
+of `Gamma` widen the admissible range for the total `xi`.
+
+``` r
+sens <- dependence_bounds(fit_nb, Gamma = c(1, 1.1, 1.25, 1.5))
+sens
+#> Dependence bounds analysis
+#> Baseline total: 1,182,125 
+#> Interpretation: bounds reflect identification sensitivity, not sampling uncertainty.
+#> 
+#>  Gamma estimate     lower   upper pct_change_lower pct_change_upper
+#>   1.00  1182125 1182124.8 1182125         0.000000                0
+#>   1.10  1182125 1074658.9 1300337        -9.090909               10
+#>   1.25  1182125  945699.8 1477656       -20.000000               25
+#>   1.50  1182125  788083.2 1773187       -33.333333               50
+```
+
+The table keeps the baseline estimate fixed and reports lower and upper
+bounds under progressively stronger departures from the separability
+assumption. These bounds are useful when the substantive question is
+whether the headline estimate would remain above or below a
+policy-relevant threshold under moderate departures from independence.
+
+### 8.2 Moving-`\xi` dependence profile
+
+[`profile_dependence()`](https://ncn-foreigners.github.io/uncounted/reference/profile_dependence.md)
+instead treats dependence as a parametric offset
+$$\mu_{i}(\delta) = \exp(\delta)\,\xi_{i}\rho_{i},$$ refits the model
+for each fixed `delta`, and reports the resulting plug-in total
+$\widehat{\xi}(\delta)$.
+
+``` r
+prof_dep <- profile_dependence(
+  fit_nb,
+  delta_grid = seq(-0.4, 0.4, length.out = 7),
+  plot = FALSE
+)
+prof_dep
+#>        delta     kappa      xi    loglik
+#> 1 -0.4000000 0.6703200 1279294 -2621.590
+#> 2 -0.2666667 0.7659283 1285023 -2621.250
+#> 3 -0.1333333 0.8751733 1291357 -2621.098
+#> 4  0.0000000 1.0000000 1306134 -2621.116
+#> 5  0.1333333 1.1426308 1316081 -2621.291
+#> 6  0.2666667 1.3056052 1333202 -2621.607
+#> 7  0.4000000 1.4918247 1347375 -2622.051
+```
+
+Unlike
+[`dependence_bounds()`](https://ncn-foreigners.github.io/uncounted/reference/dependence_bounds.md),
+the estimate is allowed to move because the model is re-fit at each grid
+point. This makes the profile more model-dependent, but it answers a
+different question: how much does the headline estimate shift under a
+structured departure from separability?
+
+### 8.3 Robustness value for a target crossing
+
+The profile can be summarised by the smallest absolute `delta` needed to
+push the total estimate across a threshold or relative target.
+
+``` r
+robustness_dependence(
+  prof_dep,
+  threshold = attr(popsize(fit_nb, total = TRUE), "total")$estimate * 0.9,
+  direction = "decrease"
+)
+#> Dependence robustness analysis
+#> Baseline xi: 1,306,134 
+#> Target xi: 1,174,162 
+#> Target not reached on supplied delta grid.
+```
+
+This is the one-dimensional analogue of a robustness value: the smaller
+the reported `rv_Gamma`, the less dependence is needed to overturn the
+chosen substantive conclusion.
+
+### 8.4 Bootstrap threshold probabilities
+
+When the question is explicitly threshold-based, the bootstrap can be
+summarised as an empirical tail area rather than an interval.
+
+``` r
+boot_dep <- bootstrap_popsize(
+  fit_nb,
+  R = 99,
+  cluster = ~ country_code,
+  total = TRUE,
+  verbose = FALSE
+)
+
+exceedance_popsize(boot_dep, threshold = 500000)
+```
+
+[`exceedance_popsize()`](https://ncn-foreigners.github.io/uncounted/reference/exceedance_popsize.md)
+reports a bootstrap exceedance probability, not a Bayesian posterior
+probability. It is most useful for statements such as “what fraction of
+bootstrap replications exceed 500,000?” rather than for constructing
+another confidence interval.
+
+### 8.5 Omitted-frailty sensitivity for `Xi`
+
+The previous diagnostics either keep the baseline estimate fixed
+([`dependence_bounds()`](https://ncn-foreigners.github.io/uncounted/reference/dependence_bounds.md)),
+move it through a parametric dependence offset
+([`profile_dependence()`](https://ncn-foreigners.github.io/uncounted/reference/profile_dependence.md)),
+or summarize the bootstrap distribution
+([`exceedance_popsize()`](https://ncn-foreigners.github.io/uncounted/reference/exceedance_popsize.md)).
+A different question is whether an omitted shared frailty could jointly
+affect hidden stock and detection in a way that changes the grouped
+hidden-population estimate itself.
+
+[`frailty_sensitivity()`](https://ncn-foreigners.github.io/uncounted/reference/frailty_sensitivity.md)
+addresses that question by linearizing the fitted Poisson/NB mean model
+with its IRLS working response, indexing the omitted frailty by weighted
+partial-$R^{2}$ values, and mapping the resulting first-order bias into
+the target ${\widehat{\Xi}}_{t}$.
+
+``` r
+frailty_sensitivity(
+  fit_nb,
+  by = ~ year,
+  r2_d = c(0, 0.05, 0.10),
+  r2_y = c(0, 0.05, 0.10),
+  plot = FALSE
+)
+```
+
+The output reports a grouped sensitivity surface for $\Xi_{t}$ together
+with robustness values for threshold or percentage-change questions. The
+full derivation is documented in
+[`?frailty_sensitivity`](https://ncn-foreigners.github.io/uncounted/reference/frailty_sensitivity.md).
+
 ## References
 
 - Beręsewicz, M., & Pawlukiewicz, K. (2020). Estimation of the number of

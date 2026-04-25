@@ -1,5 +1,205 @@
 # Changelog
 
+## uncounted 2.1.0
+
+### New features
+
+- **Bayesian model summaries**:
+  [`summary()`](https://rdrr.io/r/base/summary.html) now supports
+  `uncounted_bayes` fits and prints posterior coefficient summaries,
+  R-hat/ESS diagnostics, HMC divergence and treedepth counts, and the
+  population-size posterior summary in the same high-level layout as
+  frequentist
+  [`summary.uncounted()`](https://ncn-foreigners.github.io/uncounted/reference/summary.uncounted.md).
+
+- **Bayesian S3 methods**: Added
+  [`coef()`](https://rdrr.io/r/stats/coef.html),
+  [`fitted()`](https://rdrr.io/r/stats/fitted.values.html),
+  [`predict()`](https://rdrr.io/r/stats/predict.html),
+  [`residuals()`](https://rdrr.io/r/stats/residuals.html),
+  [`loo()`](https://ncn-foreigners.github.io/uncounted/reference/loo.md),
+  [`tidy()`](https://generics.r-lib.org/reference/tidy.html), and
+  [`glance()`](https://generics.r-lib.org/reference/glance.html) methods
+  for `uncounted_bayes` objects. Predictions delegate to the underlying
+  `brmsfit` posterior prediction functions, while
+  [`loo()`](https://ncn-foreigners.github.io/uncounted/reference/loo.md)
+  wraps [`brms::loo()`](https://mc-stan.org/loo/reference/loo.html).
+
+## uncounted 2.0.0
+
+### New features
+
+- **Bayesian hidden-population models**: New
+  [`estimate_hidden_pop_bayes()`](https://ncn-foreigners.github.io/uncounted/reference/estimate_hidden_pop_bayes.md)
+  fits Bayesian Poisson and negative-binomial versions of the core count
+  model through `brms`, using `rstan` by default and `cmdstanr` when
+  requested and installed.
+
+- **Posterior population-size summaries**:
+  [`popsize()`](https://ncn-foreigners.github.io/uncounted/reference/popsize.md)
+  now has a Bayesian method for `uncounted_bayes` fits. It computes
+  posterior draws of `xi = sum(N_i^alpha_i)` by the same grouping logic
+  used by frequentist fits, and reports posterior medians, means,
+  standard deviations, credible intervals, and optional totals.
+
+- **Bayesian hypothesis propositions**:
+  [`hypotheses_popsize()`](https://ncn-foreigners.github.io/uncounted/reference/hypotheses_popsize.md)
+  now accepts Bayesian
+  [`popsize()`](https://ncn-foreigners.github.io/uncounted/reference/popsize.md)
+  objects. Directional expressions such as
+  `xi[year == 2024 & country_code == "UKR"] < 15000` are interpreted as
+  posterior propositions and report `Pr(H1 | data)`, `Pr(H0 | data)`,
+  posterior odds, and credible intervals for the contrast rather than
+  frequentist p values.
+
+- **Posterior draw access**: New
+  [`posterior_popsize_draws()`](https://ncn-foreigners.github.io/uncounted/reference/posterior_popsize_draws.md)
+  extracts draw-by-group population-size matrices, and
+  [`as_brmsfit()`](https://ncn-foreigners.github.io/uncounted/reference/as_brmsfit.md)
+  returns the underlying `brmsfit` for users who want direct access to
+  `brms`, `loo`, or posterior-diagnostic tooling.
+
+### Scope
+
+- The first Bayesian release supports Poisson/NB likelihoods, alpha/beta
+  formulas, fixed gamma, scalar estimated gamma, bounded detection
+  links, and constrained alpha/beta transforms. `cov_gamma`,
+  OLS/NLS/iOLS, and GMM/empirical-likelihood Bayesian analogues are
+  intentionally deferred.
+
+### Documentation
+
+- **Bayesian vignette**: New vignette documenting the Bayesian
+  translation of the frequentist model, posterior `xi` summaries,
+  posterior hypothesis probabilities, HMC diagnostics, prior
+  sensitivity, posterior predictive checks, and simulation-based
+  Bayesian design/power analysis.
+
+## uncounted 1.5.0
+
+### New features
+
+- **[`hypotheses_popsize()`](https://ncn-foreigners.github.io/uncounted/reference/hypotheses_popsize.md)**:
+  New Wald-style hypothesis testing helper for population-size estimates
+  from
+  [`popsize()`](https://ncn-foreigners.github.io/uncounted/reference/popsize.md)
+  and
+  [`bootstrap_popsize()`](https://ncn-foreigners.github.io/uncounted/reference/bootstrap_popsize.md).
+  Supports explicit `xi[...]` syntax for threshold and contrast tests,
+  such as `xi[year == 2024] > 200000`,
+  `xi[year == 2024] - xi[year == 2019] > 0`, compact one-variable labels
+  such as `xi[2024]`, positional aliases `b1`, `b2`, and custom function
+  hypotheses.
+
+- **Explicit null and alternative output**:
+  [`hypotheses_popsize()`](https://ncn-foreigners.github.io/uncounted/reference/hypotheses_popsize.md)
+  reports `null_hypothesis` and `alternative_hypothesis` columns so
+  one-sided tests are unambiguous. The new `hypothesis_side` argument
+  lets users choose whether a directional character expression is
+  interpreted as the alternative hypothesis (default) or the null
+  hypothesis.
+
+### Inference
+
+- **Delta-method covariance for
+  [`popsize()`](https://ncn-foreigners.github.io/uncounted/reference/popsize.md)
+  contrasts**:
+  [`popsize()`](https://ncn-foreigners.github.io/uncounted/reference/popsize.md)
+  now stores hidden group metadata and full covariance matrices for
+  plug-in and bias-corrected population-size estimates. Contrasts across
+  years, countries, or other grouped estimates therefore account for
+  dependence induced by the shared fitted model parameters.
+
+- **Bootstrap hypothesis tests**:
+  [`bootstrap_popsize()`](https://ncn-foreigners.github.io/uncounted/reference/bootstrap_popsize.md)
+  now preserves group metadata and draw labels so the same
+  [`hypotheses_popsize()`](https://ncn-foreigners.github.io/uncounted/reference/hypotheses_popsize.md)
+  syntax can be applied to fractional weighted bootstrap objects.
+  Bootstrap tests evaluate contrasts in each draw and use the bootstrap
+  standard deviation in the Wald statistic.
+
+### Documentation
+
+- **Population-size hypothesis vignette**: New vignette explaining
+  threshold tests, change-over-time tests, multi-row filters, custom
+  function hypotheses, delta-method/Wald theory, bootstrap Wald
+  inference, empirical bootstrap exceedance probabilities, and power
+  limitations.
+
+## uncounted 1.4.0
+
+### New features
+
+- **[`frailty_sensitivity()`](https://ncn-foreigners.github.io/uncounted/reference/frailty_sensitivity.md)**:
+  New omitted-frailty identification sensitivity analysis for Poisson
+  and NB MLE fits. The method linearizes the fitted count model with its
+  IRLS working response, indexes omitted shared frailty with weighted
+  partial-`R^2` parameters, and reports how the grouped
+  hidden-population estimand `Xi` changes under first-order bias
+  formulas.
+
+- **Grouped `Xi_t` support in omitted-frailty sensitivity**:
+  [`frailty_sensitivity()`](https://ncn-foreigners.github.io/uncounted/reference/frailty_sensitivity.md)
+  mirrors `popsize(by = ...)` group construction so users can study
+  yearly or subgroup hidden-population targets with the same aggregation
+  logic as the main population-size output.
+
+### Documentation
+
+- **Theory-rich manual page for omitted-frailty sensitivity**: The new
+  [`frailty_sensitivity()`](https://ncn-foreigners.github.io/uncounted/reference/frailty_sensitivity.md)
+  help page documents the full model setup `mu = xi * rho`, the
+  omitted-frailty relaxation, IRLS linearization, weighted partial-`R^2`
+  sensitivity parameters, bias formulas, delta-method conversion to
+  `Xi`, robustness values, interpretation, and limitations.
+
+- **Diagnostics and theory vignette updates**: The diagnostics vignette
+  now includes a compact omitted-frailty workflow, and the theory
+  vignette distinguishes fixed-center dependence bounds, moving-`Xi`
+  dependence profiles, bootstrap threshold summaries, and the new
+  IRLS-based omitted-frailty diagnostic.
+
+## uncounted 1.3.0
+
+### New features
+
+- **[`dependence_bounds()`](https://ncn-foreigners.github.io/uncounted/reference/dependence_bounds.md)**:
+  New fixed-center identification envelope for the separability
+  assumption underlying `E(m_i | N_i, n_i) = xi_i * rho_i`. Reports
+  lower and upper total-population bounds over user-supplied `Gamma`
+  values and optionally computes a tipping-point `gamma_star`.
+
+- **[`sensitivity_dependence()`](https://ncn-foreigners.github.io/uncounted/reference/dependence_bounds.md)
+  deprecation**: Kept as a backward-compatible wrapper to
+  [`dependence_bounds()`](https://ncn-foreigners.github.io/uncounted/reference/dependence_bounds.md)
+  and now emits a deprecation warning.
+
+- **[`profile_dependence()`](https://ncn-foreigners.github.io/uncounted/reference/profile_dependence.md)**:
+  New moving-`xi` dependence profile for Poisson and NB MLE fits. Refits
+  the model over a grid of fixed dependence offsets `delta`, returning
+  `delta`, `kappa = exp(delta)`, the plug-in total population-size
+  estimate, and the corresponding log-likelihood.
+
+- **[`robustness_dependence()`](https://ncn-foreigners.github.io/uncounted/reference/robustness_dependence.md)**:
+  New one-dimensional robustness-value summary built on top of the
+  dependence profile. Reports the smallest dependence strength needed
+  for the profiled total population-size estimate to cross a
+  user-specified threshold or relative target.
+
+- **[`exceedance_popsize()`](https://ncn-foreigners.github.io/uncounted/reference/exceedance_popsize.md)**:
+  New bootstrap threshold helper that computes the empirical bootstrap
+  tail area `P*(xi > c)` or `P*(xi < c)` from an `uncounted_boot`
+  object, using per-replicate totals when available.
+
+### Documentation
+
+- **Dependence diagnostics workflow**: The README, diagnostics vignette,
+  and theory vignette now distinguish fixed-center bounds, moving-`xi`
+  profiles, robustness-value summaries, and bootstrap exceedance
+  probabilities. The new examples use simulated data where auxiliary
+  counts scale with the reference population, matching the real-data
+  structure more closely.
+
 ## uncounted 1.1.0
 
 ### New features

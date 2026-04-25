@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">uncounted</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2.1.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -18,7 +18,9 @@
       <ul class="navbar-nav me-auto"><li class="nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
-  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/diagnostics.html">Model Diagnostics and Comparison</a></li>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/bayesian.html">Bayesian hidden-population models</a></li>
+    <li><a class="dropdown-item" href="../articles/diagnostics.html">Model Diagnostics and Comparison</a></li>
+    <li><a class="dropdown-item" href="../articles/hypotheses-popsize.html">Hypothesis Tests for Population Size</a></li>
     <li><a class="dropdown-item" href="../articles/iols.html">iOLS: Iterated OLS for Gamma Pseudo-Maximum Likelihood</a></li>
     <li><a class="dropdown-item" href="../articles/model-comparison.html">Model Comparison and Reporting</a></li>
     <li><a class="dropdown-item" href="../articles/shiny-app.html">Interactive Shiny Application</a></li>
@@ -40,6 +42,80 @@
       <small>Source: <a href="https://github.com/ncn-foreigners/uncounted/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="2.1.0" id="uncounted-210">uncounted 2.1.0<a class="anchor" aria-label="anchor" href="#uncounted-210"></a></h2>
+<div class="section level3">
+<h3 id="new-features-2-1-0">New features<a class="anchor" aria-label="anchor" href="#new-features-2-1-0"></a></h3>
+<ul><li><p><strong>Bayesian model summaries</strong>: <code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code> now supports <code>uncounted_bayes</code> fits and prints posterior coefficient summaries, R-hat/ESS diagnostics, HMC divergence and treedepth counts, and the population-size posterior summary in the same high-level layout as frequentist <code><a href="../reference/summary.uncounted.html">summary.uncounted()</a></code>.</p></li>
+<li><p><strong>Bayesian S3 methods</strong>: Added <code><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef()</a></code>, <code><a href="https://rdrr.io/r/stats/fitted.values.html" class="external-link">fitted()</a></code>, <code><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict()</a></code>, <code><a href="https://rdrr.io/r/stats/residuals.html" class="external-link">residuals()</a></code>, <code><a href="../reference/loo.html">loo()</a></code>, <code><a href="https://generics.r-lib.org/reference/tidy.html" class="external-link">tidy()</a></code>, and <code><a href="https://generics.r-lib.org/reference/glance.html" class="external-link">glance()</a></code> methods for <code>uncounted_bayes</code> objects. Predictions delegate to the underlying <code>brmsfit</code> posterior prediction functions, while <code><a href="../reference/loo.html">loo()</a></code> wraps <code><a href="https://mc-stan.org/loo/reference/loo.html" class="external-link">brms::loo()</a></code>.</p></li>
+</ul></div>
+</div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="2.0.0" id="uncounted-200">uncounted 2.0.0<a class="anchor" aria-label="anchor" href="#uncounted-200"></a></h2>
+<div class="section level3">
+<h3 id="new-features-2-0-0">New features<a class="anchor" aria-label="anchor" href="#new-features-2-0-0"></a></h3>
+<ul><li><p><strong>Bayesian hidden-population models</strong>: New <code><a href="../reference/estimate_hidden_pop_bayes.html">estimate_hidden_pop_bayes()</a></code> fits Bayesian Poisson and negative-binomial versions of the core count model through <code>brms</code>, using <code>rstan</code> by default and <code>cmdstanr</code> when requested and installed.</p></li>
+<li><p><strong>Posterior population-size summaries</strong>: <code><a href="../reference/popsize.html">popsize()</a></code> now has a Bayesian method for <code>uncounted_bayes</code> fits. It computes posterior draws of <code>xi = sum(N_i^alpha_i)</code> by the same grouping logic used by frequentist fits, and reports posterior medians, means, standard deviations, credible intervals, and optional totals.</p></li>
+<li><p><strong>Bayesian hypothesis propositions</strong>: <code><a href="../reference/hypotheses_popsize.html">hypotheses_popsize()</a></code> now accepts Bayesian <code><a href="../reference/popsize.html">popsize()</a></code> objects. Directional expressions such as <code>xi[year == 2024 &amp; country_code == "UKR"] &lt; 15000</code> are interpreted as posterior propositions and report <code>Pr(H1 | data)</code>, <code>Pr(H0 | data)</code>, posterior odds, and credible intervals for the contrast rather than frequentist p values.</p></li>
+<li><p><strong>Posterior draw access</strong>: New <code><a href="../reference/posterior_popsize_draws.html">posterior_popsize_draws()</a></code> extracts draw-by-group population-size matrices, and <code><a href="../reference/as_brmsfit.html">as_brmsfit()</a></code> returns the underlying <code>brmsfit</code> for users who want direct access to <code>brms</code>, <code>loo</code>, or posterior-diagnostic tooling.</p></li>
+</ul></div>
+<div class="section level3">
+<h3 id="scope-2-0-0">Scope<a class="anchor" aria-label="anchor" href="#scope-2-0-0"></a></h3>
+<ul><li>The first Bayesian release supports Poisson/NB likelihoods, alpha/beta formulas, fixed gamma, scalar estimated gamma, bounded detection links, and constrained alpha/beta transforms. <code>cov_gamma</code>, OLS/NLS/iOLS, and GMM/empirical-likelihood Bayesian analogues are intentionally deferred.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="documentation-2-0-0">Documentation<a class="anchor" aria-label="anchor" href="#documentation-2-0-0"></a></h3>
+<ul><li>
+<strong>Bayesian vignette</strong>: New vignette documenting the Bayesian translation of the frequentist model, posterior <code>xi</code> summaries, posterior hypothesis probabilities, HMC diagnostics, prior sensitivity, posterior predictive checks, and simulation-based Bayesian design/power analysis.</li>
+</ul></div>
+</div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.5.0" id="uncounted-150">uncounted 1.5.0<a class="anchor" aria-label="anchor" href="#uncounted-150"></a></h2>
+<div class="section level3">
+<h3 id="new-features-1-5-0">New features<a class="anchor" aria-label="anchor" href="#new-features-1-5-0"></a></h3>
+<ul><li><p><strong><code><a href="../reference/hypotheses_popsize.html">hypotheses_popsize()</a></code></strong>: New Wald-style hypothesis testing helper for population-size estimates from <code><a href="../reference/popsize.html">popsize()</a></code> and <code><a href="../reference/bootstrap_popsize.html">bootstrap_popsize()</a></code>. Supports explicit <code>xi[...]</code> syntax for threshold and contrast tests, such as <code>xi[year == 2024] &gt; 200000</code>, <code>xi[year == 2024] - xi[year == 2019] &gt; 0</code>, compact one-variable labels such as <code>xi[2024]</code>, positional aliases <code>b1</code>, <code>b2</code>, and custom function hypotheses.</p></li>
+<li><p><strong>Explicit null and alternative output</strong>: <code><a href="../reference/hypotheses_popsize.html">hypotheses_popsize()</a></code> reports <code>null_hypothesis</code> and <code>alternative_hypothesis</code> columns so one-sided tests are unambiguous. The new <code>hypothesis_side</code> argument lets users choose whether a directional character expression is interpreted as the alternative hypothesis (default) or the null hypothesis.</p></li>
+</ul></div>
+<div class="section level3">
+<h3 id="inference-1-5-0">Inference<a class="anchor" aria-label="anchor" href="#inference-1-5-0"></a></h3>
+<ul><li><p><strong>Delta-method covariance for <code><a href="../reference/popsize.html">popsize()</a></code> contrasts</strong>: <code><a href="../reference/popsize.html">popsize()</a></code> now stores hidden group metadata and full covariance matrices for plug-in and bias-corrected population-size estimates. Contrasts across years, countries, or other grouped estimates therefore account for dependence induced by the shared fitted model parameters.</p></li>
+<li><p><strong>Bootstrap hypothesis tests</strong>: <code><a href="../reference/bootstrap_popsize.html">bootstrap_popsize()</a></code> now preserves group metadata and draw labels so the same <code><a href="../reference/hypotheses_popsize.html">hypotheses_popsize()</a></code> syntax can be applied to fractional weighted bootstrap objects. Bootstrap tests evaluate contrasts in each draw and use the bootstrap standard deviation in the Wald statistic.</p></li>
+</ul></div>
+<div class="section level3">
+<h3 id="documentation-1-5-0">Documentation<a class="anchor" aria-label="anchor" href="#documentation-1-5-0"></a></h3>
+<ul><li>
+<strong>Population-size hypothesis vignette</strong>: New vignette explaining threshold tests, change-over-time tests, multi-row filters, custom function hypotheses, delta-method/Wald theory, bootstrap Wald inference, empirical bootstrap exceedance probabilities, and power limitations.</li>
+</ul></div>
+</div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.4.0" id="uncounted-140">uncounted 1.4.0<a class="anchor" aria-label="anchor" href="#uncounted-140"></a></h2>
+<div class="section level3">
+<h3 id="new-features-1-4-0">New features<a class="anchor" aria-label="anchor" href="#new-features-1-4-0"></a></h3>
+<ul><li><p><strong><code><a href="../reference/frailty_sensitivity.html">frailty_sensitivity()</a></code></strong>: New omitted-frailty identification sensitivity analysis for Poisson and NB MLE fits. The method linearizes the fitted count model with its IRLS working response, indexes omitted shared frailty with weighted partial-<code>R^2</code> parameters, and reports how the grouped hidden-population estimand <code>Xi</code> changes under first-order bias formulas.</p></li>
+<li><p><strong>Grouped <code>Xi_t</code> support in omitted-frailty sensitivity</strong>: <code><a href="../reference/frailty_sensitivity.html">frailty_sensitivity()</a></code> mirrors <code>popsize(by = ...)</code> group construction so users can study yearly or subgroup hidden-population targets with the same aggregation logic as the main population-size output.</p></li>
+</ul></div>
+<div class="section level3">
+<h3 id="documentation-1-4-0">Documentation<a class="anchor" aria-label="anchor" href="#documentation-1-4-0"></a></h3>
+<ul><li><p><strong>Theory-rich manual page for omitted-frailty sensitivity</strong>: The new <code><a href="../reference/frailty_sensitivity.html">frailty_sensitivity()</a></code> help page documents the full model setup <code>mu = xi * rho</code>, the omitted-frailty relaxation, IRLS linearization, weighted partial-<code>R^2</code> sensitivity parameters, bias formulas, delta-method conversion to <code>Xi</code>, robustness values, interpretation, and limitations.</p></li>
+<li><p><strong>Diagnostics and theory vignette updates</strong>: The diagnostics vignette now includes a compact omitted-frailty workflow, and the theory vignette distinguishes fixed-center dependence bounds, moving-<code>Xi</code> dependence profiles, bootstrap threshold summaries, and the new IRLS-based omitted-frailty diagnostic.</p></li>
+</ul></div>
+</div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.3.0" id="uncounted-130">uncounted 1.3.0<a class="anchor" aria-label="anchor" href="#uncounted-130"></a></h2>
+<div class="section level3">
+<h3 id="new-features-1-3-0">New features<a class="anchor" aria-label="anchor" href="#new-features-1-3-0"></a></h3>
+<ul><li><p><strong><code><a href="../reference/dependence_bounds.html">dependence_bounds()</a></code></strong>: New fixed-center identification envelope for the separability assumption underlying <code>E(m_i | N_i, n_i) = xi_i * rho_i</code>. Reports lower and upper total-population bounds over user-supplied <code>Gamma</code> values and optionally computes a tipping-point <code>gamma_star</code>.</p></li>
+<li><p><strong><code><a href="../reference/dependence_bounds.html">sensitivity_dependence()</a></code> deprecation</strong>: Kept as a backward-compatible wrapper to <code><a href="../reference/dependence_bounds.html">dependence_bounds()</a></code> and now emits a deprecation warning.</p></li>
+<li><p><strong><code><a href="../reference/profile_dependence.html">profile_dependence()</a></code></strong>: New moving-<code>xi</code> dependence profile for Poisson and NB MLE fits. Refits the model over a grid of fixed dependence offsets <code>delta</code>, returning <code>delta</code>, <code>kappa = exp(delta)</code>, the plug-in total population-size estimate, and the corresponding log-likelihood.</p></li>
+<li><p><strong><code><a href="../reference/robustness_dependence.html">robustness_dependence()</a></code></strong>: New one-dimensional robustness-value summary built on top of the dependence profile. Reports the smallest dependence strength needed for the profiled total population-size estimate to cross a user-specified threshold or relative target.</p></li>
+<li><p><strong><code><a href="../reference/exceedance_popsize.html">exceedance_popsize()</a></code></strong>: New bootstrap threshold helper that computes the empirical bootstrap tail area <code>P*(xi &gt; c)</code> or <code>P*(xi &lt; c)</code> from an <code>uncounted_boot</code> object, using per-replicate totals when available.</p></li>
+</ul></div>
+<div class="section level3">
+<h3 id="documentation-1-3-0">Documentation<a class="anchor" aria-label="anchor" href="#documentation-1-3-0"></a></h3>
+<ul><li>
+<strong>Dependence diagnostics workflow</strong>: The README, diagnostics vignette, and theory vignette now distinguish fixed-center bounds, moving-<code>xi</code> profiles, robustness-value summaries, and bootstrap exceedance probabilities. The new examples use simulated data where auxiliary counts scale with the reference population, matching the real-data structure more closely.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.1.0" id="uncounted-110">uncounted 1.1.0<a class="anchor" aria-label="anchor" href="#uncounted-110"></a></h2>
 <div class="section level3">
