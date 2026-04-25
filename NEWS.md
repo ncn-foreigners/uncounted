@@ -1,3 +1,42 @@
+# uncounted 1.5.0
+
+## New features
+
+* **`hypotheses_popsize()`**: New Wald-style hypothesis testing helper for
+  population-size estimates from `popsize()` and `bootstrap_popsize()`.
+  Supports explicit `xi[...]` syntax for threshold and contrast tests, such as
+  `xi[year == 2024] > 200000`,
+  `xi[year == 2024] - xi[year == 2019] > 0`, compact one-variable labels such
+  as `xi[2024]`, positional aliases `b1`, `b2`, and custom function
+  hypotheses.
+
+* **Explicit null and alternative output**: `hypotheses_popsize()` reports
+  `null_hypothesis` and `alternative_hypothesis` columns so one-sided tests are
+  unambiguous. The new `hypothesis_side` argument lets users choose whether a
+  directional character expression is interpreted as the alternative
+  hypothesis (default) or the null hypothesis.
+
+## Inference
+
+* **Delta-method covariance for `popsize()` contrasts**: `popsize()` now stores
+  hidden group metadata and full covariance matrices for plug-in and
+  bias-corrected population-size estimates. Contrasts across years, countries,
+  or other grouped estimates therefore account for dependence induced by the
+  shared fitted model parameters.
+
+* **Bootstrap hypothesis tests**: `bootstrap_popsize()` now preserves group
+  metadata and draw labels so the same `hypotheses_popsize()` syntax can be
+  applied to fractional weighted bootstrap objects. Bootstrap tests evaluate
+  contrasts in each draw and use the bootstrap standard deviation in the Wald
+  statistic.
+
+## Documentation
+
+* **Population-size hypothesis vignette**: New vignette explaining threshold
+  tests, change-over-time tests, multi-row filters, custom function
+  hypotheses, delta-method/Wald theory, bootstrap Wald inference, empirical
+  bootstrap exceedance probabilities, and power limitations.
+
 # uncounted 1.4.0
 
 ## New features

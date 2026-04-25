@@ -173,6 +173,7 @@ bootstrap_popsize <- function(object, R = 199, cluster = NULL,
   ps0 <- popsize(object, by = by, bias_correction = TRUE, total = total)
   t0 <- ps0$estimate
   t0_bc <- ps0$estimate_bc
+  group_meta <- attr(ps0, "groups")
 
   # If by is specified, build group factor for aggregating bootstrap replicates
   by_group_factor <- NULL
@@ -260,6 +261,9 @@ bootstrap_popsize <- function(object, R = 199, cluster = NULL,
 
   # Extract bootstrap matrix
   boot_t <- boot_result$t  # R x n_groups
+  if (ncol(boot_t) == length(ps0$group)) {
+    colnames(boot_t) <- ps0$group
+  }
 
   # Compute per-group statistics
   alpha_ci <- 1 - level
@@ -377,6 +381,9 @@ bootstrap_popsize <- function(object, R = 199, cluster = NULL,
     ))
   }
 
+  attr(ps_boot, "groups") <- .bootstrap_popsize_groups_with_total(group_meta, ps_boot$group)
+  attr(ps_full, "groups") <- .bootstrap_popsize_groups_with_total(group_meta, ps_full$group)
+
   out <- list(
     t = boot_t,
     t0 = t0,
@@ -390,7 +397,8 @@ bootstrap_popsize <- function(object, R = 199, cluster = NULL,
     level = level,
     boot_params = bp_env$mat,
     n_converged = sum(apply(boot_t, 1, function(x) all(is.finite(x)))),
-    cluster = !is.null(cluster)
+    cluster = !is.null(cluster),
+    groups = group_meta
   )
 
   class(out) <- "uncounted_boot"
@@ -411,7 +419,7 @@ bootstrap_popsize <- function(object, R = 199, cluster = NULL,
 #'   uses the total bootstrap distribution if available; otherwise it uses the
 #'   only group when the bootstrap object contains a single group.
 #' @param direction Which tail area to compute: \code{"above"} for
-#'   \code{P^*(\xi > c)} or \code{"below"} for \code{P^*(\xi < c)}.
+#'   \code{P^*(xi > c)} or \code{"below"} for \code{P^*(xi < c)}.
 #'
 #' @details
 #' The reported value is an empirical bootstrap exceedance probability, i.e. a
@@ -698,4 +706,30 @@ summary.uncounted_boot <- function(object, ...) {
 
   idx <- match(group, valid_groups)
   list(group = group, distribution = object$t[, idx])
+}
+
+#' Add a Total metadata row when a bootstrap popsize table has one
+#' @noRd
+.bootstrap_popsize_groups_with_total <- function(groups, labels) {
+  if (is.null(groups)) {
+    groups <- data.frame(.group = labels[labels != "Total"],
+                         group = labels[labels != "Total"],
+                         stringsAsFactors = FALSE)
+  }
+  out <- groups
+  if ("Total" %in% labels && !("Total" %in% out$.group)) {
+    total_row <- out[NA_integer_, , drop = FALSE][1, , drop = FALSE]
+    total_row$.group <- "Total"
+    if ("group" %in% names(total_row)) {
+      if (is.factor(out$group)) {
+        out$group <- factor(as.character(out$group),
+                            levels = unique(c(levels(out$group), "Total")))
+        total_row$group <- factor("Total", levels = levels(out$group))
+      } else {
+        total_row$group <- "Total"
+      }
+    }
+    out <- rbind(out, total_row)
+  }
+  out
 }

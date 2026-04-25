@@ -25,7 +25,7 @@ uses the total bootstrap distribution if available; otherwise it uses the
 only group when the bootstrap object contains a single group.}
 
 \item{direction}{Which tail area to compute: \code{"above"} for
-\code{P^*(\xi > c)} or \code{"below"} for \code{P^*(\xi < c)}.}
+\code{P^*(xi > c)} or \code{"below"} for \code{P^*(xi < c)}.}
 }
 \value{
 An object of class \code{"uncounted_popsize_exceedance"} with
