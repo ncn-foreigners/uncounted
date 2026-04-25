@@ -3,17 +3,21 @@
 #' Tests scalar hypotheses and contrasts involving population size estimates
 #' returned by \code{\link{popsize}} or \code{\link{bootstrap_popsize}}.
 #'
-#' @param object An \code{"uncounted_popsize"} object from \code{\link{popsize}}
-#'   or an \code{"uncounted_boot"} object from \code{\link{bootstrap_popsize}}.
+#' @param object An \code{"uncounted_popsize"} object from \code{\link{popsize}},
+#'   an \code{"uncounted_popsize_bayes"} object from \code{\link{popsize}}, or
+#'   an \code{"uncounted_boot"} object from \code{\link{bootstrap_popsize}}.
 #' @param hypothesis Numeric null value(s), a character hypothesis, or a
 #'   function. Character hypotheses can refer to population size estimates with
 #'   \code{xi[...]} filters, such as \code{"xi[year == 2024] > 200000"} or
 #'   \code{"xi[year == 2024] - xi[year == 2019] > 0"}. Positional aliases
 #'   \code{b1}, \code{b2}, ... are also available.
-#' @param estimate Required character string naming the estimate to test.
-#'   For \code{popsize()} objects, use \code{"estimate"} or
-#'   \code{"estimate_bc"}. For \code{bootstrap_popsize()} objects, use
-#'   \code{"plugin"}, \code{"boot_median"}, or \code{"boot_mean"}.
+#' @param estimate Character string naming the estimate to test. For
+#'   frequentist \code{popsize()} objects, use \code{"estimate"} or
+#'   \code{"estimate_bc"}. For Bayesian \code{popsize()} objects, use
+#'   \code{"estimate"}, \code{"median"}, or \code{"mean"}; when omitted, the
+#'   estimate type stored by \code{popsize.uncounted_bayes()} is used. For
+#'   \code{bootstrap_popsize()} objects, use \code{"plugin"},
+#'   \code{"boot_median"}, or \code{"boot_mean"}.
 #' @param level Confidence level for Wald intervals on the tested contrast.
 #' @param df Degrees of freedom for p values and confidence intervals. The
 #'   default \code{Inf} uses the standard normal distribution.
@@ -25,6 +29,9 @@
 #'   as null-equality tests.
 #' @param include_total Logical; if \code{TRUE}, append a \code{"Total"} xi
 #'   target when multiple groups are available.
+#' @param rope Optional numeric region of practical equivalence for Bayesian
+#'   contrasts. Supply a positive scalar for \code{[-rope, rope]} or a
+#'   two-element vector \code{c(lower, upper)}.
 #' @param ... Additional arguments, currently ignored.
 #'
 #' @details
@@ -35,6 +42,13 @@
 #' standard deviation of those contrasts. The p value is a Wald p value, not an
 #' empirical exceedance probability; use \code{\link{exceedance_popsize}} for
 #' bootstrap tail areas.
+#'
+#' For Bayesian \code{popsize()} results, character hypotheses are interpreted
+#' as posterior propositions. A directional hypothesis such as
+#' \code{"xi[...] < 15000"} reports \code{p_h1 = Pr(H1 | data)} and
+#' \code{p_h0 = Pr(H0 | data)} from the posterior contrast draws. Equality
+#' hypotheses are summarized by posterior contrast intervals; exact point-null
+#' probabilities are not assigned.
 #'
 #' @return A data frame with one row per hypothesis and columns
 #'   \code{hypothesis}, \code{null_hypothesis},
@@ -60,8 +74,11 @@
 hypotheses_popsize <- function(object, hypothesis, estimate, level = 0.95,
                                df = Inf,
                                hypothesis_side = c("alternative", "null"),
-                               include_total = FALSE, ...) {
-  if (missing(estimate)) {
+                               include_total = FALSE, rope = NULL, ...) {
+  if (missing(estimate) && inherits(object, "uncounted_popsize_bayes")) {
+    estimate <- attr(object, "estimate_type")
+    if (is.null(estimate)) estimate <- "estimate"
+  } else if (missing(estimate)) {
     stop("'estimate' must be supplied explicitly.", call. = FALSE)
   }
   hypothesis_side <- match.arg(hypothesis_side)
@@ -72,17 +89,20 @@ hypotheses_popsize <- function(object, hypothesis, estimate, level = 0.95,
   if (!is.numeric(df) || length(df) != 1L || is.na(df) || df <= 0) {
     stop("'df' must be a single positive number or Inf.", call. = FALSE)
   }
+  rope <- .pop_hyp_validate_rope(rope)
 
   source <- .pop_hyp_source(object, estimate = estimate,
                             include_total = include_total)
 
   out <- if (is.numeric(hypothesis)) {
-    .pop_hyp_numeric(source, hypothesis, level = level, df = df)
+    .pop_hyp_numeric(source, hypothesis, level = level, df = df,
+                     rope = rope)
   } else if (is.character(hypothesis)) {
     .pop_hyp_character(source, hypothesis, level = level, df = df,
-                       hypothesis_side = hypothesis_side)
+                       hypothesis_side = hypothesis_side, rope = rope)
   } else if (is.function(hypothesis)) {
-    .pop_hyp_function(source, hypothesis, level = level, df = df)
+    .pop_hyp_function(source, hypothesis, level = level, df = df,
+                      rope = rope)
   } else {
     stop("'hypothesis' must be numeric, character, or a function.",
          call. = FALSE)
@@ -101,12 +121,15 @@ print.uncounted_popsize_hypotheses <- function(x, ...) {
 }
 
 .pop_hyp_source <- function(object, estimate, include_total = FALSE) {
-  if (inherits(object, "uncounted_popsize")) {
+  if (inherits(object, "uncounted_popsize_bayes")) {
+    .pop_hyp_source_bayes(object, estimate, include_total)
+  } else if (inherits(object, "uncounted_popsize")) {
     .pop_hyp_source_popsize(object, estimate, include_total)
   } else if (inherits(object, "uncounted_boot")) {
     .pop_hyp_source_boot(object, estimate, include_total)
   } else {
-    stop("'object' must be an 'uncounted_popsize' or 'uncounted_boot' object.",
+    stop("'object' must be an 'uncounted_popsize', ",
+         "'uncounted_popsize_bayes', or 'uncounted_boot' object.",
          call. = FALSE)
   }
 }
@@ -180,10 +203,64 @@ print.uncounted_popsize_hypotheses <- function(x, ...) {
        method = "FWB Wald test", estimate_type = estimate)
 }
 
-.pop_hyp_numeric <- function(source, null, level, df) {
+.pop_hyp_source_bayes <- function(object, estimate, include_total) {
+  valid <- c("estimate", "median", "mean")
+  if (!(estimate %in% valid)) {
+    stop("'estimate' must be one of: ", paste(valid, collapse = ", "),
+         call. = FALSE)
+  }
+  if (!(estimate %in% names(object))) {
+    stop("Bayesian population-size object does not contain the selected estimate.",
+         call. = FALSE)
+  }
+
+  x <- object[[estimate]]
+  if (is.null(x) || any(!is.finite(x))) {
+    stop("Selected estimate contains missing or non-finite values.", call. = FALSE)
+  }
+  groups <- .pop_hyp_groups_from_popsize(object)
+  names(x) <- groups$.group
+
+  draws <- posterior_popsize_draws(object, include_total = FALSE,
+                                   format = "matrix")
+  if (ncol(draws) != length(x)) {
+    stop("Posterior draw matrix does not match the population-size table.",
+         call. = FALSE)
+  }
+  colnames(draws) <- groups$.group
+
+  if (include_total && length(x) > 1L) {
+    total_draws <- attr(object, "total_draws")
+    if (is.null(total_draws)) {
+      total_draws <- rowSums(draws)
+    }
+    total_value <- switch(estimate,
+      estimate = {
+        estimate_type <- attr(object, "estimate_type")
+        if (identical(estimate_type, "mean")) mean(total_draws, na.rm = TRUE)
+        else stats::median(total_draws, na.rm = TRUE)
+      },
+      median = stats::median(total_draws, na.rm = TRUE),
+      mean = mean(total_draws, na.rm = TRUE)
+    )
+    x <- c(x, Total = total_value)
+    draws <- cbind(draws, Total = total_draws)
+    groups <- .pop_hyp_append_total_group(groups)
+  }
+
+  list(type = "bayes", x = x, V = NULL, draws = draws, groups = groups,
+       method = "Bayesian posterior probability", estimate_type = estimate)
+}
+
+.pop_hyp_numeric <- function(source, null, level, df, rope = NULL) {
   x <- source$x
   null <- .pop_hyp_expand_null(null, x)
   labels <- paste0("xi[", names(x), "] = ", format(null, trim = TRUE))
+
+  if (identical(source$type, "bayes")) {
+    return(.pop_hyp_numeric_bayes(source, null, labels, level = level,
+                                  rope = rope))
+  }
 
   if (identical(source$type, "popsize")) {
     se <- sqrt(pmax(diag(source$V), 0))
@@ -220,11 +297,13 @@ print.uncounted_popsize_hypotheses <- function(x, ...) {
 }
 
 .pop_hyp_character <- function(source, hypothesis, level, df,
-                               hypothesis_side) {
+                               hypothesis_side, rope = NULL) {
   rows <- lapply(hypothesis, function(h) {
     parsed <- .pop_hyp_parse_comparison(h, hypothesis_side = hypothesis_side)
 
-    if (identical(source$type, "popsize")) {
+    if (identical(source$type, "bayes")) {
+      .pop_hyp_character_bayes(source, h, parsed, level = level, rope = rope)
+    } else if (identical(source$type, "popsize")) {
       lhs <- .pop_hyp_eval_value(parsed$lhs, source$x, source$groups)
       rhs <- .pop_hyp_eval_value(parsed$rhs, source$x, source$groups)
       contrast <- lhs - rhs
@@ -261,11 +340,16 @@ print.uncounted_popsize_hypotheses <- function(x, ...) {
   do.call(rbind, rows)
 }
 
-.pop_hyp_function <- function(source, hypothesis, level, df) {
+.pop_hyp_function <- function(source, hypothesis, level, df, rope = NULL) {
   f0 <- .pop_hyp_call_fun(hypothesis, source$x, source$groups)
   labels <- names(f0)
   if (is.null(labels) || any(labels == "")) {
     labels <- paste0("function_", seq_along(f0))
+  }
+
+  if (identical(source$type, "bayes")) {
+    return(.pop_hyp_function_bayes(source, hypothesis, f0, labels,
+                                   level = level, rope = rope))
   }
 
   if (identical(source$type, "popsize")) {
@@ -301,6 +385,147 @@ print.uncounted_popsize_hypotheses <- function(x, ...) {
                     estimate_type = source$estimate_type,
                     n_draws = n_draws, level = level, df = df)
   }
+}
+
+.pop_hyp_numeric_bayes <- function(source, null, labels, level, rope) {
+  rows <- lapply(seq_along(source$x), function(i) {
+    contrast_draws <- source$draws[, i] - null[i]
+    .pop_hyp_bayes_result(
+      hypothesis = labels[i],
+      estimate = source$x[i],
+      null = null[i],
+      contrast = source$x[i] - null[i],
+      contrast_draws = contrast_draws,
+      alternative = "two.sided",
+      null_hypothesis = paste0("xi[", names(source$x)[i], "] = ",
+                               format(null[i], trim = TRUE)),
+      alternative_hypothesis = paste0("xi[", names(source$x)[i], "] != ",
+                                      format(null[i], trim = TRUE)),
+      method = source$method,
+      estimate_type = source$estimate_type,
+      level = level,
+      rope = rope
+    )
+  })
+  do.call(rbind, rows)
+}
+
+.pop_hyp_character_bayes <- function(source, hypothesis, parsed, level, rope) {
+  lhs0 <- .pop_hyp_eval_numeric(parsed$lhs, source$x, source$groups)
+  rhs0 <- .pop_hyp_eval_numeric(parsed$rhs, source$x, source$groups)
+  contrast0 <- lhs0 - rhs0
+  contrast_draws <- vapply(seq_len(nrow(source$draws)), function(i) {
+    row <- source$draws[i, ]
+    .pop_hyp_eval_numeric(parsed$lhs, row, source$groups) -
+      .pop_hyp_eval_numeric(parsed$rhs, row, source$groups)
+  }, numeric(1))
+
+  .pop_hyp_bayes_result(
+    hypothesis = hypothesis,
+    estimate = lhs0,
+    null = rhs0,
+    contrast = contrast0,
+    contrast_draws = contrast_draws,
+    alternative = parsed$alternative,
+    null_hypothesis = parsed$null_hypothesis,
+    alternative_hypothesis = parsed$alternative_hypothesis,
+    method = source$method,
+    estimate_type = source$estimate_type,
+    level = level,
+    rope = rope
+  )
+}
+
+.pop_hyp_function_bayes <- function(source, hypothesis, f0, labels, level, rope) {
+  vals <- lapply(seq_len(nrow(source$draws)), function(i) {
+    .pop_hyp_call_fun(hypothesis, source$draws[i, ], source$groups)
+  })
+  mat <- do.call(rbind, vals)
+  if (ncol(mat) != length(f0)) {
+    stop("Function hypothesis must return the same length for all draws.",
+         call. = FALSE)
+  }
+
+  rows <- lapply(seq_along(f0), function(i) {
+    .pop_hyp_bayes_result(
+      hypothesis = labels[i],
+      estimate = f0[i],
+      null = 0,
+      contrast = f0[i],
+      contrast_draws = mat[, i],
+      alternative = "two.sided",
+      null_hypothesis = paste0(labels[i], " = 0"),
+      alternative_hypothesis = paste0(labels[i], " != 0"),
+      method = source$method,
+      estimate_type = source$estimate_type,
+      level = level,
+      rope = rope
+    )
+  })
+  do.call(rbind, rows)
+}
+
+.pop_hyp_bayes_result <- function(hypothesis, estimate, null, contrast,
+                                  contrast_draws, alternative,
+                                  null_hypothesis, alternative_hypothesis,
+                                  method, estimate_type, level, rope) {
+  finite <- is.finite(contrast_draws)
+  draws <- contrast_draws[finite]
+  probs <- c((1 - level) / 2, 1 - (1 - level) / 2)
+  se <- stats::sd(draws)
+  ci <- stats::quantile(draws, probs = probs, na.rm = TRUE, names = FALSE)
+  p_greater <- mean(draws > 0)
+  p_less <- mean(draws < 0)
+
+  p_h1 <- switch(alternative,
+    greater = p_greater,
+    less = p_less,
+    two.sided = NA_real_
+  )
+  p_h0 <- if (is.na(p_h1)) NA_real_ else 1 - p_h1
+  posterior_odds <- if (is.na(p_h1)) {
+    NA_real_
+  } else if (p_h0 == 0) {
+    Inf
+  } else {
+    p_h1 / p_h0
+  }
+
+  p_rope <- rope_low <- rope_high <- NA_real_
+  if (!is.null(rope)) {
+    rope_low <- rope[1]
+    rope_high <- rope[2]
+    p_rope <- mean(draws >= rope_low & draws <= rope_high)
+  }
+
+  data.frame(
+    hypothesis = hypothesis,
+    null_hypothesis = null_hypothesis,
+    alternative_hypothesis = alternative_hypothesis,
+    estimate = as.numeric(estimate),
+    null.value = as.numeric(null),
+    contrast = as.numeric(contrast),
+    std.error = as.numeric(se),
+    statistic = NA_real_,
+    p.value = NA_real_,
+    s.value = NA_real_,
+    conf.low = as.numeric(ci[1]),
+    conf.high = as.numeric(ci[2]),
+    alternative = alternative,
+    method = method,
+    estimate_type = estimate_type,
+    n_draws = as.integer(sum(finite)),
+    p_greater = as.numeric(p_greater),
+    p_less = as.numeric(p_less),
+    p_h1 = as.numeric(p_h1),
+    p_h0 = as.numeric(p_h0),
+    posterior_odds = as.numeric(posterior_odds),
+    evidence_ratio = as.numeric(posterior_odds),
+    rope.low = as.numeric(rope_low),
+    rope.high = as.numeric(rope_high),
+    p_rope = as.numeric(p_rope),
+    stringsAsFactors = FALSE
+  )
 }
 
 .pop_hyp_result <- function(hypothesis, estimate, null, contrast, se,
@@ -373,6 +598,24 @@ print.uncounted_popsize_hypotheses <- function(x, ...) {
     }
   }
   p
+}
+
+.pop_hyp_validate_rope <- function(rope) {
+  if (is.null(rope)) {
+    return(NULL)
+  }
+  if (!is.numeric(rope) || !(length(rope) %in% c(1L, 2L)) ||
+      any(!is.finite(rope))) {
+    stop("'rope' must be NULL, a positive scalar, or a finite length-two vector.",
+         call. = FALSE)
+  }
+  if (length(rope) == 1L) {
+    if (rope < 0) {
+      stop("Scalar 'rope' must be non-negative.", call. = FALSE)
+    }
+    return(c(-rope, rope))
+  }
+  sort(as.numeric(rope))
 }
 
 .pop_hyp_parse_comparison <- function(hypothesis,

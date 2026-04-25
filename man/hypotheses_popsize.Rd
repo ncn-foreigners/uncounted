@@ -12,12 +12,14 @@ hypotheses_popsize(
   df = Inf,
   hypothesis_side = c("alternative", "null"),
   include_total = FALSE,
+  rope = NULL,
   ...
 )
 }
 \arguments{
-\item{object}{An \code{"uncounted_popsize"} object from \code{\link{popsize}}
-or an \code{"uncounted_boot"} object from \code{\link{bootstrap_popsize}}.}
+\item{object}{An \code{"uncounted_popsize"} object from \code{\link{popsize}},
+an \code{"uncounted_popsize_bayes"} object from \code{\link{popsize}}, or
+an \code{"uncounted_boot"} object from \code{\link{bootstrap_popsize}}.}
 
 \item{hypothesis}{Numeric null value(s), a character hypothesis, or a
 function. Character hypotheses can refer to population size estimates with
@@ -25,10 +27,13 @@ function. Character hypotheses can refer to population size estimates with
 \code{"xi[year == 2024] - xi[year == 2019] > 0"}. Positional aliases
 \code{b1}, \code{b2}, ... are also available.}
 
-\item{estimate}{Required character string naming the estimate to test.
-For \code{popsize()} objects, use \code{"estimate"} or
-\code{"estimate_bc"}. For \code{bootstrap_popsize()} objects, use
-\code{"plugin"}, \code{"boot_median"}, or \code{"boot_mean"}.}
+\item{estimate}{Character string naming the estimate to test. For
+frequentist \code{popsize()} objects, use \code{"estimate"} or
+\code{"estimate_bc"}. For Bayesian \code{popsize()} objects, use
+\code{"estimate"}, \code{"median"}, or \code{"mean"}; when omitted, the
+estimate type stored by \code{popsize.uncounted_bayes()} is used. For
+\code{bootstrap_popsize()} objects, use \code{"plugin"},
+\code{"boot_median"}, or \code{"boot_mean"}.}
 
 \item{level}{Confidence level for Wald intervals on the tested contrast.}
 
@@ -45,6 +50,10 @@ as null-equality tests.}
 \item{include_total}{Logical; if \code{TRUE}, append a \code{"Total"} xi
 target when multiple groups are available.}
 
+\item{rope}{Optional numeric region of practical equivalence for Bayesian
+contrasts. Supply a positive scalar for \code{[-rope, rope]} or a
+two-element vector \code{c(lower, upper)}.}
+
 \item{...}{Additional arguments, currently ignored.}
 }
 \value{
@@ -53,7 +62,9 @@ A data frame with one row per hypothesis and columns
 \code{alternative_hypothesis}, \code{estimate}, \code{null.value},
 \code{contrast}, \code{std.error}, \code{statistic}, \code{p.value},
 \code{s.value}, \code{conf.low}, \code{conf.high}, \code{alternative},
-\code{method}, \code{estimate_type}, and \code{n_draws}.
+\code{method}, \code{estimate_type}, and \code{n_draws}. Bayesian results
+also include \code{p_greater}, \code{p_less}, \code{p_h1}, \code{p_h0},
+\code{posterior_odds}, \code{evidence_ratio}, and optional ROPE columns.
 }
 \description{
 Tests scalar hypotheses and contrasts involving population size estimates
@@ -67,6 +78,13 @@ fractional weighted bootstrap draw, and the standard error is the bootstrap
 standard deviation of those contrasts. The p value is a Wald p value, not an
 empirical exceedance probability; use \code{\link{exceedance_popsize}} for
 bootstrap tail areas.
+
+For Bayesian \code{popsize()} results, character hypotheses are interpreted
+as posterior propositions. A directional hypothesis such as
+\code{"xi[...] < 15000"} reports \code{p_h1 = Pr(H1 | data)} and
+\code{p_h0 = Pr(H0 | data)} from the posterior contrast draws. Equality
+hypotheses are summarized by posterior contrast intervals; exact point-null
+probabilities are not assigned.
 }
 \examples{
 data(irregular_migration)

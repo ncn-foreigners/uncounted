@@ -26,6 +26,10 @@ only group when the bootstrap object contains a single group.}
 
 \item{direction}{Which tail area to compute: \code{"above"} for
 \code{P^*(xi > c)} or \code{"below"} for \code{P^*(xi < c)}.}
+
+\item{x}{Object to print.}
+
+\item{...}{Additional arguments passed to print methods.}
 }
 \value{
 An object of class \code{"uncounted_popsize_exceedance"} with

@@ -1,3 +1,59 @@
+# uncounted 2.1.0
+
+## New features
+
+* **Bayesian model summaries**: `summary()` now supports
+  `uncounted_bayes` fits and prints posterior coefficient summaries,
+  R-hat/ESS diagnostics, HMC divergence and treedepth counts, and the
+  population-size posterior summary in the same high-level layout as
+  frequentist `summary.uncounted()`.
+
+* **Bayesian S3 methods**: Added `coef()`, `fitted()`, `predict()`,
+  `residuals()`, `loo()`, `tidy()`, and `glance()` methods for
+  `uncounted_bayes` objects. Predictions delegate to the underlying
+  `brmsfit` posterior prediction functions, while `loo()` wraps `brms::loo()`.
+
+# uncounted 2.0.0
+
+## New features
+
+* **Bayesian hidden-population models**: New `estimate_hidden_pop_bayes()`
+  fits Bayesian Poisson and negative-binomial versions of the core count model
+  through `brms`, using `rstan` by default and `cmdstanr` when requested and
+  installed.
+
+* **Posterior population-size summaries**: `popsize()` now has a Bayesian
+  method for `uncounted_bayes` fits. It computes posterior draws of
+  `xi = sum(N_i^alpha_i)` by the same grouping logic used by frequentist
+  fits, and reports posterior medians, means, standard deviations, credible
+  intervals, and optional totals.
+
+* **Bayesian hypothesis propositions**: `hypotheses_popsize()` now accepts
+  Bayesian `popsize()` objects. Directional expressions such as
+  `xi[year == 2024 & country_code == "UKR"] < 15000` are interpreted as
+  posterior propositions and report `Pr(H1 | data)`, `Pr(H0 | data)`,
+  posterior odds, and credible intervals for the contrast rather than
+  frequentist p values.
+
+* **Posterior draw access**: New `posterior_popsize_draws()` extracts
+  draw-by-group population-size matrices, and `as_brmsfit()` returns the
+  underlying `brmsfit` for users who want direct access to `brms`, `loo`, or
+  posterior-diagnostic tooling.
+
+## Scope
+
+* The first Bayesian release supports Poisson/NB likelihoods, alpha/beta
+  formulas, fixed gamma, scalar estimated gamma, bounded detection links, and
+  constrained alpha/beta transforms. `cov_gamma`, OLS/NLS/iOLS, and
+  GMM/empirical-likelihood Bayesian analogues are intentionally deferred.
+
+## Documentation
+
+* **Bayesian vignette**: New vignette documenting the Bayesian translation of
+  the frequentist model, posterior `xi` summaries, posterior hypothesis
+  probabilities, HMC diagnostics, prior sensitivity, posterior predictive
+  checks, and simulation-based Bayesian design/power analysis.
+
 # uncounted 1.5.0
 
 ## New features

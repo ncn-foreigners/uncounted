@@ -147,6 +147,8 @@ profile_dependence <- function(object,
 #'   supplied, \code{q} is ignored for target construction.
 #' @param delta_grid Numeric grid passed to \code{\link{profile_dependence}}
 #'   when \code{object} is an \code{"uncounted"} fit.
+#' @param x Object to print.
+#' @param ... Additional arguments passed to print methods.
 #'
 #' @details
 #' This helper adapts the robustness-value idea to the one-dimensional

@@ -420,6 +420,8 @@ bootstrap_popsize <- function(object, R = 199, cluster = NULL,
 #'   only group when the bootstrap object contains a single group.
 #' @param direction Which tail area to compute: \code{"above"} for
 #'   \code{P^*(xi > c)} or \code{"below"} for \code{P^*(xi < c)}.
+#' @param x Object to print.
+#' @param ... Additional arguments passed to print methods.
 #'
 #' @details
 #' The reported value is an empirical bootstrap exceedance probability, i.e. a

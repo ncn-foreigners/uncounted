@@ -17,6 +17,8 @@
 #'   \code{threshold}? \code{"lower"} (default) finds the first
 #'   \code{Gamma} value with \code{lower <= threshold}; \code{"upper"} finds
 #'   the first value with \code{upper >= threshold}.
+#' @param x Object to print.
+#' @param ... Additional arguments passed to print methods.
 #'
 #' @details
 #' The fitted baseline model writes the expected observed count as

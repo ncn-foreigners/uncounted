@@ -63,6 +63,17 @@ rule.}
 \item{plot}{Logical; if \code{TRUE} (default), draw a contour plot for the
 first reported group.}
 
+\item{x}{Object to print or plot.}
+
+\item{group}{Optional group label for the plot method. When \code{NULL},
+the first available group is used.}
+
+\item{type}{Plot scale: \code{"ratio"} for values relative to baseline
+\eqn{\Xi}, or \code{"xi"} for raw \eqn{\Xi} values.}
+
+\item{side}{Which sensitivity surface to draw: \code{"lower"} or
+\code{"upper"}.}
+
 \item{...}{Additional graphical arguments passed to
 \code{\link{plot.uncounted_frailty_sensitivity}} when
 \code{plot = TRUE}.}
@@ -228,16 +239,12 @@ to \code{link_rho = "power"}, unconstrained Poisson/NB MLE fits without
 simulation-based calibration layer.
 }
 \examples{
-set.seed(123)
-d <- data.frame(
-  year = factor(rep(2023:2024, each = 20)),
-  sex = rep(c("F", "M"), times = 20),
-  N = round(exp(rnorm(40, mean = 12.5, sd = 0.35)))
-)
-d$ukr <- as.integer(rep(c(0, 1), each = 20))
-d$n <- rpois(40, lambda = pmax(1, 0.003 * d$N))
-d$m <- rpois(40, lambda = d$N^(0.55 + 0.05 * d$ukr) *
-  (0.005 + d$n / d$N)^0.8)
+data(irregular_migration)
+d <- irregular_migration[
+  irregular_migration$m > 0 & irregular_migration$n > 0,
+]
+keep <- unique(d$country)[1:8]
+d <- droplevels(d[d$country \%in\% keep, ])
 
 fit <- estimate_hidden_pop(
   data = d,
@@ -245,8 +252,7 @@ fit <- estimate_hidden_pop(
   auxiliary = ~n,
   reference_pop = ~N,
   method = "poisson",
-  cov_alpha = ~ year * ukr + sex,
-  cov_beta = ~ year,
+  cov_alpha = ~ sex,
   gamma = 0.005
 )
 

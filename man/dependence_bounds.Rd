@@ -45,6 +45,10 @@ tipping-point \code{gamma_star}. Default \code{NULL}.}
 \code{threshold}? \code{"lower"} (default) finds the first
 \code{Gamma} value with \code{lower <= threshold}; \code{"upper"} finds
 the first value with \code{upper >= threshold}.}
+
+\item{x}{Object to print.}
+
+\item{...}{Additional arguments passed to print methods.}
 }
 \value{
 An object of class \code{"uncounted_dependence_bounds"}, a list with:

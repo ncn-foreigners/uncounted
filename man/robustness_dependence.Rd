@@ -33,6 +33,10 @@ supplied, \code{q} is ignored for target construction.}
 
 \item{delta_grid}{Numeric grid passed to \code{\link{profile_dependence}}
 when \code{object} is an \code{"uncounted"} fit.}
+
+\item{x}{Object to print.}
+
+\item{...}{Additional arguments passed to print methods.}
 }
 \value{
 An object of class \code{"uncounted_dependence_robustness"} with
