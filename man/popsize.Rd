@@ -36,14 +36,14 @@ This is analogous to \code{singleRcapture::stratifyPopsize()}.}
 Default TRUE. Uses model-based variance (not HC-robust) to avoid
 overcorrection from inflated leverage-driven standard errors.}
 
-\item{total}{Logical; if \code{TRUE} and multiple groups exist, compute a
-delta-method total with SE and CI, stored in \code{attr(result, "total")}.
-Default \code{FALSE}. \strong{Warning}: for panel data where groups are
-defined by time periods (e.g., \code{by = ~ year}), the total sums
-population estimates across years. This is generally not meaningful because
-the same individuals may appear in multiple years. The total is only
-appropriate when groups represent non-overlapping subpopulations
-(e.g., \code{by = ~ sex} within a single year).}
+\item{total}{Logical; if \code{TRUE} and multiple groups exist, compute an
+optional delta-method total with SE and CI, stored in
+\code{attr(result, "total")}. Default \code{FALSE}. For panel data where
+groups are defined by time periods (e.g., \code{by = ~ year}), the total
+sums population estimates across years and is generally not meaningful
+because the same individuals may appear in multiple years. Request totals
+only for non-overlapping subpopulations (e.g., \code{by = ~ sex} within a
+single year).}
 }
 \value{
 A data frame with columns:
@@ -135,8 +135,10 @@ When \code{bias_correction = TRUE}, the lower and upper bounds are
 rescaled by \eqn{\hat{\xi}^{BC}_g / \hat{\xi}_g}, matching the returned
 bias-corrected point estimate.
 
-\strong{Total across groups.} When multiple groups exist, the total
-\eqn{\hat{\xi} = \sum_g \hat{\xi}_g} has its own delta-method CI
+\strong{Total across groups.} Totals are not computed or reported by default,
+because summing across panel or time groups is usually not substantively
+meaningful. When \code{total = TRUE} is requested for non-overlapping
+groups, \eqn{\hat{\xi} = \sum_g \hat{\xi}_g} has its own delta-method CI
 computed via the gradient \eqn{\nabla_\alpha \xi} and a log-normal
 approximation for positivity. This is stored in \code{attr(result, "total")}.
 }

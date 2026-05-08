@@ -53,6 +53,8 @@ test_that("vcov label shows CL when clustered", {
     method = "poisson", cluster = ~ country_code
   )
 
+  expect_equal(fit_cl$vcov_requested, "HC3")
+  expect_equal(fit_cl$vcov_type, "HC1")
   out <- capture.output(print(fit_cl))
   expect_true(any(grepl("CL\\(", out)))
 })

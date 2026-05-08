@@ -25,8 +25,9 @@ test_that("total=TRUE adds total attribute", {
   tot <- attr(ps, "total")
   expect_false(is.null(tot))
   expect_true(tot$estimate > 0)
-  expect_true(tot$lower < tot$estimate)
-  expect_true(tot$estimate < tot$upper)
+  expect_true(tot$estimate_bc > 0)
+  expect_true(tot$lower < tot$estimate_bc)
+  expect_true(tot$estimate_bc < tot$upper)
 })
 
 test_that("total=FALSE has no total attribute", {
@@ -34,6 +35,13 @@ test_that("total=FALSE has no total attribute", {
   fit <- quick_fit(d, gamma = 0.005, cov_alpha = ~sex)
   ps <- popsize(fit, total = FALSE)
   expect_null(attr(ps, "total"))
+})
+
+test_that("summary does not report a total unless explicitly requested", {
+  d <- small_data()
+  fit <- quick_fit(d, gamma = 0.005, cov_alpha = ~sex)
+  out <- capture.output(summary(fit))
+  expect_false(any(grepl("^Total\\b", out)))
 })
 
 test_that("total=TRUE prints total in output", {

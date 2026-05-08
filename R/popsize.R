@@ -75,8 +75,10 @@
 #' rescaled by \eqn{\hat{\xi}^{BC}_g / \hat{\xi}_g}, matching the returned
 #' bias-corrected point estimate.
 #'
-#' **Total across groups.** When multiple groups exist, the total
-#' \eqn{\hat{\xi} = \sum_g \hat{\xi}_g} has its own delta-method CI
+#' **Total across groups.** Totals are not computed or reported by default,
+#' because summing across panel or time groups is usually not substantively
+#' meaningful. When \code{total = TRUE} is requested for non-overlapping
+#' groups, \eqn{\hat{\xi} = \sum_g \hat{\xi}_g} has its own delta-method CI
 #' computed via the gradient \eqn{\nabla_\alpha \xi} and a log-normal
 #' approximation for positivity. This is stored in \code{attr(result, "total")}.
 #'
@@ -85,14 +87,14 @@
 #' @param bias_correction Logical; apply analytical bias correction?
 #'   Default TRUE. Uses model-based variance (not HC-robust) to avoid
 #'   overcorrection from inflated leverage-driven standard errors.
-#' @param total Logical; if \code{TRUE} and multiple groups exist, compute a
-#'   delta-method total with SE and CI, stored in \code{attr(result, "total")}.
-#'   Default \code{FALSE}. \strong{Warning}: for panel data where groups are
-#'   defined by time periods (e.g., \code{by = ~ year}), the total sums
-#'   population estimates across years. This is generally not meaningful because
-#'   the same individuals may appear in multiple years. The total is only
-#'   appropriate when groups represent non-overlapping subpopulations
-#'   (e.g., \code{by = ~ sex} within a single year).
+#' @param total Logical; if \code{TRUE} and multiple groups exist, compute an
+#'   optional delta-method total with SE and CI, stored in
+#'   \code{attr(result, "total")}. Default \code{FALSE}. For panel data where
+#'   groups are defined by time periods (e.g., \code{by = ~ year}), the total
+#'   sums population estimates across years and is generally not meaningful
+#'   because the same individuals may appear in multiple years. Request totals
+#'   only for non-overlapping subpopulations (e.g., \code{by = ~ sex} within a
+#'   single year).
 #' @param ... Additional arguments (ignored).
 #'
 #' @return A data frame with columns:
@@ -308,6 +310,11 @@ popsize.uncounted <- function(object, by = NULL, level = 0.95,
       log_se <- se_xi_total / xi_total
       total_lower <- xi_total * exp(-z_crit * log_se)
       total_upper <- xi_total * exp(z_crit * log_se)
+      if (bias_correction && isTRUE(xi_total_bc > 0)) {
+        total_bc_ratio <- xi_total_bc / xi_total
+        total_lower <- total_lower * total_bc_ratio
+        total_upper <- total_upper * total_bc_ratio
+      }
     } else {
       total_lower <- total_upper <- NA_real_
     }

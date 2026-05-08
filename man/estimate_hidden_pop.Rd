@@ -84,7 +84,8 @@ Non-MLE estimators are currently available only for
 \itemize{
 \item A character string specifying the HC type: \code{"HC0"} through
 \code{"HC5"}, or \code{"HC4m"}. Default \code{"HC3"}. When \code{cluster}
-is also provided, this type is passed to \code{sandwich::vcovCL()}.
+is also provided, clustered HC2+ requests are downgraded to
+\code{"HC1"} before calling \code{sandwich::vcovCL()}.
 For count models fitted with \code{estimator = "gmm"} or
 \code{estimator = "el"}, the default robust covariance is
 \code{"HC1"} and HC2+ requests are downgraded to \code{"HC1"}.
@@ -115,11 +116,9 @@ for that.}
 \item{cluster}{Optional one-sided formula identifying a cluster variable
 for cluster-robust variance estimation (e.g., \code{~ country_code}).
 When provided and \code{vcov} is a character string, the variance is
-computed using \code{sandwich::vcovCL()} with the specified HC type.
-Note: clustered HC2 and HC3 are only applicable to standard linear and
-generalized linear models; \code{sandwich::vcovCL()} will emit a warning
-for non-GLM objects. Use \code{"HC0"} or \code{"HC1"} with clustering
-to avoid this. Ignored when \code{vcov} is a function.}
+computed using \code{sandwich::vcovCL()} with the requested HC type, except
+that HC2+ requests are reported in \code{vcov_requested} and computed as
+\code{"HC1"}. Ignored when \code{vcov} is a function.}
 }
 \value{
 An object of class \code{"uncounted"}, a list containing:

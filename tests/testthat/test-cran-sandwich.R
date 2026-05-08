@@ -64,9 +64,15 @@ test_that("sandwich::vcovCL can return the meat matrix only", {
 test_that("cluster parameter in estimate_hidden_pop works", {
   d <- small_data()
   fit_hc <- quick_fit(d, gamma = 0.005, vcov = "HC3")
+  expect_no_warning(
+    fit_cl_default <- quick_fit(d, gamma = 0.005, cluster = ~country)
+  )
   fit_cl <- quick_fit(d, gamma = 0.005, vcov = "HC1", cluster = ~country)
   se_hc <- sqrt(diag(fit_hc$vcov))
   se_cl <- sqrt(diag(fit_cl$vcov))
+  expect_equal(fit_cl_default$vcov_requested, "HC3")
+  expect_equal(fit_cl_default$vcov_type, "HC1")
+  expect_equal(vcov(fit_cl_default), vcov(fit_cl), tolerance = 1e-10)
   expect_false(all(abs(se_hc - se_cl) < 1e-10))
 })
 
@@ -76,6 +82,8 @@ test_that("countries does NOT trigger clustering", {
   fit_with_cl <- quick_fit(d, gamma = 0.005, countries = ~country, cluster = ~sex)
   se_no <- sqrt(diag(fit_no_cl$vcov))
   se_cl <- sqrt(diag(fit_with_cl$vcov))
+  expect_equal(fit_with_cl$vcov_requested, "HC3")
+  expect_equal(fit_with_cl$vcov_type, "HC1")
   expect_false(all(abs(se_no - se_cl) < 1e-10))
 })
 
@@ -131,10 +139,12 @@ test_that("HC0 and HC3 produce different SE", {
                        sqrt(diag(fit_hc3$vcov))) < 1e-10))
 })
 
-test_that("HC0 and HC3 produce different SE with clustering", {
+test_that("HC0 and HC3-requested produce different SE with clustering", {
   d <- small_data()
   fit_hc0 <- quick_fit(d, gamma = 0.005, vcov = "HC0", cluster = ~country)
   fit_hc3 <- quick_fit(d, gamma = 0.005, vcov = "HC3", cluster = ~country)
+  expect_equal(fit_hc3$vcov_requested, "HC3")
+  expect_equal(fit_hc3$vcov_type, "HC1")
   expect_false(all(abs(sqrt(diag(fit_hc0$vcov)) -
                        sqrt(diag(fit_hc3$vcov))) < 1e-10))
 })

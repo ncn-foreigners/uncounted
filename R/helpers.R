@@ -157,6 +157,15 @@
   vcov_type
 }
 
+#' Normalize requested covariance type for clustered covariance
+#' @noRd
+.normalize_cluster_vcov_type <- function(vcov_type) {
+  if (vcov_type %in% c("HC2", "HC3", "HC4", "HC4m", "HC5")) {
+    return("HC1")
+  }
+  vcov_type
+}
+
 # ---- Design matrix helpers ----
 
 #' Build design matrix from a covariate formula

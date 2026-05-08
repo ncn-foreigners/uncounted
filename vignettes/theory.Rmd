@@ -284,7 +284,7 @@ distributional assumptions.
 Ordinary least squares applied to the log-linearized model:
 
 $$
-\log m_i = \alpha \log N_i + \beta \log\!\left(\frac{n_i + \gamma}{N_i}\right) + \varepsilon_i.
+\log m_i = \alpha \log N_i + \beta \log\!\left(\gamma + \frac{n_i}{N_i}\right) + \varepsilon_i.
 $$
 
 When some $m_i = 0$, the response is replaced by $\log(m_i + 1)$.  OLS
@@ -302,7 +302,7 @@ Nonlinear least squares minimizes
 
 $$
 \sum_{i=1}^n \left(m_i - N_i^{\alpha}
-  \left(\frac{n_i + \gamma}{N_i}\right)^{\!\beta}\right)^2
+  \left(\gamma + \frac{n_i}{N_i}\right)^{\!\beta}\right)^2
 $$
 
 using the Levenberg--Marquardt algorithm.  This avoids the
@@ -494,10 +494,13 @@ When analytical bias correction is requested, the package rescales both
 bounds by the ratio $\hat\xi_g^{BC}/\hat\xi_g$ so that the returned
 interval is centered on the bias-corrected estimate.
 
-**Total across groups.**  When the model includes covariates in $\alpha$,
-the total $\hat\xi = \sum_g \hat\xi_g$ has its own delta-method CI
-computed via the gradient $\nabla_\alpha \xi$ and a log-normal
-approximation to ensure positivity.
+**Total across groups.**  The package does not report totals by default.
+Totals are optional and should be requested only when the groups are
+non-overlapping subpopulations. They are usually not meaningful for panel or
+time-period groupings because the same individuals may contribute to multiple
+periods. When a total is requested, $\hat\xi = \sum_g \hat\xi_g$ has its own
+delta-method CI computed via the gradient $\nabla_\alpha \xi$ and a
+log-normal approximation to ensure positivity.
 
 ### Bias correction
 
