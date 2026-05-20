@@ -63,6 +63,10 @@ rule.}
 \item{plot}{Logical; if \code{TRUE} (default), draw a contour plot for the
 first reported group.}
 
+\item{...}{Additional graphical arguments passed to
+\code{\link{plot.uncounted_frailty_sensitivity}} when
+\code{plot = TRUE}.}
+
 \item{x}{Object to print or plot.}
 
 \item{group}{Optional group label for the plot method. When \code{NULL},
@@ -73,10 +77,6 @@ the first available group is used.}
 
 \item{side}{Which sensitivity surface to draw: \code{"lower"} or
 \code{"upper"}.}
-
-\item{...}{Additional graphical arguments passed to
-\code{\link{plot.uncounted_frailty_sensitivity}} when
-\code{plot = TRUE}.}
 }
 \value{
 An object of class \code{"uncounted_frailty_sensitivity"} with:
@@ -268,7 +268,7 @@ frailty_sensitivity(
 \references{
 Cinelli, C., & Hazlett, C. (2020). Making sense of sensitivity:
 Extending omitted variable bias. \emph{Journal of the Royal Statistical
-Society: Series B}, 82(1), 39--67.
+Society: Series B}, 82(1), 39--67. \doi{10.1111/rssb.12348}
 
 Beręsewicz, M., & Pawlukiewicz, K. (2020). Estimation of the number of
 irregular foreigners in Poland using non-linear count regression models.

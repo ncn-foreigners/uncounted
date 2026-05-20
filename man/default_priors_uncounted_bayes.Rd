@@ -28,6 +28,5 @@ gamma, or \code{NULL} to use \eqn{n_i / N_i} directly.}
 A \pkg{brms} prior specification.
 }
 \description{
-Construct weakly informative default priors for
-\code{\link{estimate_hidden_pop_bayes}}.
+Default Priors for Bayesian Hidden-Population Models
 }

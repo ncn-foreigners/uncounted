@@ -35,7 +35,7 @@
 #' Norway. \url{https://www.ssb.no/a/english/publikasjoner/pdf/doc_200811_en/doc_200811_en.pdf}
 #'
 #' McCullagh, P. and Nelder, J. A. (1989). \emph{Generalized Linear Models},
-#' 2nd ed. Chapman & Hall.
+#' 2nd ed. Chapman & Hall. \doi{10.1007/978-1-4899-3242-6}
 #'
 #' @examples
 #' set.seed(123)

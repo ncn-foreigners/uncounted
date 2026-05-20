@@ -348,8 +348,8 @@
   without sigma^2 scaling, preventing inflated bias correction on zero-heavy
   data.
 
-* **Removed nonexistent reference**: Replaced Beresewicz, Gudaszewski & Walsh
-  (2025) with the correct Zhang (2008) and Beresewicz & Pawlukiewicz (2020)
+* **Removed nonexistent reference**: Replaced Beręsewicz, Gudaszewski & Walsh
+  (2025) with the correct Zhang (2008) and Beręsewicz & Pawlukiewicz (2020)
   references.
 
 ## Enhancements
@@ -363,7 +363,7 @@
 ## New features
 
 * **iOLS estimator** (`method = "iols"`): Iterated OLS targeting the Gamma PML
-  (GPML) score equations, following Benatia, Bellego & Pape (2024). Two-phase
+  (GPML) score equations, following Benatia, Bellégo & Pape (2025). Two-phase
   algorithm: Phase 1 warms up with increasing delta and empirical centering;
   Phase 2 uses the exact limiting transform `y_tilde = log(mu) + (m/mu - 1)/(1+rho)`
   to solve `Z'(m/mu - 1) = 0`. Converges on complex specifications including
@@ -430,7 +430,7 @@
 ## Documentation
 
 * Fixed references: replaced incorrect Zhang (2008) citation, added URLs,
-  added Beresewicz & Pawlukiewicz (2020).
+  added Beręsewicz & Pawlukiewicz (2020).
 
 * OLS `log(m+1)` fitted-value scale limitation documented.
 

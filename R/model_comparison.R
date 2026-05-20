@@ -210,7 +210,7 @@ print.uncounted_comparison <- function(x, ...) {
 #' Self, S. G. and Liang, K.-Y. (1987). Asymptotic properties of maximum
 #' likelihood estimators and likelihood ratio tests under nonstandard
 #' conditions. \emph{Journal of the American Statistical Association},
-#' 82(398), 605--610.
+#' 82(398), 605--610. \doi{10.1080/01621459.1987.10478472}
 #'
 #' @examples
 #' set.seed(42)
@@ -383,7 +383,7 @@ print.uncounted_lrtest <- function(x, ...) {
 #' @references Cameron, A.C. and Windmeijer, F.A.G. (1996). R-squared measures
 #'   for count data regression models with applications to health-care
 #'   utilization. \emph{Journal of Business & Economic Statistics}, 14(2),
-#'   209--220.
+#'   209--220. \doi{10.1080/07350015.1996.10524648}
 #' @noRd
 .pseudo_r2_cameron_windmeijer <- function(object) {
   if (!object$method %in% c("poisson", "nb")) return(NA_real_)

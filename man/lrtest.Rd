@@ -67,5 +67,5 @@ lrtest(fit_po, fit_nb)
 Self, S. G. and Liang, K.-Y. (1987). Asymptotic properties of maximum
 likelihood estimators and likelihood ratio tests under nonstandard
 conditions. \emph{Journal of the American Statistical Association},
-82(398), 605--610.
+82(398), 605--610. \doi{10.1080/01621459.1987.10478472}
 }

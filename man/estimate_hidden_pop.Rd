@@ -298,5 +298,5 @@ irregular foreigners in Poland using non-linear count regression models.
 \emph{arXiv preprint} arXiv:2008.09407.
 
 Santos Silva, J. M. C. and Tenreyro, S. (2006). The log of gravity.
-\emph{The Review of Economics and Statistics}, 88(4), 641--658.
+\emph{The Review of Economics and Statistics}, 88(4), 641--658. \doi{10.1162/rest.88.4.641}
 }

@@ -2,12 +2,9 @@
 % Please edit documentation in R/bayes.R
 \name{as_brmsfit}
 \alias{as_brmsfit}
-\alias{as_brmsfit.uncounted_bayes}
 \title{Extract the brmsfit from a Bayesian uncounted Model}
 \usage{
 as_brmsfit(object, ...)
-
-\method{as_brmsfit}{uncounted_bayes}(object, ...)
 }
 \arguments{
 \item{object}{An object.}
@@ -18,5 +15,5 @@ as_brmsfit(object, ...)
 The underlying \code{brmsfit}.
 }
 \description{
-Extract the \code{brmsfit} stored inside an \code{"uncounted_bayes"} object.
+Extract the brmsfit from a Bayesian uncounted Model
 }

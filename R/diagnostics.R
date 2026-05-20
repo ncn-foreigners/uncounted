@@ -18,7 +18,7 @@
 #'   (number of estimated parameters) and \code{nobs} (number of observations).
 #' @references
 #' McCullagh, P. and Nelder, J. A. (1989). \emph{Generalized Linear Models},
-#' 2nd ed. Chapman & Hall.
+#' 2nd ed. Chapman & Hall. \doi{10.1007/978-1-4899-3242-6}
 #'
 #' @examples
 #' # Simulate synthetic data
@@ -91,7 +91,7 @@ nobs.uncounted <- function(object, ...) {
 #' @return A numeric scalar giving the deviance.
 #' @references
 #' McCullagh, P. and Nelder, J. A. (1989). \emph{Generalized Linear Models},
-#' 2nd ed. Chapman & Hall.
+#' 2nd ed. Chapman & Hall. \doi{10.1007/978-1-4899-3242-6}
 #'
 #' @examples
 #' set.seed(123)
@@ -183,7 +183,7 @@ deviance.uncounted <- function(object, ...) {
 #'
 #' @references
 #' McCullagh, P. and Nelder, J. A. (1989). \emph{Generalized Linear Models},
-#' 2nd ed. Chapman & Hall.
+#' 2nd ed. Chapman & Hall. \doi{10.1007/978-1-4899-3242-6}
 #'
 #' Hilbe, J. M. (2011). \emph{Negative Binomial Regression}, 2nd ed. Cambridge
 #' University Press.

@@ -124,11 +124,11 @@ drive the difference.
 ## References
 
 - Santos Silva, J. M. C. & Tenreyro, S. (2006). The Log of Gravity.
-  *Review of Economics and Statistics*, 88(4), 641--658.
-- Benatia, D., Bellego, C. & Pape, L.-D. (2024). Dealing with Logs and
-  Zeros in Regression Models. arXiv:2203.11820v3.
+  *Review of Economics and Statistics*, 88(4), 641--658. https://doi.org/10.1162/rest.88.4.641
+- Benatia, D., Bellégo, C. & Pape, L.-D. (2025). Dealing with Logs and
+  Zeros in Regression Models. arXiv:2203.11820v3. https://arxiv.org/abs/2203.11820
 - Zhang, L.-C. (2008). *Developing methods for determining the number of
-  unauthorized foreigners in Norway* (Documents 2008/11). Statistics Norway.
-- Beresewicz, M. & Pawlukiewicz, K. (2020). Estimation of the number of
+  unauthorized foreigners in Norway* (Documents 2008/11). Statistics Norway. https://www.ssb.no/a/english/publikasjoner/pdf/doc_200811_en/doc_200811_en.pdf
+- Beręsewicz, M. & Pawlukiewicz, K. (2020). Estimation of the number of
   irregular foreigners in Poland using non-linear count regression models.
-  arXiv:2008.09407.
+  arXiv:2008.09407. https://arxiv.org/abs/2008.09407

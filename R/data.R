@@ -49,7 +49,7 @@
 #' unauthorized foreigners in Norway. \emph{Documents} 2008/11, Statistics
 #' Norway. \url{https://www.ssb.no/a/english/publikasjoner/pdf/doc_200811_en/doc_200811_en.pdf}
 #'
-#' Beresewicz, M. and Pawlukiewicz, K. (2020). Estimation of the number of
+#' Beręsewicz, M. and Pawlukiewicz, K. (2020). Estimation of the number of
 #' irregular foreigners in Poland using non-linear count regression models.
 #' \emph{arXiv preprint} arXiv:2008.09407.
 #'

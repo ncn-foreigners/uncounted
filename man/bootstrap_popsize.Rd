@@ -154,5 +154,5 @@ boot_bc <- bootstrap_popsize(fit, R = 99, ci_type = "bc", seed = 123)
 \references{
 Xu, L., Gotwalt, C., Hong, Y., King, C. B., & Meeker, W. Q. (2020).
 Applications of the fractional-random-weight bootstrap.
-\emph{The American Statistician}, 74(4), 345--358.
+\emph{The American Statistician}, 74(4), 345--358. \doi{10.1080/00031305.2020.1731599}
 }

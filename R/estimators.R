@@ -718,7 +718,7 @@
 }
 
 
-# ---- iOLS estimator (Benatia, Bellego & Pape, 2024) ----
+# ---- iOLS estimator (Benatia, Bellégo & Pape, 2025) ----
 #
 # Two-phase iterated OLS targeting GPML (Gamma PML) score equations.
 # Phase 1: warm-up with increasing delta and empirical centering.

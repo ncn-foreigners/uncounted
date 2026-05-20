@@ -202,7 +202,7 @@
 #' @references
 #' Cinelli, C., & Hazlett, C. (2020). Making sense of sensitivity:
 #' Extending omitted variable bias. \emph{Journal of the Royal Statistical
-#' Society: Series B}, 82(1), 39--67.
+#' Society: Series B}, 82(1), 39--67. \doi{10.1111/rssb.12348}
 #'
 #' Beręsewicz, M., & Pawlukiewicz, K. (2020). Estimation of the number of
 #' irregular foreigners in Poland using non-linear count regression models.

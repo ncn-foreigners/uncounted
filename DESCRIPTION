@@ -8,9 +8,10 @@ Authors@R: c(
   )
 Description: Estimates the size of unauthorized migrant populations using
     a power-law model that relates observed counts to reference populations
-    and auxiliary detection data. Supports OLS, NLS, Poisson, and Negative
-    Binomial estimation, alternative bounded detection links, optional gamma
-    offsets, moment-based count estimators via the 'momentfit' package, and
+    and auxiliary detection data. Supports OLS, NLS, iterated OLS (iOLS),
+    Poisson, and Negative Binomial estimation, alternative bounded detection
+    links, optional gamma offsets, moment-based count estimators via the
+    'momentfit' package, and
     Bayesian Poisson and negative binomial workflows through optional 'brms'
     and 'rstan' integrations.
 License: MIT + file LICENSE

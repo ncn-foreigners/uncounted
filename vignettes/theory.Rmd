@@ -26,7 +26,7 @@ exploit cross-source variation to infer the size of the population that
 escapes all sources.
 
 The `uncounted` package implements the estimation framework of
-Beresewicz and Pawlukiewicz (2020), which builds on the
+Beręsewicz and Pawlukiewicz (2020), which builds on the
 dual-system ideas of Zhang (2008).  The core insight is that the
 *observed* count of unauthorized migrants in a given group (e.g., a
 country-of-origin $\times$ year cell) is a power-law function of the
@@ -187,8 +187,9 @@ $$
 When $\hat\alpha < 1$ and $N_i > 1$ for all $i$, we have
 $\hat\xi < \sum_i N_i$, reflecting the fact that only a fraction of the
 reference population is unauthorized.  The population size $\hat\xi$ is
-a monotone increasing function of $\alpha$ (for $N_i \geq 1$), a
-property exploited for confidence interval construction.
+a monotone increasing function of $\alpha$ (for $N_i \geq 1$).
+Confidence intervals for $\hat\xi$ are obtained by the delta method
+(see the inference section below).
 
 ```{r basic-model, eval = TRUE}
 library(uncounted)
@@ -305,7 +306,7 @@ $$
   \left(\gamma + \frac{n_i}{N_i}\right)^{\!\beta}\right)^2
 $$
 
-using the Levenberg--Marquardt algorithm.  This avoids the
+using the L-BFGS-B quasi-Newton algorithm.  This avoids the
 log-transformation bias of OLS but still treats $m_i$ as continuous.
 
 ### Poisson pseudo-maximum likelihood (PPML)
@@ -323,6 +324,15 @@ for the parameters of the conditional mean $E[m_i \mid N_i, n_i]$ even if
 the true distribution is not Poisson, provided the mean is correctly
 specified.  This makes PPML robust to heteroscedasticity and is the
 recommended default in `uncounted`.
+
+The PPML point estimates coincide exactly with those of a Poisson GLM
+--- both solve the same score equations
+$\sum_i (m_i - \mu_i)\mathbf{z}_i = \mathbf{0}$ --- but by default
+`uncounted` reports heteroskedasticity-consistent (HC3) standard errors
+rather than the model-based Fisher-information variance. This robust
+variance is what distinguishes the *pseudo*-ML estimator from naive
+Poisson ML; it is also more general than quasi-Poisson, which assumes
+$\mathrm{Var}(m_i) = \phi\mu_i$.
 
 For the Poisson and Negative Binomial count models, the package can also use
 `estimator = "gmm"` or `estimator = "el"`. In those cases the same
@@ -352,7 +362,7 @@ $\alpha$, $\beta$, and $\gamma$.
 
 ### iOLS (Gamma PML)
 
-The iOLS estimator (Benatia, Bellego & Pape, 2024) targets the Gamma
+The iOLS estimator (Benatia, Bellégo & Pape, 2025) targets the Gamma
 Pseudo-Maximum Likelihood (GPML) score equations
 
 $$\sum_i (m_i / \mu_i - 1)\,\mathbf{z}_i = \mathbf{0}$$
@@ -671,14 +681,13 @@ documented in `?frailty_sensitivity`.
 
 ## References
 
-- Beręsewicz, M., & Pawlukiewicz, K. (2020). Estimation of the number of irregular foreigners in Poland using non-linear count regression models. arXiv preprint arXiv:2008.09407.
+- Beręsewicz, M., & Pawlukiewicz, K. (2020). Estimation of the number of irregular foreigners in Poland using non-linear count regression models. arXiv preprint arXiv:2008.09407. https://arxiv.org/abs/2008.09407
 
 - Santos Silva, J. M. C. and Tenreyro, S. (2006). The log of gravity.
-  *The Review of Economics and Statistics*, 88(4), 641--658.
+  *The Review of Economics and Statistics*, 88(4), 641--658. https://doi.org/10.1162/rest.88.4.641
 
 - Xu, L., Gotwalt, C., Hong, Y., King, C. B., and Meeker, W. Q. (2020).
   Applications of the fractional-random-weight bootstrap. *The American
-  Statistician*, 74(4), 345--358.
+  Statistician*, 74(4), 345--358. https://doi.org/10.1080/00031305.2020.1731599
 
 - Zhang, L.-C. (2008). *Developing methods for determining the number of unauthorized foreigners in Norway* (Documents 2008/11). Statistics Norway. https://www.ssb.no/a/english/publikasjoner/pdf/doc_200811_en/doc_200811_en.pdf
-- Beręsewicz, M., & Pawlukiewicz, K. (2020). Estimation of the number of irregular foreigners in Poland using non-linear count regression models. arXiv preprint arXiv:2008.09407.

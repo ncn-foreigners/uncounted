@@ -463,14 +463,13 @@ full derivation is documented in `?frailty_sensitivity`.
 
 ## References
 
-- Beręsewicz, M., & Pawlukiewicz, K. (2020). Estimation of the number of irregular foreigners in Poland using non-linear count regression models. arXiv preprint arXiv:2008.09407.
+- Beręsewicz, M., & Pawlukiewicz, K. (2020). Estimation of the number of irregular foreigners in Poland using non-linear count regression models. arXiv preprint arXiv:2008.09407. https://arxiv.org/abs/2008.09407
 - Kleiber, C. and Zeileis, A. (2016). Visualizing Count Data
   Regressions Using Rootograms. *The American Statistician*, 70(3),
-  296--303.
+  296--303. https://doi.org/10.1080/00031305.2016.1173590
 - McCullagh, P. and Nelder, J. A. (1989). *Generalized Linear Models*,
-  2nd ed. Chapman & Hall.
+  2nd ed. Chapman & Hall. https://doi.org/10.1007/978-1-4899-3242-6
 - Self, S. G. and Liang, K.-Y. (1987). Asymptotic properties of maximum
   likelihood estimators and likelihood ratio tests under nonstandard
-  conditions. *JASA*, 82(398), 605--610.
+  conditions. *JASA*, 82(398), 605--610. https://doi.org/10.1080/01621459.1987.10478472
 - Zhang, L.-C. (2008). *Developing methods for determining the number of unauthorized foreigners in Norway* (Documents 2008/11). Statistics Norway. https://www.ssb.no/a/english/publikasjoner/pdf/doc_200811_en/doc_200811_en.pdf
-- Beręsewicz, M., & Pawlukiewicz, K. (2020). Estimation of the number of irregular foreigners in Poland using non-linear count regression models. arXiv preprint arXiv:2008.09407.

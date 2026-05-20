@@ -350,8 +350,8 @@ head(sort(abs(dp), decreasing = TRUE))
 
 ## Funding
 
-This work is supported by the National Science Centre, OPUS 20 grant no.
-2021/43/B/HS4/00469.
+This work is supported by the National Science Centre, OPUS 27 grant no.
+2024/53/B/HS4/01580.
 
 ## References
 
@@ -362,5 +362,7 @@ This work is supported by the National Science Centre, OPUS 20 grant no.
 - Beręsewicz, M., & Pawlukiewicz, K. (2020). Estimation of the number of
   irregular foreigners in Poland using non-linear count regression
   models. arXiv preprint arXiv:2008.09407.
+  <https://arxiv.org/abs/2008.09407>
 - Santos Silva, J.M.C. and Tenreyro, S. (2006). The log of gravity. *The
   Review of Economics and Statistics*, 88(4), 641–658.
+  <https://doi.org/10.1162/rest.88.4.641>
