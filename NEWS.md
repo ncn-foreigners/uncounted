@@ -13,6 +13,32 @@
   `uncounted_bayes` objects. Predictions delegate to the underlying
   `brmsfit` posterior prediction functions, while `loo()` wraps `brms::loo()`.
 
+## Documentation
+
+* **Reference verification**: Verified every package reference against
+  Crossref/arXiv and added DOIs throughout the vignettes, `README`, and
+  roxygen `@references`. Normalized author names (Beręsewicz, Bellégo) and
+  corrected the Benatia et al. citation year to 2025 (arXiv v3).
+
+* **Theory vignette**: Corrected the NLS optimizer (L-BFGS-B, not
+  Levenberg-Marquardt), aligned the population-size confidence-interval
+  description with the delta-method implementation, and clarified that the
+  Poisson PMLE reports HC3 robust standard errors by default (its point
+  estimates coincide with a Poisson GLM).
+
+* **Metadata**: Listed iOLS among the estimation methods in `DESCRIPTION`;
+  updated the funding acknowledgement to NCN OPUS 27.
+
+## Testing
+
+* **Confidence-interval calibration**: Added a Monte Carlo test confirming
+  that the 95% analytic and cluster fractional-weighted-bootstrap intervals
+  for the population size attain approximately nominal coverage under a
+  correctly specified model.
+
+* **Parameter recovery**: Tightened the data-generating-process recovery
+  assertions for the community-anchor (alpha) and detection offset (gamma).
+
 # uncounted 2.0.0
 
 ## New features
@@ -237,7 +263,7 @@
 * **README and examples**: The README now reflects the current package surface
   (`iols`, bounded `link_rho`, count-model `gmm`/`el`), uses the `ukr`
   interaction example in `cov_alpha`, suppresses bootstrap progress via
-  `verbose = FALSE`, and updates the funding line to NCN OPUS 20.
+  `verbose = FALSE`, and updates the funding line to NCN OPUS 27.
 
 # uncounted 1.0.0
 
