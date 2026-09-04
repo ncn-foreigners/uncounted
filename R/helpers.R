@@ -205,8 +205,18 @@
 
 #' Compute sandwich HC variance-covariance matrix
 #'
+#' The arguments follow one convention throughout: with working weights
+#' \eqn{W_i} and residuals \eqn{e_i}, the bread is
+#' \eqn{(\sum_i W_i x_i x_i')^{-1}} and the per-observation score is
+#' \eqn{s_i = \sqrt{W_i}\, e_i\, x_i}. Callers must scale \code{residuals}
+#' so that this holds: for a Poisson working model with weights
+#' \eqn{W_i = \mu_i}, pass the Pearson residual
+#' \eqn{(m_i - \mu_i)/\sqrt{\mu_i}}; when prior observation weights
+#' \eqn{a_i} are also present, pass \eqn{\sqrt{a_i}} times that residual so
+#' the meat picks up \eqn{a_i^2} as the sandwich package does.
+#'
 #' @param X Design matrix (n x p)
-#' @param residuals Residuals vector (n)
+#' @param residuals Residuals vector (n), scaled as described above.
 #' @param weights Working weights for bread (n). For OLS: rep(1,n). For Poisson: mu.
 #' @param hat_values Hat matrix diagonal (n). Needed for HC2+.
 #' @param vcov_type Character: "HC0", "HC1", "HC2", "HC3", "HC4", "HC4m", "HC5"
@@ -249,8 +259,11 @@
       }
     )
 
-    ## Score per observation: w_i * e_i * x_i = wX_i * (e_i * sqrt(w_i))
-    score_i <- wX * as.numeric(residuals * sqrt(weights))
+    ## Score per observation: sqrt(w_i) * e_i * x_i = wX_i * e_i.
+    ## This must match the score implied by the observation-level branch
+    ## below, whose meat is crossprod(wX * sqrt(adj * e^2)); with one
+    ## cluster per observation and CR0 the two branches then agree exactly.
+    score_i <- wX * as.numeric(residuals)
 
     ## Sum scores within clusters
     cl <- as.factor(cluster)
@@ -300,7 +313,9 @@
       1 / (1 - h)^delta
     },
     "HC5" = {
-      k <- pmin(n * h / p, pmax(4, 0.7 * n * h / p))
+      ## Cribari-Neto, Souza & Vasconcellos (2007): the upper cut-off is a
+      ## single constant driven by the maximum leverage, not by h_i.
+      k <- pmin(n * h / p, pmax(4, 0.7 * n * max(h) / p))
       1 / sqrt((1 - h)^k)
     },
     rep(1, n)  # fallback to HC0

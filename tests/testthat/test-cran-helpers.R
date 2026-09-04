@@ -69,33 +69,114 @@ test_that("solve_safe falls back to qr.solve and generalized inverse", {
   expect_equal(as.numeric(A_sing %*% sol_sing), b_sing, tolerance = 1e-8)
 })
 
-test_that("model-based and sandwich covariance helpers return finite matrices", {
+test_that("model-based covariance helper matches sigma^2 (X'WX)^-1", {
   X <- cbind("(Intercept)" = 1, x = seq_len(6))
-  residuals <- c(-1, 1, -0.5, 0.5, -0.25, 0.25)
   weights <- seq(1, 6)
-  hat_values <- uncounted:::.hat_values_wls(X, weights)
-
   V_model <- uncounted:::.compute_model_vcov(X, weights, sigma2 = 2)
-  V_hc4 <- uncounted:::.compute_sandwich_vcov(
-    X, residuals, weights = weights, hat_values = hat_values, vcov_type = "HC4"
-  )
   expect_equal(
     V_model,
     2 * solve(crossprod(X * sqrt(weights))),
     tolerance = 1e-10
   )
-  expect_equal(dim(V_hc4), c(ncol(X), ncol(X)))
-  expect_true(all(is.finite(V_hc4)))
+})
 
+## Reference fit for the sandwich comparisons below. A weighted lm is used
+## because sandwich::vcovHC()/vcovCL() then provide an independent oracle for
+## every HC type, and .hat_values_wls() must reproduce hatvalues() exactly.
+.sandwich_fixture <- function() {
+  set.seed(11)
+  n <- 30
+  x <- rnorm(n)
+  x[1] <- 25    # high leverage, so HC4/HC4m/HC5 exponents actually bind
+  x[2] <- 14    # intermediate leverage, separates HC5's max(h) cut-off
+  z <- runif(n)
+  w <- runif(n, 0.5, 2)
+  y <- 1 + 0.5 * x - z + rnorm(n)
+  fit <- lm(y ~ x + z, weights = w)
+  list(fit = fit, X = model.matrix(fit), e = residuals(fit), w = w, n = n)
+}
+
+test_that(".hat_values_wls reproduces hatvalues() for a weighted fit", {
+  f <- .sandwich_fixture()
+  expect_equal(
+    unname(uncounted:::.hat_values_wls(f$X, f$w)),
+    unname(stats::hatvalues(f$fit)),
+    tolerance = 1e-10
+  )
+})
+
+test_that(".compute_sandwich_vcov matches sandwich::vcovHC for HC0-HC5", {
+  skip_if_not_installed("sandwich")
+  f <- .sandwich_fixture()
+  h <- uncounted:::.hat_values_wls(f$X, f$w)
+  ## Prior weights enter the meat as a_i^2, so the residual carries sqrt(a_i).
+  res <- sqrt(f$w) * f$e
+  ## Guard the fixture: the high-leverage points must make HC5's cut-off bind,
+  ## otherwise HC4/HC5 degenerate to the same exponent and the test is vacuous.
+  p <- ncol(f$X)
+  cutoff <- max(4, 0.7 * f$n * max(h) / p)
+  expect_true(any(f$n * h / p > 4 & f$n * h / p < cutoff))
+
+  for (type in c("HC0", "HC1", "HC2", "HC3", "HC4", "HC4m", "HC5")) {
+    V_pkg <- uncounted:::.compute_sandwich_vcov(
+      f$X, res, weights = f$w, hat_values = h, vcov_type = type
+    )
+    V_ref <- sandwich::vcovHC(f$fit, type = type)
+    expect_equal(unname(V_pkg), unname(V_ref), tolerance = 1e-8,
+                 info = paste("vcov_type =", type))
+  }
+})
+
+test_that("cluster-robust branch is consistent with the observation-level one", {
+  f <- .sandwich_fixture()
+  h <- uncounted:::.hat_values_wls(f$X, f$w)
+  res <- sqrt(f$w) * f$e
+
+  ## One cluster per observation with CR0 (no small-sample correction) is
+  ## exactly HC0; this is what catches a mis-scaled per-observation score.
+  V_hc0 <- uncounted:::.compute_sandwich_vcov(
+    f$X, res, weights = f$w, hat_values = h, vcov_type = "HC0"
+  )
+  V_cr0 <- uncounted:::.compute_sandwich_vcov(
+    f$X, res, weights = f$w, hat_values = h, vcov_type = "HC0",
+    cluster = seq_len(f$n)
+  )
+  expect_equal(V_cr0, V_hc0, tolerance = 1e-10)
+})
+
+test_that("cluster-robust branch matches sandwich::vcovCL", {
+  skip_if_not_installed("sandwich")
+  f <- .sandwich_fixture()
+  h <- uncounted:::.hat_values_wls(f$X, f$w)
+  res <- sqrt(f$w) * f$e
+  cl <- rep(1:6, each = 5)
+
+  V_cr1 <- uncounted:::.compute_sandwich_vcov(
+    f$X, res, weights = f$w, hat_values = h, vcov_type = "HC1", cluster = cl
+  )
+  expect_equal(
+    unname(V_cr1),
+    unname(sandwich::vcovCL(f$fit, cluster = cl, type = "HC1", cadjust = TRUE)),
+    tolerance = 1e-8
+  )
+
+  ## HC2+ is not defined for the clustered meat and must degrade to CR1.
   expect_warning(
-    V_cl <- uncounted:::.compute_sandwich_vcov(
-      X, residuals, weights = weights, hat_values = hat_values,
-      vcov_type = "HC5", cluster = rep(1:3, each = 2)
+    V_cl5 <- uncounted:::.compute_sandwich_vcov(
+      f$X, res, weights = f$w, hat_values = h,
+      vcov_type = "HC5", cluster = cl
     ),
     "Falling back to CR1"
   )
-  expect_equal(dim(V_cl), c(ncol(X), ncol(X)))
-  expect_true(all(is.finite(V_cl)))
+  expect_equal(V_cl5, V_cr1, tolerance = 1e-10)
+
+  expect_error(
+    uncounted:::.compute_sandwich_vcov(
+      f$X, res, weights = f$w, hat_values = h,
+      vcov_type = "HC1", cluster = rep(1, f$n)
+    ),
+    "at least 2 clusters"
+  )
 })
 
 test_that("NB sandwich helper covers HC1, clustering, and single-cluster error", {
