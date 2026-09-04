@@ -667,6 +667,11 @@ estimate_hidden_pop <- function(data,
     fitted.values = result$fitted,
     residuals = result$residuals,
     log_mu = result$log_mu,
+    ## Offset in force when this fit was produced (see profile_dependence()).
+    ## Stored so that anything recomputing log(mu) later, such as predict(),
+    ## reproduces the fitted values instead of reading whatever the global
+    ## state happens to be at call time.
+    dependence_offset = .current_dependence_offset(),
     n_obs = result$n_obs,
     df.residual = result$df.residual,
     loglik = result$loglik,

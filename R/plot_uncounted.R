@@ -484,13 +484,19 @@ profile_gamma <- function(object, gamma_grid = seq(1e-4, 0.5, length.out = 20),
 
   par0 <- c(object$alpha_coefs, object$beta_coefs)
 
+  ## Profile the same criterion the fit optimised, including any dependence
+  ## offset that was in force then.
+  offset <- object$dependence_offset
+  if (is.null(offset)) offset <- 0
+
   nll_fn <- function(par) {
     a <- par[seq_len(p_alpha)]
     b <- par[p_alpha + seq_len(p_beta)]
     alpha_lin <- .alpha_fn(as.numeric(X_alpha %*% a))
     beta_lin <- .beta_fn(as.numeric(X_beta %*% b))
     log_mu <- pmin(.compute_log_mu(alpha_lin, log_N, beta_lin, rate,
-                                   link_rho = link_rho), 20)
+                                   link_rho = link_rho,
+                                   dependence_offset = offset), 20)
     mu <- pmax(exp(log_mu), 1e-300)
 
     if (method == "nb") {

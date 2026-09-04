@@ -126,8 +126,13 @@ predict.uncounted <- function(object, newdata = NULL,
     beta_vals <- eta_beta
   }
 
+  ## Use the offset recorded at fit time, not the current global one, so that
+  ## predict(fit, newdata = <training data>) reproduces fitted(fit).
+  offset <- object$dependence_offset
+  if (is.null(offset)) offset <- 0
   log_mu <- .compute_log_mu(alpha_vals, log_N_new, beta_vals, rate_new,
-                            link_rho = object$link_rho)
+                            link_rho = object$link_rho,
+                            dependence_offset = offset)
   if (type == "link") return(as.numeric(log_mu))
   as.numeric(exp(log_mu))
 }
