@@ -12,8 +12,9 @@
 \item{which}{Integer vector selecting which panels to display (default
 \code{1:4}).}
 
-\item{ask}{Logical; if \code{TRUE} (the default in interactive sessions),
-the user is prompted before each new page.}
+\item{ask}{Logical; if \code{TRUE}, the user is prompted before each new
+page. Defaults to \code{TRUE} in interactive sessions when more than one
+panel is requested, and \code{FALSE} otherwise.}
 
 \item{...}{Additional graphical arguments passed to \code{\link{plot}}.}
 }

@@ -126,9 +126,11 @@ tidy.uncounted <- function(x, conf.int = FALSE, conf.level = 0.95, ...) {
 #'
 #' @param x An \code{uncounted} object.
 #' @param ... Additional arguments (ignored).
-#' @return A one-row data frame with columns: \code{method}, \code{nobs},
-#'   \code{logLik}, \code{AIC}, \code{BIC}, \code{deviance},
-#'   \code{df.residual}, \code{gamma}, \code{theta}.
+#' @return A one-row data frame with columns: \code{method},
+#'   \code{estimator}, \code{link_rho}, \code{nobs}, \code{logLik},
+#'   \code{AIC}, \code{BIC}, \code{deviance}, \code{df.residual}.
+#'   Estimated \code{gamma} and \code{theta} are not reported here; they are
+#'   parameter estimates and appear as rows in \code{\link{tidy.uncounted}}.
 #'
 #' @examples
 #' data(irregular_migration)

@@ -25,8 +25,9 @@
 #' @param x An object of class \code{"uncounted"}.
 #' @param which Integer vector selecting which panels to display (default
 #'   \code{1:4}).
-#' @param ask Logical; if \code{TRUE} (the default in interactive sessions),
-#'   the user is prompted before each new page.
+#' @param ask Logical; if \code{TRUE}, the user is prompted before each new
+#'   page. Defaults to \code{TRUE} in interactive sessions when more than one
+#'   panel is requested, and \code{FALSE} otherwise.
 #' @param ... Additional graphical arguments passed to \code{\link{plot}}.
 #'
 #' @references
