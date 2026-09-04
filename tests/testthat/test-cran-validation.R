@@ -135,3 +135,33 @@ test_that("theta_start must be a single positive value for NB", {
     "uncounted"
   )
 })
+
+test_that("popsize() rejects arguments it would otherwise discard", {
+  fit <- quick_fit(testdata, method = "poisson", gamma = 0.005)
+
+  ## popsize() has no vcov argument, so this used to return the fit-time
+  ## HC3 interval while the caller believed they had asked for HC0.
+  expect_error(popsize(fit, vcov = "HC0"), "no 'vcov' argument")
+  expect_error(popsize(fit, bias_corection = FALSE), "Unused argument")
+  ## An unnamed argument binds positionally to `by`, so it is caught there.
+  expect_error(popsize(fit, TRUE), "one-sided formula")
+  expect_error(popsize(fit, by = "year"), "one-sided formula")
+
+  ## The documented route does change the interval.
+  w <- function(x) {
+    ps <- popsize(x)
+    ps$upper[1] - ps$lower[1]
+  }
+  expect_false(isTRUE(all.equal(w(fit), w(update(fit, vcov = "HC0")))))
+})
+
+test_that("popsize() validates level", {
+  fit <- quick_fit(testdata, method = "poisson", gamma = 0.005)
+  expect_error(popsize(fit, level = 1.5), "strictly between 0 and 1")
+  expect_error(popsize(fit, level = 0), "strictly between 0 and 1")
+  expect_error(popsize(fit, level = c(0.9, 0.95)), "strictly between 0 and 1")
+
+  ## A wider level must give a wider interval.
+  w <- function(l) { ps <- popsize(fit, level = l); ps$upper[1] - ps$lower[1] }
+  expect_gt(w(0.99), w(0.95))
+})

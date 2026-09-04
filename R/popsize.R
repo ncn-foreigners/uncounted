@@ -154,6 +154,37 @@ popsize <- function(object, ...) {
 #' @export
 popsize.uncounted <- function(object, by = NULL, level = 0.95,
                                bias_correction = TRUE, total = FALSE, ...) {
+  if (!inherits(object, "uncounted")) {
+    stop("'object' must be an \"uncounted\" object from estimate_hidden_pop().",
+         call. = FALSE)
+  }
+  if (!is.null(by) && !inherits(by, "formula")) {
+    stop("'by' must be a one-sided formula such as ~ year, or NULL.",
+         call. = FALSE)
+  }
+  if (!is.numeric(level) || length(level) != 1L || !is.finite(level) ||
+      level <= 0 || level >= 1) {
+    stop("'level' must be a single number strictly between 0 and 1.",
+         call. = FALSE)
+  }
+  ## Reject anything that landed in ... rather than silently discarding it.
+  ## popsize() has no vcov argument, so popsize(fit, vcov = "HC0") used to
+  ## return the fit-time covariance without a word.
+  extra <- list(...)
+  if (length(extra) > 0L) {
+    nms <- names(extra)
+    if (is.null(nms)) nms <- rep("", length(extra))
+    labelled <- ifelse(nzchar(nms), nms, "<unnamed>")
+    if ("vcov" %in% nms) {
+      stop("popsize() has no 'vcov' argument. The interval uses the ",
+           "covariance selected when the model was fitted; change it with ",
+           "update(object, vcov = ...) or refit with ",
+           "estimate_hidden_pop(vcov = ...).", call. = FALSE)
+    }
+    stop("Unused argument(s) passed to popsize(): ",
+         paste(labelled, collapse = ", "), ".", call. = FALSE)
+  }
+
   alpha_coefs <- object$alpha_coefs
   V <- object$vcov
   V_model <- object$vcov_model
