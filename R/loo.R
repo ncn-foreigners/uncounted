@@ -94,7 +94,6 @@ loo.uncounted <- function(object, by = c("obs", "country"),
                           verbose = FALSE, ...) {
   by <- match.arg(by)
   data <- object$data
-  call <- object$call
   n_obs <- nrow(data)
 
   # Determine groups to drop
@@ -365,7 +364,6 @@ plot.uncounted_loo <- function(x, type = c("xi", "coef"), ...) {
     dxi <- x$dxi
     ok <- !is.na(dxi)
     ord <- order(dxi[ok])
-    n <- sum(ok)
 
     oldpar <- par(mar = c(4, 8, 3, 1))
     on.exit(par(oldpar))
@@ -500,7 +498,6 @@ compare_loo <- function(loo1, loo2,
   if (loo1$n_drops != loo2$n_drops)
     stop("Both LOO objects must have the same number of drops.")
 
-  n <- loo1$n_drops
   dropped <- loo1$dropped
 
   # Build labels for observations
@@ -640,7 +637,6 @@ plot.uncounted_loo_compare <- function(x, type = c("scatter", "bar"),
   } else {
     # Barplot
     tab <- head(x$table, n)
-    n_show <- nrow(tab)
 
     dxi1 <- tab[[3]]  # dxi for model 1
     dxi2 <- tab[[5]]  # dxi for model 2
@@ -650,14 +646,14 @@ plot.uncounted_loo_compare <- function(x, type = c("scatter", "bar"),
     oldpar <- par(mar = c(4, 10, 3, 1))
     on.exit(par(oldpar))
 
-    bp <- barplot(mat, beside = TRUE, horiz = TRUE,
-                  names.arg = tab$label,
-                  las = 1, cex.names = 0.65,
-                  col = c(adjustcolor("tomato", 0.7),
-                          adjustcolor("steelblue", 0.7)),
-                  border = NA,
-                  main = paste("LOO:", x$labels[1], "vs", x$labels[2]),
-                  xlab = expression(Delta * xi))
+    barplot(mat, beside = TRUE, horiz = TRUE,
+            names.arg = tab$label,
+            las = 1, cex.names = 0.65,
+            col = c(adjustcolor("tomato", 0.7),
+                    adjustcolor("steelblue", 0.7)),
+            border = NA,
+            main = paste("LOO:", x$labels[1], "vs", x$labels[2]),
+            xlab = expression(Delta * xi))
     abline(v = 0, lty = 2)
     legend("bottomright", legend = x$labels,
            fill = c(adjustcolor("tomato", 0.7),

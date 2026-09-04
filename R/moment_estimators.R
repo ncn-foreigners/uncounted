@@ -211,8 +211,6 @@
   estimator <- match.arg(estimator)
   n_obs <- length(m)
   if (is.null(weights)) weights <- rep(1, n_obs)
-  p_alpha <- ncol(X_alpha)
-  p_beta <- ncol(X_beta)
   p_gamma <- if (!is.null(X_gamma)) ncol(X_gamma) else 0L
 
   start_fit <- .fit_poisson(

@@ -67,7 +67,6 @@
                   seq(0.1, gamma_bounds[2], length.out = 5))
   grid_rss <- sapply(gamma_grid, obj_fn)
   best_idx <- which.min(grid_rss)
-  best_grid <- gamma_grid[best_idx]
 
   # Narrow interval around best grid point
   lower_g <- if (best_idx > 1) gamma_grid[best_idx - 1] else gamma_bounds[1]
@@ -361,12 +360,10 @@
   if (estimate_gamma) {
     gamma_coefs_hat <- opt$par[p_alpha + p_beta + seq_len(p_gamma)]
     gamma_lin_hat <- exp(pmin(as.numeric(X_gamma %*% gamma_coefs_hat), 10))
-    gamma_hat <- if (p_gamma == 1) gamma_lin_hat[1] else NULL
     names(gamma_coefs_hat) <- colnames(X_gamma)
   } else {
     gamma_coefs_hat <- NULL
     gamma_lin_hat <- NULL
-    gamma_hat <- gamma_value
   }
 
   # Transform to response scale
@@ -583,12 +580,10 @@
   if (estimate_gamma) {
     gamma_coefs_hat <- opt$par[idx_gamma_start - 1 + seq_len(p_gamma)]
     gamma_lin_hat <- exp(pmin(as.numeric(X_gamma %*% gamma_coefs_hat), 10))
-    gamma_hat <- if (p_gamma == 1) gamma_lin_hat[1] else NULL
     names(gamma_coefs_hat) <- colnames(X_gamma)
   } else {
     gamma_coefs_hat <- NULL
     gamma_lin_hat <- NULL
-    gamma_hat <- gamma_value
   }
 
   eta_alpha <- as.numeric(X_alpha %*% a_raw)
@@ -626,8 +621,6 @@
   }
 
   w_nb <- weights * mu * theta / (theta + mu)
-
-  resid_pearson <- resid_raw / sqrt(mu + mu^2 / theta)
 
   p_ab <- p_alpha + p_beta
   V_model_full <- .compute_model_vcov(Z, w_nb)

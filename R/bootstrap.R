@@ -175,14 +175,6 @@ bootstrap_popsize <- function(object, R = 199, cluster = NULL,
   t0_bc <- ps0$estimate_bc
   group_meta <- attr(ps0, "groups")
 
-  # If by is specified, build group factor for aggregating bootstrap replicates
-  by_group_factor <- NULL
-  if (!is.null(by)) {
-    by_vars <- all.vars(by)
-    by_data <- data[, by_vars, drop = FALSE]
-    by_group_factor <- interaction(by_data, drop = TRUE, sep = ", ")
-  }
-
   # Cluster variable
   cluster_var <- NULL
   if (!is.null(cluster)) {

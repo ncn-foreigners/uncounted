@@ -991,12 +991,6 @@ update.uncounted <- function(object, ..., evaluate = TRUE) {
     # Delta method: SE(beta) = exp(zeta) * SE(zeta)
     se_zeta <- sqrt(as.numeric(z_row %*% V_beta %*% t(z_row)))
     se_beta <- beta_resp * se_zeta
-    # Label from beta covariates
-    label <- paste0("beta=", round(beta_resp, 4))
-    if (!is.null(x$cov_alpha_vars)) {
-      # Try to find a meaningful label — use the first obs with this pattern
-      label <- paste0("(", idx, ")")
-    }
     data.frame(
       group = key,
       beta = beta_resp,

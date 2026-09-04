@@ -576,7 +576,6 @@ run_app <- function(...) {
     shiny::req(rv$ps_result)
     ps <- rv$ps_result
     if (nrow(ps) > 1) {
-      n_groups <- nrow(ps)
       par(mar = c(7, 4, 3, 1))
       bp <- barplot(ps$estimate, names.arg = ps$group, las = 2,
                     ylab = expression(hat(xi)), main = "Population Size Estimates",
