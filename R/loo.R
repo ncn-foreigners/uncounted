@@ -90,6 +90,7 @@ loo <- function(object, ...) {
 
 #' @rdname loo
 #' @export
+#' @exportS3Method loo::loo
 loo.uncounted <- function(object, by = c("obs", "country"),
                           verbose = FALSE, ...) {
   by <- match.arg(by)

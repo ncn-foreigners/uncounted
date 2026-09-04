@@ -593,6 +593,7 @@ residuals.uncounted_bayes <- function(object,
 }
 
 #' @export
+#' @exportS3Method loo::loo
 loo.uncounted_bayes <- function(object, ...) {
   .require_namespace("brms")
   brms::loo(object$fit, ...)

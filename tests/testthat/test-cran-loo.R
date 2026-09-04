@@ -39,3 +39,18 @@ test_that("compare_loo supports labels, printing, plotting, and validation", {
     "same 'by'"
   )
 })
+
+test_that("loo() still dispatches when the loo package masks the generic", {
+  ## uncounted defines its own loo() generic so the package works without the
+  ## loo package. Attaching loo (which every brms user does) then masks it, and
+  ## before delayed registration on loo::loo the call failed with
+  ## "no applicable method for 'loo' applied to an object of class uncounted".
+  skip_if_not_installed("loo")
+  fit <- quick_fit(small_data(), method = "poisson", gamma = 0.005)
+
+  expect_s3_class(loo::loo(fit), "uncounted_loo")
+  expect_identical(
+    class(getS3method("loo", "uncounted", envir = asNamespace("loo"))),
+    "function"
+  )
+})
