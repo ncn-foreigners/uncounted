@@ -264,6 +264,7 @@ posterior_popsize_draws <- function(object, ...) {
   UseMethod("posterior_popsize_draws")
 }
 
+#' @rdname posterior_popsize_draws
 #' @export
 posterior_popsize_draws.uncounted_bayes <- function(object, by = NULL,
                                                     include_total = FALSE,
@@ -273,6 +274,7 @@ posterior_popsize_draws.uncounted_bayes <- function(object, by = NULL,
   posterior_popsize_draws(ps, include_total = include_total, format = format)
 }
 
+#' @rdname posterior_popsize_draws
 #' @export
 posterior_popsize_draws.uncounted_popsize_bayes <- function(object,
                                                             include_total = FALSE,
@@ -495,6 +497,20 @@ coef.uncounted_bayes <- function(object,
   stats::setNames(vals, tab$term)
 }
 
+#' Fitted Values from a Bayesian uncounted Model
+#'
+#' Posterior expected observed counts for the data used to fit the model.
+#'
+#' @param object An \code{"uncounted_bayes"} object.
+#' @param summary Posterior summary to return: \code{"mean"} (the default),
+#'   \code{"median"}, or \code{"draws"} for the full draw-by-observation
+#'   matrix.
+#' @param ... Additional arguments passed to the underlying \pkg{brms}
+#'   expected-prediction function.
+#'
+#' @return A numeric vector of posterior summaries, or a draw-by-observation
+#'   matrix when \code{summary = "draws"}.
+#'
 #' @export
 fitted.uncounted_bayes <- function(object,
                                    summary = c("mean", "median", "draws"),

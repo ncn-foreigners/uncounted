@@ -2,9 +2,26 @@
 % Please edit documentation in R/bayes.R
 \name{posterior_popsize_draws}
 \alias{posterior_popsize_draws}
+\alias{posterior_popsize_draws.uncounted_bayes}
+\alias{posterior_popsize_draws.uncounted_popsize_bayes}
 \title{Extract Posterior Population-Size Draws}
 \usage{
 posterior_popsize_draws(object, ...)
+
+\method{posterior_popsize_draws}{uncounted_bayes}(
+  object,
+  by = NULL,
+  include_total = FALSE,
+  format = c("matrix", "data.frame"),
+  ...
+)
+
+\method{posterior_popsize_draws}{uncounted_popsize_bayes}(
+  object,
+  include_total = FALSE,
+  format = c("matrix", "data.frame"),
+  ...
+)
 }
 \arguments{
 \item{object}{A Bayesian fitted model from
