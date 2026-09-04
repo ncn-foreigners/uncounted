@@ -378,33 +378,22 @@ profile_gamma <- function(object, gamma_grid = seq(1e-4, 0.5, length.out = 20),
          "gamma varies by covariates.", call. = FALSE)
   }
 
-  # Extract call arguments for refitting
-  cl <- object$call
-  data <- object$data
-  observed <- eval(cl$observed)
-  auxiliary <- eval(cl$auxiliary)
-  reference_pop <- eval(cl$reference_pop)
-  method <- object$method
-  cov_alpha <- if (!is.null(cl$cov_alpha)) eval(cl$cov_alpha) else NULL
-  cov_beta <- if (!is.null(cl$cov_beta)) eval(cl$cov_beta) else NULL
-  vcov_type <- object$vcov_type
-  constrained_arg <- isTRUE(object$constrained)
-  theta_start <- if (!is.null(object$theta)) object$theta else 1
-  estimator_arg <- object$estimator
-  link_rho_arg <- object$link_rho
+  ## Refit with exactly the original specification, changing only gamma.
+  ## Building this by hand previously dropped weights, cluster and countries,
+  ## so a weighted or clustered fit was profiled by unweighted, unclustered
+  ## refits and the profile did not belong to the model being profiled.
+  refit_args <- .refit_args_from_object(object)
+  ## cov_gamma requires gamma = "estimate" and is rejected above anyway, so it
+  ## must not be carried into a fixed-gamma refit.
+  refit_args$cov_gamma <- NULL
 
   results <- data.frame(gamma = gamma_grid, xi = NA_real_, loglik = NA_real_)
 
   for (i in seq_along(gamma_grid)) {
+    args_i <- refit_args
+    args_i$gamma <- gamma_grid[i]
     fit_i <- tryCatch(
-      estimate_hidden_pop(
-        data = data, observed = observed, auxiliary = auxiliary,
-        reference_pop = reference_pop, method = method,
-        cov_alpha = cov_alpha, cov_beta = cov_beta,
-        gamma = gamma_grid[i], theta_start = theta_start,
-        link_rho = link_rho_arg, estimator = estimator_arg,
-        vcov = vcov_type, constrained = constrained_arg
-      ),
+      do.call(estimate_hidden_pop, args_i),
       error = function(e) NULL
     )
     if (!is.null(fit_i)) {
