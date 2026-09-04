@@ -331,8 +331,107 @@ estimate_hidden_pop <- function(data,
   n_aux <- eval(auxiliary[[2]], data)
   N <- eval(reference_pop[[2]], data)
 
-  stopifnot(length(m) == length(N), length(m) == length(n_aux))
-  stopifnot(all(N > 0))
+  # ---- Validate the response and the two count inputs ----
+  .check_count <- function(x, label, formula) {
+    if (!is.numeric(x)) {
+      stop("'", label, "' (", deparse(formula), ") must be numeric, not ",
+           class(x)[1], ".", call. = FALSE)
+    }
+    if (anyNA(x)) {
+      stop("'", label, "' (", deparse(formula), ") contains ", sum(is.na(x)),
+           " missing value(s). Remove or impute them before fitting.",
+           call. = FALSE)
+    }
+    if (any(!is.finite(x))) {
+      stop("'", label, "' (", deparse(formula), ") contains non-finite values.",
+           call. = FALSE)
+    }
+    if (any(x < 0)) {
+      stop("'", label, "' (", deparse(formula), ") contains negative values; ",
+           "counts and population sizes must be non-negative.", call. = FALSE)
+    }
+    invisible(TRUE)
+  }
+  .check_count(m, "observed", observed)
+  .check_count(n_aux, "auxiliary", auxiliary)
+  .check_count(N, "reference_pop", reference_pop)
+
+  if (length(m) != length(N) || length(m) != length(n_aux)) {
+    stop("'observed', 'auxiliary' and 'reference_pop' must have the same ",
+         "length (got ", length(m), ", ", length(n_aux), ", ", length(N),
+         ").", call. = FALSE)
+  }
+  if (any(N <= 0)) {
+    stop("'reference_pop' must be strictly positive; ", sum(N <= 0),
+         " observation(s) are zero or negative.", call. = FALSE)
+  }
+  if (any(N < 1)) {
+    warning("Some reference populations are below 1, so log(N) < 0 and the ",
+            "corresponding N^alpha contributions shrink as alpha grows. ",
+            "The population-size estimator assumes N_i >= 1.", call. = FALSE)
+  }
+
+  # ---- Validate gamma and its bounds ----
+  if (!is.null(gamma)) {
+    if (is.character(gamma)) {
+      if (!identical(gamma, "estimate")) {
+        stop("'gamma' must be \"estimate\", a single non-negative number, or ",
+             "NULL; got \"", gamma[1], "\".", call. = FALSE)
+      }
+    } else if (is.numeric(gamma)) {
+      if (length(gamma) != 1L || !is.finite(gamma) || gamma < 0) {
+        stop("A numeric 'gamma' must be a single finite non-negative value.",
+             call. = FALSE)
+      }
+    } else {
+      stop("'gamma' must be \"estimate\", a single non-negative number, or ",
+           "NULL; got an object of class ", class(gamma)[1], ".",
+           call. = FALSE)
+    }
+  }
+  if (identical(gamma, "estimate")) {
+    if (!is.numeric(gamma_bounds) || length(gamma_bounds) != 2L ||
+        any(!is.finite(gamma_bounds))) {
+      stop("'gamma_bounds' must be a numeric vector of length 2 with finite ",
+           "values.", call. = FALSE)
+    }
+    if (gamma_bounds[1] < 0 || gamma_bounds[2] <= gamma_bounds[1]) {
+      stop("'gamma_bounds' must satisfy 0 <= lower < upper; got c(",
+           gamma_bounds[1], ", ", gamma_bounds[2], ").", call. = FALSE)
+    }
+  }
+
+  # ---- Validate weights ----
+  if (!is.null(weights)) {
+    if (!is.numeric(weights)) {
+      stop("'weights' must be numeric, not ", class(weights)[1], ".",
+           call. = FALSE)
+    }
+    if (length(weights) != length(m)) {
+      stop("'weights' must have one value per observation (got ",
+           length(weights), " for ", length(m), " observations).",
+           call. = FALSE)
+    }
+    if (anyNA(weights) || any(!is.finite(weights))) {
+      stop("'weights' must not contain missing or non-finite values.",
+           call. = FALSE)
+    }
+    if (any(weights < 0)) {
+      stop("'weights' must be non-negative.", call. = FALSE)
+    }
+    if (all(weights == 0)) {
+      stop("'weights' are all zero, so no observation contributes to the fit.",
+           call. = FALSE)
+    }
+  }
+
+  if (identical(method, "nb")) {
+    if (!is.numeric(theta_start) || length(theta_start) != 1L ||
+        !is.finite(theta_start) || theta_start <= 0) {
+      stop("'theta_start' must be a single positive finite value.",
+           call. = FALSE)
+    }
+  }
 
   ratio <- n_aux / N
   log_N <- log(N)
@@ -344,8 +443,10 @@ estimate_hidden_pop <- function(data,
 
   if (no_gamma) {
     if (any(n_aux == 0)) {
-      warning("auxiliary contains zeros; log(n/N) will be -Inf. ",
-              "Consider using gamma = 'estimate' or a fixed gamma value.")
+      stop("'gamma = NULL' uses log(n/N), which is undefined for the ",
+           sum(n_aux == 0), " observation(s) where the auxiliary count is ",
+           "zero. Use gamma = \"estimate\" or a fixed positive gamma.",
+           call. = FALSE)
     }
     log_rate <- log(ratio)
     gamma_value <- NULL
