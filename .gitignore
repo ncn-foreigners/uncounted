@@ -4,9 +4,12 @@
 .Ruserdata
 .DS_Store
 .claude/
+CLAUDE.md
 inst/doc
 docs/
-tests/testthat/Rplots.pdf
+Rplots.pdf
 README.html
 *.Rproj
+*.Rcheck/
+*.tar.gz
 notes/
