@@ -224,7 +224,6 @@
     gamma_bounds = gamma_bounds,
     X_gamma = X_gamma,
     weights = weights,
-    vcov_type = "HC0",
     constrained = constrained,
     link_rho = link_rho
   )
@@ -335,7 +334,6 @@
     theta_start = theta_start,
     X_gamma = X_gamma,
     weights = weights,
-    vcov_type = "HC0",
     constrained = constrained,
     link_rho = link_rho
   )

@@ -426,10 +426,10 @@ estimate_hidden_pop <- function(data,
       if (estimate_gamma) {
         .fit_ols_gamma(m, N, ratio, log_N, X_alpha, X_beta,
                        gamma_start, gamma_bounds,
-                       weights = weights, vcov_type = actual_vcov_type)
+                       weights = weights)
       } else {
         .fit_ols(m, N, ratio, log_N, log_rate, X_alpha, X_beta,
-                 weights = weights, vcov_type = actual_vcov_type)
+                 weights = weights)
       }
     },
     "nls" = {
@@ -438,7 +438,7 @@ estimate_hidden_pop <- function(data,
                estimate_gamma = estimate_gamma,
                gamma_start = gamma_start,
                gamma_bounds = gamma_bounds,
-               weights = weights, vcov_type = actual_vcov_type,
+               weights = weights,
                link_rho = link_rho)
     },
     "poisson" = {
@@ -449,7 +449,7 @@ estimate_hidden_pop <- function(data,
                      gamma_start = gamma_start,
                      gamma_bounds = gamma_bounds,
                      X_gamma = X_gamma,
-                     weights = weights, vcov_type = actual_vcov_type,
+                     weights = weights,
                      constrained = constrained,
                      link_rho = link_rho)
       } else {
@@ -474,7 +474,7 @@ estimate_hidden_pop <- function(data,
                 gamma_bounds = gamma_bounds,
                 theta_start = theta_start,
                 X_gamma = X_gamma,
-                weights = weights, vcov_type = actual_vcov_type,
+                weights = weights,
                 constrained = constrained,
                 link_rho = link_rho)
       } else {
@@ -498,7 +498,7 @@ estimate_hidden_pop <- function(data,
       }
       .fit_iols(m, N, ratio, log_N, log_rate, X_alpha, X_beta,
                 gamma_value = gamma_value,
-                weights = weights, vcov_type = actual_vcov_type)
+                weights = weights)
     }
   )
 
@@ -518,20 +518,6 @@ estimate_hidden_pop <- function(data,
   } else {
     c(result$alpha_coefs, result$beta_coefs)
   }
-  vcov_names <- colnames(result$vcov)
-  if (is.null(vcov_names) || anyNA(vcov_names)) {
-    vcov_names <- names(all_coefs)
-    if (estimate_gamma && !has_cov_gamma && nrow(result$vcov) > length(vcov_names)) {
-      vcov_names <- c(vcov_names, colnames(X_gamma))
-    }
-    if (length(vcov_names) < nrow(result$vcov)) {
-      vcov_names <- c(vcov_names,
-                      rep(NA_character_, nrow(result$vcov) - length(vcov_names)))
-    }
-    vcov_names <- vcov_names[seq_len(nrow(result$vcov))]
-    rownames(result$vcov) <- colnames(result$vcov) <- vcov_names
-  }
-
   # Compute alpha/beta per observation (response scale for constrained)
   alpha_values <- if (!is.null(result$alpha_values)) {
     result$alpha_values

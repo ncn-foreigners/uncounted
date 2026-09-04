@@ -2,7 +2,7 @@
 
 #' @noRd
 .fit_ols <- function(m, N, ratio, log_N, log_rate,
-                     X_alpha, X_beta, weights = NULL, vcov_type = "HC3") {
+                     X_alpha, X_beta, weights = NULL) {
   n_obs <- length(m)
   if (is.null(weights)) weights <- rep(1, n_obs)
 
@@ -25,17 +25,13 @@
   resid_raw <- m - mu
   resid_log <- y - log_mu
 
-  h <- .hat_values_wls(Z, weights)
-  V <- .compute_sandwich_vcov(Z, resid_log, weights = weights,
-                              hat_values = h, vcov_type = vcov_type,
-)
 
   sigma2 <- sum(weights * resid_log^2) / (n_obs - length(coefs))
   V_model <- .compute_model_vcov(Z, weights, sigma2 = sigma2)
 
   list(alpha_coefs = alpha_coefs, beta_coefs = beta_coefs,
        fitted = mu, residuals = resid_raw, log_mu = log_mu,
-       vcov = V, vcov_model = V_model,
+       vcov_model = V_model,
        model_matrix_full = Z, bread_weights = weights,
        score_residuals = weights * resid_log,
        n_obs = n_obs, df.residual = n_obs - length(coefs),
@@ -49,7 +45,7 @@
 #' @noRd
 .fit_ols_gamma <- function(m, N, ratio, log_N, X_alpha, X_beta,
                            gamma_start, gamma_bounds,
-                           weights = NULL, vcov_type = "HC3") {
+                           weights = NULL) {
   n_obs <- length(m)
   if (is.null(weights)) weights <- rep(1, n_obs)
   p_alpha <- ncol(X_alpha)
@@ -102,13 +98,8 @@
   J_gamma <- beta_lin / (gamma_hat + ratio)
   J_full <- cbind(Z, gamma = J_gamma)
 
-  h <- .hat_values_wls(J_full, weights)
-  V_full <- .compute_sandwich_vcov(J_full, resid_log, weights = weights,
-                                   hat_values = h, vcov_type = vcov_type,
-     )
 
   p_ab <- p_alpha + p_beta
-  V <- V_full[seq_len(p_ab), seq_len(p_ab), drop = FALSE]
 
   sigma2 <- sum(weights * resid_log^2) / (n_obs - length(coefs) - 1)
   V_model_full <- .compute_model_vcov(J_full, weights, sigma2 = sigma2)
@@ -116,7 +107,7 @@
 
   list(alpha_coefs = alpha_coefs, beta_coefs = beta_coefs,
        fitted = mu, residuals = resid_raw, log_mu = log_mu,
-       vcov = V, vcov_model = V_model, vcov_full = V_full,
+       vcov_model = V_model,
        model_matrix_full = J_full, bread_weights = weights,
        score_residuals = weights * resid_log,
        n_obs = n_obs, df.residual = n_obs - length(coefs) - 1,
@@ -132,7 +123,7 @@
                      X_alpha, X_beta, gamma_value = NULL,
                      estimate_gamma = FALSE, gamma_start = 0.01,
                      gamma_bounds = c(1e-10, 1),
-                     weights = NULL, vcov_type = "HC3",
+                     weights = NULL,
                      link_rho = "power") {
   n_obs <- length(m)
   if (is.null(weights)) weights <- rep(1, n_obs)
@@ -226,25 +217,17 @@
     J <- cbind(J, gamma = mu * dlogrho_final * beta_lin * gamma_hat / rate_final)
   }
 
-  h <- .hat_values_wls(J, weights)
-  V_full <- .compute_sandwich_vcov(J, resid_raw, weights = weights,
-                                   hat_values = h, vcov_type = vcov_type,
-     )
   p_ab <- p_alpha + p_beta
-  V <- V_full[seq_len(p_ab), seq_len(p_ab), drop = FALSE]
 
   sigma2 <- sum(weights * resid_raw^2) / (n_obs - length(opt$par))
   V_model_full <- .compute_model_vcov(J, weights, sigma2 = sigma2)
   V_model <- V_model_full[seq_len(p_ab), seq_len(p_ab), drop = FALSE]
 
-  ## NLS Jacobian: J = dmu/dtheta * mu (already computed above)
-  J_full <- if (estimate_gamma) J else J
   list(alpha_coefs = a, beta_coefs = b,
        alpha_values = alpha_lin, beta_values = beta_lin,
        fitted = mu, residuals = resid_raw, log_mu = log_mu,
-       vcov = V, vcov_model = V_model,
-       vcov_full = if (estimate_gamma) V_full else V,
-       model_matrix_full = J_full, bread_weights = weights,
+       vcov_model = V_model,
+       model_matrix_full = J, bread_weights = weights,
        score_residuals = weights * resid_raw,
        n_obs = n_obs, df.residual = n_obs - length(opt$par),
        loglik = NULL, theta = NULL,
@@ -263,7 +246,7 @@
                          estimate_gamma = FALSE, gamma_start = 0.01,
                          gamma_bounds = c(1e-10, 1),
                          X_gamma = NULL,
-                         weights = NULL, vcov_type = "HC3",
+                         weights = NULL,
                          constrained = FALSE,
                          link_rho = "power") {
   n_obs <- length(m)
@@ -422,18 +405,8 @@
 
   # Sandwich vcov (on link scale)
   w_glm <- weights * mu
-  h <- .hat_values_wls(Z, w_glm)
-  V_full <- .compute_sandwich_vcov(Z, resid_raw / sqrt(mu), weights = w_glm,
-                                   hat_values = h, vcov_type = vcov_type,
-     )
 
   p_ab <- p_alpha + p_beta
-  V <- if (estimate_gamma) {
-    V_full[seq_len(p_ab), seq_len(p_ab), drop = FALSE]
-  } else {
-    V_full
-  }
-
   V_model_full <- .compute_model_vcov(Z, w_glm)
   V_model <- if (estimate_gamma) {
     V_model_full[seq_len(p_ab), seq_len(p_ab), drop = FALSE]
@@ -446,8 +419,7 @@
        alpha_values = alpha_lin, beta_values = beta_lin,
        gamma_coefs = gamma_coefs_hat, gamma_values = gamma_lin_hat,
        fitted = mu, residuals = resid_raw, log_mu = log_mu,
-       vcov = V, vcov_model = V_model,
-       vcov_full = if (estimate_gamma) V_full else V,
+       vcov_model = V_model,
        model_matrix_full = Z, bread_weights = w_glm,
        score_residuals = weights * resid_raw,
        n_obs = n_obs, df.residual = n_obs - length(opt$par),
@@ -469,7 +441,7 @@
                     estimate_gamma = FALSE, gamma_start = 0.01,
                     gamma_bounds = c(1e-10, 1), theta_start = 1,
                     X_gamma = NULL,
-                    weights = NULL, vcov_type = "HC3",
+                    weights = NULL,
                     constrained = FALSE,
                     link_rho = "power") {
   n_obs <- length(m)
@@ -570,7 +542,7 @@
                         gamma_start = gamma_start, gamma_bounds = gamma_bounds,
                         theta_start = theta_start, X_gamma = X_gamma,
                         weights = weights,
-                        vcov_type = "HC0", constrained = FALSE,
+                        constrained = FALSE,
                         link_rho = link_rho)
       c(fit_uc$alpha_coefs, fit_uc$beta_coefs)
     }, error = function(e) start_ab)
@@ -654,20 +626,10 @@
   }
 
   w_nb <- weights * mu * theta / (theta + mu)
-  h <- .hat_values_wls(Z, w_nb)
 
   resid_pearson <- resid_raw / sqrt(mu + mu^2 / theta)
-  V_full <- .compute_sandwich_vcov(Z, resid_pearson, weights = w_nb,
-                                   hat_values = h, vcov_type = vcov_type,
-     )
 
   p_ab <- p_alpha + p_beta
-  V <- if (estimate_gamma) {
-    V_full[seq_len(p_ab), seq_len(p_ab), drop = FALSE]
-  } else {
-    V_full
-  }
-
   V_model_full <- .compute_model_vcov(Z, w_nb)
   V_model <- if (estimate_gamma) {
     V_model_full[seq_len(p_ab), seq_len(p_ab), drop = FALSE]
@@ -701,8 +663,7 @@
        alpha_values = alpha_lin, beta_values = beta_lin,
        gamma_coefs = gamma_coefs_hat, gamma_values = gamma_lin_hat,
        fitted = mu, residuals = resid_raw, log_mu = log_mu,
-       vcov = V, vcov_model = V_model,
-       vcov_full = if (estimate_gamma) V_full else V,
+       vcov_model = V_model,
        model_matrix_full = Z, bread_weights = w_nb,
        score_residuals = nb_score_factor,
        score_full = score_full,
@@ -730,7 +691,7 @@
                       X_alpha, X_beta, gamma_value = NULL,
                       estimate_gamma = FALSE, gamma_start = 0.01,
                       gamma_bounds = c(1e-10, 0.5),
-                      weights = NULL, vcov_type = "HC3",
+                      weights = NULL,
                       delta_grid = c(1, 10, 100, 1000),
                       rho = 1,
                       tol = 1e-6, max_iter = 100) {
@@ -824,9 +785,6 @@
   loglik_gpml <- -sum(weights * (m / mu - log(pmax(m, 1e-300) / mu) - 1))
 
   # Sandwich vcov using GPML score residual: (m/mu - 1)
-  h <- .hat_values_wls(Z, weights)
-  V <- .compute_sandwich_vcov(Z, gpml_resid, weights = weights,
-                              hat_values = h, vcov_type = vcov_type)
 
   # GPML Fisher information: (Z'Z)^{-1} without sigma2 scaling.
   # Gamma variance function gives unit working weights, so the model-based
@@ -836,7 +794,7 @@
 
   list(alpha_coefs = alpha_coefs, beta_coefs = beta_coefs,
        fitted = mu, residuals = resid_raw, log_mu = log_mu,
-       vcov = V, vcov_model = V_model,
+       vcov_model = V_model,
        model_matrix_full = Z, bread_weights = weights,
        score_residuals = weights * gpml_resid,
        n_obs = n_obs, df.residual = n_obs - p,
@@ -851,7 +809,7 @@
 #' @noRd
 .fit_iols_gamma <- function(m, N, ratio, log_N, X_alpha, X_beta,
                             gamma_start, gamma_bounds,
-                            weights = NULL, vcov_type = "HC3",
+                            weights = NULL,
                             delta_grid = c(1, 10, 100, 1000),
                             rho = 1,
                             tol = 1e-6, max_iter = 100) {
@@ -952,10 +910,6 @@
   J_full <- cbind(Z, gamma = J_gamma)
   p_ab <- p_alpha + p_beta
 
-  h <- .hat_values_wls(J_full, weights)
-  V_full <- .compute_sandwich_vcov(J_full, gpml_resid, weights = weights,
-                                   hat_values = h, vcov_type = vcov_type)
-  V <- V_full[seq_len(p_ab), seq_len(p_ab), drop = FALSE]
 
   sigma2 <- sum(weights * gpml_resid^2) / (n_obs - p_ab - 1)
   V_model_full <- .compute_model_vcov(J_full, weights, sigma2 = sigma2)
@@ -963,7 +917,7 @@
 
   list(alpha_coefs = alpha_coefs, beta_coefs = beta_coefs,
        fitted = mu, residuals = resid_raw, log_mu = log_mu,
-       vcov = V, vcov_model = V_model, vcov_full = V_full,
+       vcov_model = V_model,
        model_matrix_full = J_full, bread_weights = weights,
        score_residuals = weights * gpml_resid,
        n_obs = n_obs, df.residual = n_obs - p_ab - 1,
