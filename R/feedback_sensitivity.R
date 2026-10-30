@@ -688,6 +688,11 @@ feedback_identified_set <- function(x, delta_range = NULL, level = 0.95,
 #' @export
 print.uncounted_feedback_set <- function(x, ...) {
   D <- attr(x, "delta_range")
+  ## Subsetting drops the attributes and possibly columns: show it as plain data
+  if (is.null(D) || !all(c("group", "L", "U") %in% names(x))) {
+    print(as.data.frame(unclass(x), stringsAsFactors = FALSE), ...)
+    return(invisible(x))
+  }
   cat("Identified set over delta in [", signif(D[1], 3), ", ", signif(D[2], 3), "]\n", sep = "")
   has_ci <- any(is.finite(x$ci_lower))
   if (has_ci) {

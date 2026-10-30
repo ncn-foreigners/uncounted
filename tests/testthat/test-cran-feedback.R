@@ -488,3 +488,9 @@ test_that("feedback_calibrate() returns the share and its mean", {
   expect_output(print(cal), "congestion elasticity")
   expect_error(feedback_calibrate(list()), "uncounted")
 })
+
+test_that("a subset of the identified set still prints", {
+  x <- quiet_feedback(feedback_fit(cov_alpha = ~sex), "geomean", by = ~sex, total = TRUE)
+  set <- feedback_identified_set(x)
+  expect_output(print(set[3, c("group", "L")]), "Total")
+})
