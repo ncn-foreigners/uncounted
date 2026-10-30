@@ -120,7 +120,7 @@ profile_dependence <- function(object,
       plot(results$delta[valid_ll], results$loglik[valid_ll],
            type = "b", pch = 19, cex = 0.6,
            xlab = expression(delta), ylab = "Log-likelihood",
-           main = expression("Log-likelihood" ~ ell(delta)),
+           main = expression("Log-likelihood" ~ italic(l)(delta)),
            ...)
       abline(v = 0, lty = 2, col = "red")
     }
