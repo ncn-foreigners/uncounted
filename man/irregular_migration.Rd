@@ -9,10 +9,11 @@ A data frame with 1,382 rows and 8 variables:
 \describe{
 \item{year}{Year of observation (factor, 2019--2024).}
 \item{sex}{Sex (factor: \code{"Female"}, \code{"Male"}).}
-\item{country_code}{ISO 3166-1 alpha-3 country code (e.g. \code{"UKR"}).}
+\item{country_code}{ISO 3166-1 alpha-3 country code (e.g. \code{"UKR"}), or
+\code{"unknown/stateless"} for records without a country of origin.}
 \item{country}{Country name in English.}
 \item{continent}{Continent (\code{"Africa"}, \code{"Americas"}, \code{"Asia"},
-\code{"Europe"}, \code{"Oceania"}).}
+\code{"Europe"}, \code{"Oceania"}), or \code{"unknown/stateless"} (12 rows).}
 \item{m}{Observed count: foreigners apprehended by the Border Guard for
 unauthorized stay (the variable whose hidden population we estimate).}
 \item{n}{Auxiliary count: foreigners identified by the Police (a second,
