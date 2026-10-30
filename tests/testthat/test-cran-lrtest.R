@@ -47,3 +47,44 @@ test_that("Poisson nested in NB is accepted in either argument order", {
   expect_match(r2$model1, "POISSON")
   expect_equal(lrtest(nb_s, po)$df, 2)
 })
+
+test_that("the boundary p-value is the chi-squared mixture", {
+  po <- estimate_hidden_pop(testdata, ~m, ~n, ~N, gamma = 0.005)
+  nb <- estimate_hidden_pop(testdata, ~m, ~n, ~N, method = "nb", gamma = 0.005)
+  r <- lrtest(po, nb)
+  expect_equal(r$p_value, 0.5 * pchisq(r$statistic, 1, lower.tail = FALSE))
+
+  ## Extra covariates in the NB model: used to be a plain chi2 on df degrees
+  nb_s <- estimate_hidden_pop(testdata, ~m, ~n, ~N, method = "nb", cov_alpha = ~sex,
+                              gamma = 0.005)
+  r2 <- lrtest(po, nb_s)
+  expect_equal(r2$df, 2)
+  expect_equal(r2$p_value, 0.5 * pchisq(r2$statistic, 1, lower.tail = FALSE) +
+                 0.5 * pchisq(r2$statistic, 2, lower.tail = FALSE))
+  expect_output(print(r2), "0.5 \\* chi2_1 \\+ 0.5 \\* chi2_2")
+})
+
+test_that("LR = 0 at the boundary gives p = 1", {
+  ## The old formula, 0.5 * P(chi2_1 > 0), gave 0.5
+  expect_equal(.lr_boundary_p(0, 1), 1)
+  expect_equal(.lr_boundary_p(0, 2), 1)
+  expect_equal(.lr_boundary_p(3.84, 1), 0.5 * pchisq(3.84, 1, lower.tail = FALSE))
+
+  ## Underdispersed counts: the NB fit stays at the Poisson limit
+  d <- testdata
+  d$m <- round(d$N^0.7 * (0.005 + d$n / d$N)^0.55)
+  po <- estimate_hidden_pop(d, ~m, ~n, ~N, gamma = 0.005)
+  nb <- suppressWarnings(estimate_hidden_pop(d, ~m, ~n, ~N, method = "nb", gamma = 0.005))
+  r <- lrtest(po, nb)
+  expect_lt(r$statistic, 1e-3)
+  expect_gt(r$p_value, 0.45)
+})
+
+test_that("a same-family comparison keeps the plain chi-squared", {
+  f0 <- estimate_hidden_pop(testdata, ~m, ~n, ~N, gamma = 0.005)
+  f1 <- estimate_hidden_pop(testdata, ~m, ~n, ~N, cov_alpha = ~sex, gamma = 0.005)
+  r <- lrtest(f0, f1)
+  expect_false(r$boundary)
+  expect_equal(r$p_value, pchisq(r$statistic, 1, lower.tail = FALSE))
+  expect_false(any(grepl("Boundary", capture.output(print(r)))))
+})

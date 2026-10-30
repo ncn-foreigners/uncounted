@@ -34,13 +34,15 @@ to the difference in the number of estimated parameters.
 When comparing a Poisson model (H0) against a Negative Binomial model (H1),
 the dispersion parameter \eqn{\theta} lies on the boundary of its parameter
 space under \eqn{H_0} (\eqn{\theta \to \infty}). The standard
-\eqn{\chi^2} approximation is invalid in this setting. Following Self &
-Liang (1987), the p-value is corrected as
+\eqn{\chi^2} approximation is invalid in this setting. Following Chernoff
+(1954) and Self & Liang (1987), with \eqn{q} further parameters tested at
+interior points (covariates in the NB model only), the p-value is
 
-\deqn{p = 0.5\,\Pr(\chi^2_1 > LR)}
+\deqn{p = 0.5\,\Pr(\chi^2_q > LR) + 0.5\,\Pr(\chi^2_{q+1} > LR)}
 
-which corresponds to a 50:50 mixture of a point mass at zero and a
-\eqn{\chi^2_1}.
+where \eqn{\chi^2_0} is a point mass at zero. With the same mean model
+(\eqn{q = 0}) this is \eqn{0.5\Pr(\chi^2_1 > LR)} for \eqn{LR > 0} and 1 for
+\eqn{LR = 0}, which happens with probability one half under \eqn{H_0}.
 
 \strong{Nesting.} A Poisson model is nested in an NB model only if its alpha,
 beta and gamma specifications are contained in the NB model's. An NB model is
@@ -71,6 +73,10 @@ lrtest(fit_po, fit_nb)
 
 }
 \references{
+Chernoff, H. (1954). On the distribution of the likelihood ratio.
+\emph{Annals of Mathematical Statistics}, 25(3), 573--578.
+\doi{10.1214/aoms/1177728725}
+
 Self, S. G. and Liang, K.-Y. (1987). Asymptotic properties of maximum
 likelihood estimators and likelihood ratio tests under nonstandard
 conditions. \emph{Journal of the American Statistical Association},

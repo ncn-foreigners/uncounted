@@ -128,6 +128,11 @@
   pair, or a Poisson model whose specification is not contained in the NB model's,
   is now an error pointing to `compare_models()`.
 
+* **`lrtest()` boundary p-value.** For Poisson against NB with extra covariates it
+  was a plain chi-squared despite printing "boundary-corrected", and with `LR = 0`
+  it was 0.5. It is now the mixture `0.5 chi2_q + 0.5 chi2_(q+1)`, which is 1 at
+  `LR = 0`, and the printed text names the mixture used.
+
 ## New features
 
 * `estimate_hidden_pop()` gains `gamma_start` to set the starting value, and

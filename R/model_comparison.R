@@ -195,6 +195,15 @@ print.uncounted_comparison <- function(x, ...) {
   invisible(x)
 }
 
+#' p-value when one parameter is on the boundary and df - 1 are tested at interior
+#' points: 0.5 chi2_{df-1} + 0.5 chi2_df, with chi2_0 a point mass at 0
+#' @noRd
+.lr_boundary_p <- function(lr, df) {
+  p_lower <- if (df == 1) as.numeric(lr == 0) else
+    pchisq(lr, df = df - 1, lower.tail = FALSE)
+  0.5 * p_lower + 0.5 * pchisq(lr, df = df, lower.tail = FALSE)
+}
+
 #' Likelihood ratio test for nested uncounted models
 #'
 #' Performs a likelihood ratio test between two nested \code{uncounted} models
@@ -212,13 +221,15 @@ print.uncounted_comparison <- function(x, ...) {
 #' When comparing a Poisson model (H0) against a Negative Binomial model (H1),
 #' the dispersion parameter \eqn{\theta} lies on the boundary of its parameter
 #' space under \eqn{H_0} (\eqn{\theta \to \infty}). The standard
-#' \eqn{\chi^2} approximation is invalid in this setting. Following Self &
-#' Liang (1987), the p-value is corrected as
+#' \eqn{\chi^2} approximation is invalid in this setting. Following Chernoff
+#' (1954) and Self & Liang (1987), with \eqn{q} further parameters tested at
+#' interior points (covariates in the NB model only), the p-value is
 #'
-#' \deqn{p = 0.5\,\Pr(\chi^2_1 > LR)}
+#' \deqn{p = 0.5\,\Pr(\chi^2_q > LR) + 0.5\,\Pr(\chi^2_{q+1} > LR)}
 #'
-#' which corresponds to a 50:50 mixture of a point mass at zero and a
-#' \eqn{\chi^2_1}.
+#' where \eqn{\chi^2_0} is a point mass at zero. With the same mean model
+#' (\eqn{q = 0}) this is \eqn{0.5\Pr(\chi^2_1 > LR)} for \eqn{LR > 0} and 1 for
+#' \eqn{LR = 0}, which happens with probability one half under \eqn{H_0}.
 #'
 #' \strong{Nesting.} A Poisson model is nested in an NB model only if its alpha,
 #' beta and gamma specifications are contained in the NB model's. An NB model is
@@ -239,6 +250,10 @@ print.uncounted_comparison <- function(x, ...) {
 #'   descriptions, and log-likelihoods.
 #'
 #' @references
+#' Chernoff, H. (1954). On the distribution of the likelihood ratio.
+#' \emph{Annals of Mathematical Statistics}, 25(3), 573--578.
+#' \doi{10.1214/aoms/1177728725}
+#'
 #' Self, S. G. and Liang, K.-Y. (1987). Asymptotic properties of maximum
 #' likelihood estimators and likelihood ratio tests under nonstandard
 #' conditions. \emph{Journal of the American Statistical Association},
@@ -361,8 +376,8 @@ lrtest <- function(object1, object2) {
     stop("Models have the same number of parameters -- not nested.")
   }
 
-  if (is_boundary && df == 1) {
-    p_value <- 0.5 * pchisq(lr_stat, df = 1, lower.tail = FALSE)
+  if (is_boundary) {
+    p_value <- .lr_boundary_p(lr_stat, df)
   } else {
     p_value <- pchisq(lr_stat, df = df, lower.tail = FALSE)
   }
@@ -390,7 +405,8 @@ print.uncounted_lrtest <- function(x, ...) {
   cat("Model 2:", x$model2, " (logLik =", round(x$ll2, 2), ")\n")
   cat("LR statistic:", round(x$statistic, 4), "on", x$df, "df\n")
   if (x$boundary) {
-    cat("(Boundary-corrected: 0.5 * P(chi2 > LR), Self & Liang 1987)\n")
+    cat(sprintf("(Boundary-corrected: 0.5 * chi2_%d + 0.5 * chi2_%d, Self & Liang 1987)\n",
+                x$df - 1L, x$df))
   }
   cat("p-value:", format.pval(x$p_value, digits = 4), "\n")
   invisible(x)
