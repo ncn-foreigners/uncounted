@@ -484,6 +484,9 @@
     },
     cov_gamma = if (!is.null(cl$cov_gamma)) cl$cov_gamma else NULL,
     gamma_bounds = if (!is.null(cl$gamma_bounds)) cl$gamma_bounds else c(1e-10, 0.5),
+    ## Warm start: refits begin at the original optimum instead of re-screening
+    gamma_start = if (isTRUE(object$gamma_estimated) &&
+                      !isTRUE(object$has_cov_gamma)) object$gamma else NULL,
     theta_start = if (!is.null(object$theta)) object$theta else 1,
     link_rho = object$link_rho,
     estimator = object$estimator,
@@ -493,4 +496,84 @@
     countries = if (!is.null(cl$countries)) cl$countries else NULL,
     cluster = if (!is.null(cl$cluster)) cl$cluster else NULL
   )
+}
+
+# ---- Optimisation helpers ----
+
+#' Screen a starting value for an estimated gamma
+#'
+#' With gamma fixed and the power link, the Poisson model is a log-link GLM in
+#' (alpha, beta), so one glm.fit per grid point gives the exact Poisson
+#' profile deviance over gamma (for other links and for NB it is a screen
+#' only). Evaluates it on a log-spaced grid inside \code{gamma_bounds} and
+#' returns the grid, the deviance, and the best gamma. Screening on log-OLS
+#' starts instead was tried and picks the upper bound on heavy-tailed N.
+#' @noRd
+.screen_gamma_start <- function(m, log_N, ratio, X_alpha, X_beta,
+                                gamma_bounds, weights = NULL, n_grid = 25L) {
+  if (is.null(weights)) weights <- rep(1, length(m))
+  grid <- exp(seq(log(max(gamma_bounds[1], 1e-10)), log(gamma_bounds[2]),
+                  length.out = n_grid))
+  crit <- vapply(grid, function(g) {
+    Z <- cbind(X_alpha * log_N, X_beta * log(g + ratio))
+    fit <- tryCatch(
+      suppressWarnings(stats::glm.fit(Z, m, weights = weights,
+                                      family = stats::poisson(),
+                                      control = stats::glm.control(maxit = 50))),
+      error = function(e) NULL)
+    if (is.null(fit) || !is.finite(fit$deviance)) Inf else fit$deviance
+  }, numeric(1))
+  start <- if (all(!is.finite(crit))) mean(gamma_bounds) else grid[which.min(crit)]
+  list(start = start, grid = grid, deviance = crit)
+}
+
+#' L-BFGS-B with polishing restarts and a projected-gradient check
+#'
+#' A single L-BFGS-B run with the default tolerance (factr = 1e7) can stop on
+#' a flat stretch with convergence = 0 while the gradient is still far from
+#' zero; the parameters here are badly scaled, so this leaves xi off by
+#' 0.1-1% or, from a poor start, in a much worse region. The first run keeps
+#' the default tolerance and its convergence code; restarts from the returned
+#' point (fresh curvature memory) then polish with \code{factr}. A polish that
+#' ends in a line-search stall (code 52) has hit machine precision, which is
+#' not a failure, so the first run's code is kept. The loop stops once a
+#' restart improves the objective by less than a relative 1e-8.
+#' @noRd
+.optim_lbfgsb <- function(par, fn, gr, lower, upper, maxit = 1000L, factr = 10,
+                          max_restarts = 3L, hessian = FALSE) {
+  run <- function(p, factr) {
+    stats::optim(p, fn, gr = gr, method = "L-BFGS-B", lower = lower,
+                 upper = upper, control = list(maxit = maxit, factr = factr))
+  }
+  opt <- run(par, 1e7)
+  restarts <- 0L
+  while (restarts < max_restarts) {
+    pol <- run(opt$par, factr)
+    restarts <- restarts + 1L
+    gain <- opt$value - pol$value
+    if (pol$value <= opt$value) {
+      opt$par <- pol$par
+      opt$value <- pol$value
+      if (pol$convergence != 52L) {
+        opt$convergence <- pol$convergence
+        opt$message <- pol$message
+      }
+    }
+    if (gain < 1e-8 * (1 + abs(opt$value))) break
+  }
+
+  ## Projected gradient: components blocked by an active bound satisfy KKT
+  g <- gr(opt$par)
+  at_lower <- is.finite(lower) & opt$par <= lower + 1e-8
+  at_upper <- is.finite(upper) & opt$par >= upper - 1e-8
+  g_proj <- g
+  g_proj[at_lower & g > 0] <- 0
+  g_proj[at_upper & g < 0] <- 0
+
+  if (hessian) opt$hessian <- stats::optimHess(opt$par, fn, gr)
+  opt$restarts <- restarts
+  opt$max_grad <- max(abs(g_proj))
+  opt$at_lower <- at_lower
+  opt$at_upper <- at_upper
+  opt
 }

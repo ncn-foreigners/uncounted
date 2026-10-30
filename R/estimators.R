@@ -344,9 +344,7 @@
     upper <- rep(Inf, p_alpha + p_beta)
   }
 
-  opt <- optim(start_par, nll, gr = grad_nll, method = "L-BFGS-B",
-               lower = lower, upper = upper,
-               control = list(maxit = 1000))
+  opt <- .optim_lbfgsb(start_par, nll, grad_nll, lower = lower, upper = upper)
 
   if (opt$convergence != 0) {
     warning("Poisson optimization did not converge (code ", opt$convergence,
@@ -426,6 +424,9 @@
        } else NULL,
        constrained = constrained,
        convergence = opt$convergence,
+       optim_info = list(restarts = opt$restarts, max_grad = opt$max_grad,
+                         message = opt$message, at_lower = opt$at_lower,
+                         at_upper = opt$at_upper),
        X_alpha = X_alpha, X_beta = X_beta)
 }
 
@@ -563,9 +564,8 @@
     upper <- c(rep(Inf, p_alpha + p_beta), log(1e6))
   }
 
-  opt <- optim(start_par, nll, gr = grad_nll, method = "L-BFGS-B",
-               lower = lower, upper = upper,
-               control = list(maxit = 1000), hessian = TRUE)
+  opt <- .optim_lbfgsb(start_par, nll, grad_nll, lower = lower, upper = upper,
+                       hessian = TRUE)
 
   if (opt$convergence != 0) {
     warning("NB optimization did not converge (code ", opt$convergence,
@@ -668,6 +668,9 @@
        } else NULL,
        constrained = constrained,
        convergence = opt$convergence,
+       optim_info = list(restarts = opt$restarts, max_grad = opt$max_grad,
+                         message = opt$message, at_lower = opt$at_lower,
+                         at_upper = opt$at_upper),
        X_alpha = X_alpha, X_beta = X_beta)
 }
 

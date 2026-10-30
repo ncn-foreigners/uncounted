@@ -15,6 +15,7 @@ estimate_hidden_pop(
   gamma = "estimate",
   cov_gamma = NULL,
   gamma_bounds = c(1e-10, 0.5),
+  gamma_start = NULL,
   theta_start = 1,
   link_rho = c("power", "cloglog", "logit", "probit"),
   estimator = c("mle", "gmm", "el"),
@@ -60,6 +61,15 @@ Default \code{NULL} means a single scalar gamma (intercept only).}
 
 \item{gamma_bounds}{Numeric vector of length 2: lower and upper bounds for
 the estimated gamma parameter. Default \code{c(1e-10, 0.5)}.}
+
+\item{gamma_start}{Optional starting value for the estimated gamma (the
+gamma intercept when \code{cov_gamma} is used); must lie inside
+\code{gamma_bounds}. Default \code{NULL} screens 25 log-spaced values in
+\code{gamma_bounds} and starts from the one with the smallest Poisson
+profile deviance. Ignored unless \code{gamma = "estimate"}. Refits
+inside \code{bootstrap_popsize()}, \code{loo()} and the profile functions
+start from the original estimate. The screen and the optimiser's trace
+are stored in \code{$optim_info}.}
 
 \item{theta_start}{Starting value for the NB dispersion parameter (used
 only when \code{method = "nb"}). Default 1.}

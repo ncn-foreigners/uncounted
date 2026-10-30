@@ -1,3 +1,24 @@
+# uncounted (development version)
+
+## Bug fixes
+
+* **Estimated gamma could stop at a wrong optimum.** `gamma = "estimate"`
+  started at `mean(gamma_bounds)` (0.25 by default), and with covariates or
+  weights Poisson/NB fits could stop at gamma near 0.29 with `convergence = 0`,
+  understating xi by about 2.5x; refit loops such as `profile_dependence()`
+  jumped between optima. The start now comes from a profile-deviance screen
+  over `gamma_bounds`, and L-BFGS-B is polished with restarts, so point
+  estimates can change slightly (typically below 0.2% of xi) even where the
+  old fit was in the right basin.
+
+## New features
+
+* `estimate_hidden_pop()` gains `gamma_start` to set the starting value, and
+  fits now store `$optim_info`: the start and its source, the screen, restarts,
+  the final projected gradient, and `gamma_at_bound`. A message is shown when
+  an estimated gamma ends on a bound, and a warning when the optimiser stops
+  with a non-negligible gradient.
+
 # uncounted 2.1.0
 
 ## New features

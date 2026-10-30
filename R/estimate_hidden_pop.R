@@ -30,6 +30,14 @@
 #'   Default \code{NULL} means a single scalar gamma (intercept only).
 #' @param gamma_bounds Numeric vector of length 2: lower and upper bounds for
 #'   the estimated gamma parameter. Default \code{c(1e-10, 0.5)}.
+#' @param gamma_start Optional starting value for the estimated gamma (the
+#'   gamma intercept when \code{cov_gamma} is used); must lie inside
+#'   \code{gamma_bounds}. Default \code{NULL} screens 25 log-spaced values in
+#'   \code{gamma_bounds} and starts from the one with the smallest Poisson
+#'   profile deviance. Ignored unless \code{gamma = "estimate"}. Refits
+#'   inside \code{bootstrap_popsize()}, \code{loo()} and the profile functions
+#'   start from the original estimate. The screen and the optimiser's trace
+#'   are stored in \code{$optim_info}.
 #' @param theta_start Starting value for the NB dispersion parameter (used
 #'   only when \code{method = "nb"}). Default 1.
 #' @param link_rho Link for the detection component
@@ -265,6 +273,7 @@ estimate_hidden_pop <- function(data,
                                 gamma = "estimate",
                                 cov_gamma = NULL,
                                 gamma_bounds = c(1e-10, 0.5),
+                                gamma_start = NULL,
                                 theta_start = 1,
                                 link_rho = c("power", "cloglog", "logit", "probit"),
                                 estimator = c("mle", "gmm", "el"),
@@ -289,6 +298,7 @@ estimate_hidden_pop <- function(data,
   call$method <- method
   call$gamma <- gamma
   call$gamma_bounds <- gamma_bounds
+  if (!is.null(gamma_start)) call$gamma_start <- gamma_start
   call$theta_start <- theta_start
   call$constrained <- constrained
   if (!is.null(cov_alpha)) call$cov_alpha <- cov_alpha
@@ -456,10 +466,16 @@ estimate_hidden_pop <- function(data,
     gamma_value <- gamma
     gamma_start <- NULL
   } else if (estimate_gamma) {
-    gamma_start_val <- mean(gamma_bounds)
-    log_rate <- log(gamma_start_val + ratio)
+    ## log_rate is set once the design matrices exist (start screen below)
     gamma_value <- NULL
-    gamma_start <- gamma_start_val
+    if (!is.null(gamma_start)) {
+      if (!is.numeric(gamma_start) || length(gamma_start) != 1L ||
+          !is.finite(gamma_start) || gamma_start < gamma_bounds[1] ||
+          gamma_start > gamma_bounds[2]) {
+        stop("'gamma_start' must be a single value inside gamma_bounds = c(",
+             gamma_bounds[1], ", ", gamma_bounds[2], ").", call. = FALSE)
+      }
+    }
   }
 
   # ---- Validate cov_gamma ----
@@ -502,6 +518,17 @@ estimate_hidden_pop <- function(data,
     NULL
   }
   p_gamma <- if (!is.null(X_gamma)) ncol(X_gamma) else 0L
+
+  # ---- Starting value for an estimated gamma ----
+  gamma_screen <- NULL
+  if (estimate_gamma) {
+    if (is.null(gamma_start)) {
+      gamma_screen <- .screen_gamma_start(m, log_N, ratio, X_alpha, X_beta,
+                                          gamma_bounds, weights)
+      gamma_start <- gamma_screen$start
+    }
+    log_rate <- log(gamma_start + ratio)
+  }
 
   # ---- Extract cluster variable (if provided) ----
   cluster_vec <- if (!is.null(cluster)) {
@@ -654,6 +681,44 @@ estimate_hidden_pop <- function(data,
             "). Consider using constrained = TRUE.")
   }
 
+  # ---- Optimiser trace and gamma-bound check ----
+  optim_info <- NULL
+  if (estimate_gamma || !is.null(result$optim_info)) {
+    optim_info <- c(
+      list(gamma_start = if (estimate_gamma) gamma_start else NULL,
+           gamma_start_source = if (!estimate_gamma) NULL
+                                else if (is.null(gamma_screen)) "user"
+                                else "screen",
+           gamma_screen = gamma_screen),
+      result$optim_info
+    )
+  }
+  if (!is.null(result$optim_info) && isTRUE(result$optim_info$max_grad >
+                                             1e-4 * (1 + abs(result$loglik)))) {
+    warning("The optimiser stopped with a non-negligible gradient (max |grad| = ",
+            signif(result$optim_info$max_grad, 3), "); the estimates may not be ",
+            "a maximum. Try another 'gamma_start' or narrower 'gamma_bounds'. ",
+            "See $optim_info.", call. = FALSE)
+  }
+  if (estimate_gamma) {
+    gamma_level <- if (has_cov_gamma && !is.null(result$gamma_coefs)) {
+      exp(result$gamma_coefs[1])
+    } else {
+      result$gamma_estimated
+    }
+    if (!is.null(gamma_level) && is.finite(gamma_level)) {
+      at_bound <- c(lower = abs(log(gamma_level) - log(gamma_bounds[1])) < 1e-6,
+                    upper = abs(log(gamma_level) - log(gamma_bounds[2])) < 1e-6)
+      if (any(at_bound)) {
+        message("Estimated gamma ", if (has_cov_gamma) "(intercept) ",
+                "is at its ", names(at_bound)[at_bound], " bound (",
+                signif(gamma_level, 3), "); the optimum may lie outside ",
+                "gamma_bounds = c(", gamma_bounds[1], ", ", gamma_bounds[2], ").")
+      }
+      optim_info$gamma_at_bound <- if (any(at_bound)) names(at_bound)[at_bound] else "none"
+    }
+  }
+
   out <- list(
     coefficients = all_coefs,
     alpha_coefs = result$alpha_coefs,
@@ -721,6 +786,7 @@ estimate_hidden_pop <- function(data,
     backend_vcov_full = result$backend_vcov_full,
     backend_vcov_model_full = result$backend_vcov_model_full,
     moment_backend = result$moment_backend,
+    optim_info = optim_info,
     call_args = list(
       observed = observed, auxiliary = auxiliary, reference_pop = reference_pop
     )
