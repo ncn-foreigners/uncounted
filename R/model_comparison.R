@@ -130,7 +130,7 @@ compare_models <- function(..., sort_by = c("AIC", "BIC", "loglik")) {
 
     # Pearson chi-squared
     v <- .variance_function(x)
-    pearson <- sum((x$m - x$fitted.values)^2 / v)
+    pearson <- sum(.fit_weights(x) * (x$m - x$fitted.values)^2 / v)
 
     rmse <- sqrt(mean(x$residuals^2))
 

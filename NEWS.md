@@ -106,6 +106,11 @@
 * The null model of the pseudo-R2 in `compare_models()` now keeps the fit's
   weights, countries and gamma bounds.
 
+* **Fit statistics handled weights inconsistently.** `logLik()` was weighted for
+  Poisson and NB but not OLS and NLS, and `deviance()` and Pearson X2 were never
+  weighted. All now use the weighted sum, so `logLik()`, `AIC()`, `BIC()` and
+  `deviance()` of weighted OLS/NLS fits change.
+
 ## New features
 
 * `estimate_hidden_pop()` gains `gamma_start` to set the starting value, and

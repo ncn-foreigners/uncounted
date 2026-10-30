@@ -33,7 +33,8 @@ reports a Gamma pseudo-log-likelihood without normalising constants.
 These values, and AIC/BIC based on them, are comparable only among models of
 the same family: OLS with OLS, NLS with NLS, iOLS with iOLS, and Poisson with
 NB. They live on different scales across families. See
-\code{\link{compare_models}}.
+\code{\link{compare_models}}. With \code{weights}, every family reports the
+weighted sum \eqn{\sum_i w_i \log f(m_i)}, so weights of 2 double the value.
 }
 \examples{
 # Simulate synthetic data

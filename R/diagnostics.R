@@ -16,7 +16,8 @@
 #' These values, and AIC/BIC based on them, are comparable only among models of
 #' the same family: OLS with OLS, NLS with NLS, iOLS with iOLS, and Poisson with
 #' NB. They live on different scales across families. See
-#' \code{\link{compare_models}}.
+#' \code{\link{compare_models}}. With \code{weights}, every family reports the
+#' weighted sum \eqn{\sum_i w_i \log f(m_i)}, so weights of 2 double the value.
 #'
 #' @param object An object of class \code{"uncounted"}.
 #' @param ... Additional arguments (ignored).
@@ -50,10 +51,12 @@ logLik.uncounted <- function(object, ...) {
   } else if (object$method == "iols") {
     ll <- object$loglik
   } else {
-    # Gaussian pseudo-loglik on the scale the method optimises
-    n <- object$n_obs
-    sigma2 <- sum(.fit_scale_residuals(object)^2) / n
-    ll <- -n/2 * (log(2 * pi * sigma2) + 1)
+    # Gaussian pseudo-loglik on the scale the method optimises, weighted like
+    # the count likelihoods: sum_i w_i log f(m_i)
+    w <- .fit_weights(object)
+    sum_w <- sum(w)
+    sigma2 <- sum(w * .fit_scale_residuals(object)^2) / sum_w
+    ll <- -sum_w/2 * (log(2 * pi * sigma2) + 1)
   }
 
   structure(ll, df = n_par, nobs = object$n_obs, class = "logLik")
@@ -113,22 +116,23 @@ nobs.uncounted <- function(object, ...) {
 deviance.uncounted <- function(object, ...) {
   m <- object$m
   mu <- object$fitted.values
+  w <- .fit_weights(object)
 
   switch(object$method,
     "poisson" = {
       d <- ifelse(m == 0, 2 * mu, 2 * (m * log(m / mu) - (m - mu)))
-      sum(d)
+      sum(w * d)
     },
     "nb" = {
       theta <- object$theta
       d <- ifelse(m == 0,
                   2 * theta * log((theta + mu) / theta),
                   2 * (m * log(m / mu) - (m + theta) * log((m + theta) / (mu + theta))))
-      sum(d)
+      sum(w * d)
     },
     {
       # OLS/NLS: RSS on the scale the method optimises
-      sum(.fit_scale_residuals(object)^2)
+      sum(w * .fit_scale_residuals(object)^2)
     }
   )
 }
@@ -289,6 +293,12 @@ residuals.uncounted <- function(object, type = c("response", "pearson", "devianc
       mu^2 * sigma2
     }
   )
+}
+
+#' Observation weights of a fit, 1 when none were given
+#' @noRd
+.fit_weights <- function(object) {
+  if (is.null(object$obs_weights)) rep(1, object$n_obs) else object$obs_weights
 }
 
 #' Residuals on the scale the Gaussian methods optimise: raw for NLS, which
