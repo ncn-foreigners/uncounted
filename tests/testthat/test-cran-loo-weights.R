@@ -65,3 +65,15 @@ test_that("dxi handles covariates and the constrained scale", {
   a <- plogis(as.numeric(fit$X_alpha %*% refit$alpha_coefs))
   expect_equal(l$dxi[1], sum(testdata$N^a) - sum(popsize(fit)$estimate), tolerance = 1e-6)
 })
+
+test_that("dfbeta() has the sign of stats::dfbeta()", {
+  fit <- estimate_hidden_pop(testdata, ~m, ~n, ~N, gamma = 0.005)
+  refit <- estimate_hidden_pop(testdata[-1, ], ~m, ~n, ~N, gamma = 0.005)
+  expect_equal(unname(dfbeta(fit)[1, ]), unname(coef(fit) - coef(refit)), tolerance = 1e-5)
+  expect_equal(unname(loo(fit)$dfbeta[1, ]), unname(coef(fit) - coef(refit)), tolerance = 1e-5)
+
+  ## Same convention as stats::dfbeta on a glm
+  g <- glm(m ~ 0 + log(N) + log(0.005 + n / N), family = poisson(), data = testdata)
+  g1 <- update(g, data = testdata[-1, ])
+  expect_equal(sign(unname(coef(g) - coef(g1))), sign(unname(dfbeta(fit)[1, ])))
+})

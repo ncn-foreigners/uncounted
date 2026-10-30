@@ -332,8 +332,9 @@ residuals.uncounted <- function(object, type = c("response", "pearson", "devianc
 #'   (requires \code{countries} in the original fit).
 #' @param ... Additional arguments passed to \code{\link{loo}}.
 #' @return A matrix with one row per dropped unit and one column per coefficient.
-#'   Each entry is the change in the coefficient estimate relative to the full
-#'   model (\eqn{\hat\beta_{(-i)} - \hat\beta}).
+#'   Each entry is \eqn{\hat\beta - \hat\beta_{(-i)}}, the same sign as
+#'   \code{stats::dfbeta()} for \code{lm} and \code{glm} fits: positive means
+#'   the unit pulls the coefficient up.
 #'
 #' @seealso \code{\link{loo}}, \code{\link{dfpopsize}}
 #'

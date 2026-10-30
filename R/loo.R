@@ -50,8 +50,9 @@
 #'     each refit.}
 #'   \item{xi}{Data frame with \eqn{\xi} estimates from each refit.}
 #'   \item{dropped}{Character vector: label of dropped observation or country.}
-#'   \item{dfbeta}{Matrix (\code{n_drops} x \code{p}): change in coefficients
-#'     \eqn{\hat{\beta}_{(-i)} - \hat{\beta}}.}
+#'   \item{dfbeta}{Matrix (\code{n_drops} x \code{p}): influence on the
+#'     coefficients, \eqn{\hat{\beta} - \hat{\beta}_{(-i)}}, the same sign as
+#'     \code{stats::dfbeta()}. Positive means the unit pulls the coefficient up.}
 #'   \item{dxi}{Numeric vector: influence on the population size for a fixed
 #'     target, using the refit's coefficients on all rows (see Details).}
 #'   \item{dxi_subset}{Numeric vector: change in population size when the unit
@@ -212,7 +213,8 @@ loo.uncounted <- function(object, by = c("obs", "country"),
   }))
 
   # Compute differences
-  dfbeta <- sweep(coef_mat, 2, full_coefs, "-")
+  ## Same sign as stats::dfbeta(): full-sample estimate minus leave-one-out
+  dfbeta <- -sweep(coef_mat, 2, full_coefs, "-")
 
   # Population size differences (summed across groups if multiple)
   full_ps_total <- sum(full_ps$estimate)

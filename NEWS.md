@@ -116,6 +116,12 @@
   `fwb (>= 1.0.0)`, whose bootstrap weights depend only on the seed, so numbers
   under a fixed seed differ from `fwb` < 1.0.0.
 
+## Breaking changes
+
+* `dfbeta()` and `loo()$dfbeta` now return `beta_hat - beta_hat(-i)`, the sign
+  used by `stats::dfbeta()` for `lm` and `glm` fits. They used to return the
+  opposite, so a positive value now means the unit pulls the coefficient up.
+
 # uncounted 2.1.0
 
 ## New features

@@ -27,8 +27,9 @@ An object of class \code{"uncounted_loo"} with components:
 each refit.}
 \item{xi}{Data frame with \eqn{\xi} estimates from each refit.}
 \item{dropped}{Character vector: label of dropped observation or country.}
-\item{dfbeta}{Matrix (\code{n_drops} x \code{p}): change in coefficients
-\eqn{\hat{\beta}_{(-i)} - \hat{\beta}}.}
+\item{dfbeta}{Matrix (\code{n_drops} x \code{p}): influence on the
+coefficients, \eqn{\hat{\beta} - \hat{\beta}_{(-i)}}, the same sign as
+\code{stats::dfbeta()}. Positive means the unit pulls the coefficient up.}
 \item{dxi}{Numeric vector: influence on the population size for a fixed
 target, using the refit's coefficients on all rows (see Details).}
 \item{dxi_subset}{Numeric vector: change in population size when the unit
