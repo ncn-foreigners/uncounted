@@ -392,3 +392,99 @@ test_that("identified-set intervals follow their definitions", {
   iq <- feedback_identified_set(x, se = "iqr")
   expect_equal(iq$se_L, IQR(log(bounds[1, ])) / 1.349, tolerance = 1e-4)
 })
+
+# ---- feedback_tipping() ----
+
+tipping_fit <- function() {
+  feedback_fit(cov_alpha = ~year, countries = ~country)
+}
+
+test_that("a threshold crossing is found exactly", {
+  fit <- feedback_fit(cov_alpha = ~sex)
+  x <- quiet_feedback(fit, "geomean", by = ~sex, total = TRUE)
+  tot <- function(d) sum(exp(x$log_K + (x$log_xi0 - x$log_K) / (1 + d)))
+  ## The total is decreasing, so a higher threshold is crossed below 0
+  thr <- tot(-0.07)
+  tp <- feedback_tipping(x, threshold = thr)
+  expect_equal(unname(tp$point["negative"]), -0.07, tolerance = 1e-5)
+  expect_true(is.na(tp$point["positive"]))
+  expect_equal(tp$alternative, "less")
+  expect_equal(tp$baseline, tot(0) - thr)
+  expect_match(tp$statement, "Total")
+
+  low <- feedback_tipping(x, threshold = tot(0.11))
+  expect_equal(unname(low$point["positive"]), 0.11, tolerance = 1e-5)
+  expect_equal(low$alternative, "greater")
+  expect_true(is.na(low$supported_at_zero))
+
+  none <- feedback_tipping(x, threshold = 1)
+  expect_true(all(is.na(none$point)))
+
+  one <- feedback_tipping(x, threshold = tot(0) / 2, group = "M")
+  expect_match(one$statement, "\\[M\\]")
+})
+
+test_that("a contrast uses the hypotheses_popsize syntax", {
+  fit <- tipping_fit()
+  x <- quiet_feedback(fit, "geomean", by = ~year)
+  ctr <- function(d) {
+    z <- tapply(exp(x$log_K + (x$log_xi0 - x$log_K) / (1 + d)), testdata$year, sum)
+    unname(z["2023"] - z["2019"])
+  }
+  h <- "xi[year == 2023] - xi[year == 2019] > 0"
+  tp <- feedback_tipping(x, hypothesis = h)
+  expect_equal(tp$baseline, ctr(0))
+  expect_equal(tp$alternative, "greater")
+  expect_equal(tp$curve$contrast[tp$curve$delta == 0], ctr(0))
+  for (r in tp$point[is.finite(tp$point)]) expect_equal(ctr(r), 0, tolerance = 1e-3)
+  expect_equal(feedback_tipping(x, hypothesis = "xi[year == 2023] < 100")$alternative, "less")
+})
+
+test_that("the test stops supporting a statement at the first failing grid value", {
+  skip_if_not_installed("fwb")
+  fit <- feedback_fit()
+  b <- bootstrap_popsize(fit, R = 30, seed = 1, verbose = FALSE)
+  x <- quiet_feedback(fit, "geomean", boot = b)
+  low <- min(x$profile$lower[x$profile$delta == 0]) / 2
+  tp <- feedback_tipping(x, threshold = low)
+  expect_true(tp$supported_at_zero)
+  expect_equal(tp$curve$lower[tp$curve$delta == 0],
+               unname(quantile(colSums(exp(x$replicates)), 0.05)) - low)
+
+  ## The first grid value above 0 where the 5% quantile is not above the threshold
+  above <- tp$curve[tp$curve$delta > 0, ]
+  first <- above$delta[which(!above$supported)[1]]
+  expect_equal(unname(tp$test["positive"]), first)
+  expect_output(print(tp), "stops supporting")
+
+  ## Not supported at 0: nothing to overturn
+  mid <- feedback_tipping(x, threshold = x$profile$estimate[x$profile$delta == 0] * 0.999)
+  expect_false(mid$supported_at_zero)
+  expect_true(all(is.na(mid$test)))
+  expect_output(print(mid), "no significant result to overturn")
+})
+
+test_that("feedback_tipping() validates its input", {
+  x <- quiet_feedback(feedback_fit(cov_alpha = ~sex), "geomean", by = ~sex)
+  expect_error(feedback_tipping(x), "either")
+  expect_error(feedback_tipping(x, threshold = 1, hypothesis = "xi[TRUE] > 0"), "either")
+  expect_error(feedback_tipping(x, threshold = 1), "'group'")
+  expect_error(feedback_tipping(x, threshold = 1, group = "nope"), "'group'")
+  expect_error(feedback_tipping(x, threshold = c(1, 2), group = "F"), "single")
+  expect_error(feedback_tipping(list(), threshold = 1), "feedback_sensitivity")
+})
+
+# ---- feedback_calibrate() ----
+
+test_that("feedback_calibrate() returns the share and its mean", {
+  fit <- feedback_fit(cov_alpha = ~sex)
+  cal <- feedback_calibrate(fit)
+  xi0 <- fit$N^fit$alpha_values
+  s <- xi0 / (fit$N + xi0)
+  expect_equal(cal$s, s)
+  expect_equal(cal$mean_s, mean(s))
+  expect_equal(cal$weighted_mean_s, sum(s * xi0) / sum(xi0))
+  expect_equal(cal$congestion_elasticity, -cal$weighted_mean_s)
+  expect_output(print(cal), "congestion elasticity")
+  expect_error(feedback_calibrate(list()), "uncounted")
+})

@@ -196,7 +196,8 @@ data with heterogeneous detection probabilities. \emph{Biometrics}, 59(4),
 1123--1130. \doi{10.1111/j.0006-341X.2003.00129.x}
 }
 \seealso{
-\code{\link{dependence_bounds}},
+\code{\link{feedback_identified_set}}, \code{\link{feedback_tipping}},
+\code{\link{feedback_calibrate}}, \code{\link{dependence_bounds}},
 \code{\link{profile_dependence}} (where \code{delta} is a different quantity, a
 constant shift of the mean)
 }

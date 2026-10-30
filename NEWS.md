@@ -166,6 +166,14 @@
   monotone, with an Imbens-Manski interval for the true value or a union interval
   for the whole set.
 
+* New `feedback_tipping()`: how much detection feedback overturns a threshold or a
+  contrast in the `xi[...]` syntax of `hypotheses_popsize()`, for the point estimate
+  and for the one-sided bootstrap test.
+
+* New `feedback_calibrate()`: the unauthorized share of the foreign population per
+  cell, whose negative is the mechanical congestion elasticity, to help choose
+  `delta_grid`.
+
 ## Breaking changes
 
 * `dfbeta()` and `loo()$dfbeta` now return `beta_hat - beta_hat(-i)`, the sign

@@ -149,7 +149,8 @@
 #' feedback_sensitivity(fit, anchor = "geomean")
 #' feedback_sensitivity(fit, anchor = "share")
 #'
-#' @seealso \code{\link{dependence_bounds}},
+#' @seealso \code{\link{feedback_identified_set}}, \code{\link{feedback_tipping}},
+#'   \code{\link{feedback_calibrate}}, \code{\link{dependence_bounds}},
 #'   \code{\link{profile_dependence}} (where \code{delta} is a different quantity, a
 #'   constant shift of the mean)
 #'
@@ -730,4 +731,224 @@ print.uncounted_feedback_set <- function(x, ...) {
   if (f(lower) >= 0) return(lower)
   if (f(upper) <= 0) return(upper)
   stats::uniroot(f, c(lower, upper), tol = 1e-10)$root
+}
+
+
+#' Tipping Points under Detection Feedback
+#'
+#' Finds how much detection feedback it takes to overturn a statement about the
+#' population size.
+#'
+#' @param x An \code{"uncounted_feedback"} object.
+#' @param threshold A single value for a group total. Use with \code{group}. The tested
+#'   direction is the side of the threshold on which the estimate lies at
+#'   \eqn{\delta = 0}.
+#' @param group Group label for \code{threshold}. Defaults to \code{"Total"} when
+#'   available, or the only group.
+#' @param hypothesis A comparison in the \code{xi[...]} syntax of
+#'   \code{\link{hypotheses_popsize}}, such as
+#'   \code{"xi[year == 2024] - xi[year == 2019] > 0"}. The filters refer to the
+#'   \code{by} variables of \code{x}.
+#' @param level Level of the one-sided bootstrap test: the statement is supported at
+#'   \eqn{\delta} when the \code{1 - level} quantile of the replicate contrasts is
+#'   above 0 (for \code{>}), or the \code{level} quantile is below 0 (for \code{<}).
+#'   For \code{=}, both tails use \code{(1 - level) / 2}.
+#' @param ... Ignored.
+#'
+#' @details
+#' Two kinds of tipping point are reported on each side of 0, within the
+#' \code{delta_grid} of \code{x}:
+#' \itemize{
+#'   \item \code{point}: the \eqn{\delta} nearest 0 at which the point estimate of the
+#'     contrast changes sign, found exactly between grid points.
+#'   \item \code{test}: with a bootstrap, the grid value nearest 0 at which the test
+#'     stops supporting the statement.
+#' }
+#' If the test does not support the statement at \eqn{\delta = 0}, there is nothing to
+#' overturn: \code{test} is \code{NA} and \code{supported_at_zero} is \code{FALSE}.
+#' Tipping points are reported whether or not they are admissible, with the admissible
+#' range shown alongside.
+#'
+#' @return An object of class \code{"uncounted_feedback_tipping"}, a list with
+#'   \code{statement}, \code{alternative}, \code{baseline} (the contrast at
+#'   \eqn{\delta = 0}), \code{point} and \code{test} (each \code{c(negative, positive)},
+#'   \code{NA} when not reached), \code{supported_at_zero} (\code{NA} without a
+#'   bootstrap), \code{admissible_range}, and \code{curve}, a data frame with
+#'   \code{delta}, \code{contrast}, \code{lower}, \code{upper} and \code{supported}.
+#'
+#' @seealso \code{\link{feedback_sensitivity}}, \code{\link{hypotheses_popsize}}
+#'
+#' @export
+feedback_tipping <- function(x, threshold = NULL, group = NULL, hypothesis = NULL,
+                             level = 0.95) {
+  if (!inherits(x, "uncounted_feedback")) {
+    stop("'x' must come from feedback_sensitivity().", call. = FALSE)
+  }
+  if (is.null(threshold) == is.null(hypothesis)) {
+    stop("Supply either 'threshold' or 'hypothesis'.", call. = FALSE)
+  }
+  if (!is.numeric(level) || length(level) != 1L || !is.finite(level) ||
+      level <= 0 || level >= 1) {
+    stop("'level' must be a single number between 0 and 1.", call. = FALSE)
+  }
+
+  if (!is.null(hypothesis)) {
+    if (!is.character(hypothesis) || length(hypothesis) != 1L) {
+      stop("'hypothesis' must be a single character string.", call. = FALSE)
+    }
+    parsed <- .pop_hyp_parse_comparison(hypothesis)
+    contrast <- function(v) {
+      .pop_hyp_eval_numeric(parsed$lhs, v, x$groups) -
+        .pop_hyp_eval_numeric(parsed$rhs, v, x$groups)
+    }
+    statement <- hypothesis
+    alternative <- parsed$alternative
+  } else {
+    if (!is.numeric(threshold) || length(threshold) != 1L || !is.finite(threshold)) {
+      stop("'threshold' must be a single finite number.", call. = FALSE)
+    }
+    if (is.null(group)) {
+      group <- if (isTRUE(x$total)) "Total" else if (length(x$labels) == 1L) x$labels
+    }
+    if (is.null(group) || !group %in% c(x$labels, if (isTRUE(x$total)) "Total")) {
+      stop("'group' must name one group: ",
+           paste(c(x$labels, if (isTRUE(x$total)) "Total"), collapse = ", "), ".",
+           call. = FALSE)
+    }
+    pick <- if (group == "Total") seq_along(x$labels) else match(group, x$labels)
+    contrast <- function(v) sum(v[pick]) - threshold
+    at_zero <- contrast(.feedback_totals(x$log_xi0, x$log_K, 0, x$group_id, FALSE))
+    alternative <- if (at_zero > 0) "greater" else "less"
+    statement <- paste0("xi[", group, "] ", if (at_zero > 0) ">" else "<", " ",
+                        format(threshold, big.mark = ",", scientific = FALSE))
+  }
+
+  point_at <- function(d) {
+    contrast(.feedback_totals(x$log_xi0, x$log_K, d, x$group_id, FALSE))
+  }
+  grid <- x$delta_grid
+  values <- vapply(grid, point_at, numeric(1))
+  zero <- which(grid == 0)
+  baseline <- values[zero]
+
+  curve <- data.frame(delta = grid, contrast = values, lower = NA_real_,
+                      upper = NA_real_, supported = NA)
+  a <- if (alternative == "two.sided") (1 - level) / 2 else 1 - level
+  if (!is.null(x$replicates)) {
+    for (j in seq_along(grid)) {
+      totals <- .feedback_totals(x$replicates, x$log_K, grid[j], x$group_id, FALSE)
+      draws <- apply(totals, 2, contrast)
+      draws <- draws[is.finite(draws)]
+      curve$lower[j] <- unname(stats::quantile(draws, a))
+      curve$upper[j] <- unname(stats::quantile(draws, 1 - a))
+      curve$supported[j] <- switch(alternative,
+        greater = curve$lower[j] > 0,
+        less = curve$upper[j] < 0,
+        two.sided = curve$lower[j] > 0 || curve$upper[j] < 0
+      )
+    }
+  }
+
+  ## Sign change nearest 0 on one side; an exact 0 at baseline has no side to cross from
+  crossing <- function(side) {
+    if (baseline == 0) return(NA_real_)
+    path <- if (side < 0) rev(seq_len(zero)) else seq(zero, length(grid))
+    for (k in seq_along(path)[-1L]) {
+      if (sign(values[path[k]]) != sign(baseline)) {
+        ends <- sort(grid[path[c(k - 1L, k)]])
+        return(stats::uniroot(point_at, ends, tol = 1e-8)$root)
+      }
+    }
+    NA_real_
+  }
+  stops <- function(side) {
+    if (is.null(x$replicates) || !isTRUE(curve$supported[zero])) return(NA_real_)
+    path <- if (side < 0) rev(seq_len(zero)) else seq(zero, length(grid))
+    hit <- path[!curve$supported[path]]
+    if (length(hit)) grid[hit[1]] else NA_real_
+  }
+
+  out <- list(
+    statement = statement,
+    alternative = alternative,
+    baseline = baseline,
+    point = c(negative = crossing(-1), positive = crossing(1)),
+    test = c(negative = stops(-1), positive = stops(1)),
+    supported_at_zero = if (is.null(x$replicates)) NA else isTRUE(curve$supported[zero]),
+    admissible_range = x$admissible_range,
+    level = level,
+    curve = curve
+  )
+  class(out) <- "uncounted_feedback_tipping"
+  out
+}
+
+#' @rdname feedback_tipping
+#' @export
+print.uncounted_feedback_tipping <- function(x, ...) {
+  fmt <- function(v) {
+    ifelse(is.na(v), "not reached", format(round(v, 4), trim = TRUE))
+  }
+  cat("Detection-feedback tipping points\n")
+  cat("Statement:", x$statement, "\n")
+  cat("Contrast at delta = 0:", .feedback_fmt(x$baseline), "\n")
+  rng <- x$admissible_range
+  cat("Admissible range: ",
+      if (anyNA(rng)) "none" else paste0("[", format(rng[1]), ", ", format(rng[2]), "]"),
+      "\n", sep = "")
+  cat("Point estimate changes sign at delta: ", fmt(x$point["negative"]), " (below 0), ",
+      fmt(x$point["positive"]), " (above 0)\n", sep = "")
+  if (isTRUE(x$supported_at_zero)) {
+    cat("Test at ", 100 * x$level, "% stops supporting it at delta: ",
+        fmt(x$test["negative"]), " (below 0), ", fmt(x$test["positive"]),
+        " (above 0)\n", sep = "")
+  } else if (isFALSE(x$supported_at_zero)) {
+    cat("The bootstrap test at ", 100 * x$level, "% does not support the statement at ",
+        "delta = 0, so there is no significant result to overturn.\n", sep = "")
+  }
+  invisible(x)
+}
+
+
+#' Calibrate the Feedback Parameter
+#'
+#' Summarizes \eqn{s_i = \xi_{0i} / (N_i + \xi_{0i})}, the share of the unauthorized
+#' population in the foreign population of a cell. If inspections are spread over the
+#' whole foreign population, the implied mechanical congestion elasticity of detection
+#' is \eqn{-s}, which helps to choose a \code{delta_grid} for
+#' \code{\link{feedback_sensitivity}}.
+#'
+#' @param fit An \code{"uncounted"} object.
+#' @param x Object to print.
+#' @param ... Ignored.
+#'
+#' @return An object of class \code{"uncounted_feedback_calibration"}, a list with
+#'   \code{s} (one value per cell), \code{mean_s}, \code{weighted_mean_s} (weighted by
+#'   \eqn{\xi_{0i}}) and \code{congestion_elasticity}, the negative of
+#'   \code{weighted_mean_s}.
+#'
+#' @seealso \code{\link{feedback_sensitivity}}
+#'
+#' @export
+feedback_calibrate <- function(fit) {
+  if (!inherits(fit, "uncounted")) {
+    stop("'fit' must inherit from class 'uncounted'.", call. = FALSE)
+  }
+  xi0 <- fit$N^fit$alpha_values
+  s <- xi0 / (fit$N + xi0)
+  weighted <- stats::weighted.mean(s, xi0)
+  out <- list(s = s, mean_s = mean(s), weighted_mean_s = weighted,
+              congestion_elasticity = -weighted)
+  class(out) <- "uncounted_feedback_calibration"
+  out
+}
+
+#' @rdname feedback_calibrate
+#' @export
+print.uncounted_feedback_calibration <- function(x, ...) {
+  cat("Feedback calibration: s = xi0 / (N + xi0)\n")
+  cat("Cell mean of s:", round(x$mean_s, 3), "\n")
+  cat("xi0-weighted mean of s:", round(x$weighted_mean_s, 3), "\n")
+  cat("Implied mechanical congestion elasticity:", round(x$congestion_elasticity, 3), "\n")
+  invisible(x)
 }
