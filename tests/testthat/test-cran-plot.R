@@ -115,3 +115,21 @@ test_that("plot_explore with constrained model runs without error", {
   fit <- quick_fit(d, gamma = 0.005, constrained = TRUE)
   expect_no_error(plot_explore(fit))
 })
+
+test_that(".running_mean covers every point", {
+  ## w = n %/% 10 used to stop at the 10th of 19 points, and gave NA windows for
+  ## n < 10
+  x <- 1:19
+  rm19 <- .running_mean(x, x)
+  expect_length(rm19$x, 10L)
+  expect_equal(max(rm19$x), mean(18:19))
+  expect_equal(weighted.mean(rm19$y, tabulate(ceiling(seq_len(19) * 10 / 19))), mean(x))
+
+  rm5 <- .running_mean(1:5, 5:1)
+  expect_equal(rm5$x, 1:5)
+  expect_equal(rm5$y, 5:1)
+  expect_false(anyNA(rm5$x))
+
+  ## Sorted by x, whatever the input order
+  expect_equal(.running_mean(c(3, 1, 2), c(30, 10, 20))$y, c(10, 20, 30))
+})

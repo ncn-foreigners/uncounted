@@ -7,6 +7,9 @@
 #'
 #' @param data A data frame containing all variables.
 #' @param observed One-sided formula for the observed count (e.g., \code{~ m}).
+#'   Must be whole numbers for \code{method = "nb"}. \code{method = "poisson"}
+#'   also accepts non-integer values (pseudo-maximum likelihood); \code{$loglik}
+#'   is then a pseudo-log-likelihood, flagged by \code{$pseudo_loglik}.
 #' @param auxiliary One-sided formula for the auxiliary count (e.g., \code{~ n}).
 #' @param reference_pop One-sided formula for the reference population (e.g., \code{~ N}).
 #' @param method Estimation method: \code{"poisson"} (default), \code{"nb"},
@@ -30,6 +33,15 @@
 #'   Default \code{NULL} means a single scalar gamma (intercept only).
 #' @param gamma_bounds Numeric vector of length 2: lower and upper bounds for
 #'   the estimated gamma parameter. Default \code{c(1e-10, 0.5)}.
+#' @param gamma_start Optional starting value for the estimated gamma (the
+#'   gamma intercept when \code{cov_gamma} is used); must lie inside
+#'   \code{gamma_bounds}. Default \code{NULL} screens 25 log-spaced values in
+#'   \code{gamma_bounds} and starts from the one with the smallest Poisson
+#'   profile deviance. Ignored unless \code{gamma = "estimate"}, and by
+#'   \code{method = "ols"}, which profiles gamma over its own grid. Refits
+#'   inside \code{bootstrap_popsize()}, \code{loo()} and the profile functions
+#'   start from the original estimate. The screen and the optimiser's trace
+#'   are stored in \code{$optim_info}.
 #' @param theta_start Starting value for the NB dispersion parameter (used
 #'   only when \code{method = "nb"}). Default 1.
 #' @param link_rho Link for the detection component
@@ -50,7 +62,8 @@
 #'   \itemize{
 #'     \item A character string specifying the HC type: \code{"HC0"} through
 #'       \code{"HC5"}, or \code{"HC4m"}. Default \code{"HC3"}. When \code{cluster}
-#'       is also provided, this type is passed to \code{sandwich::vcovCL()}.
+#'       is also provided, clustered HC2+ requests are downgraded to
+#'       \code{"HC1"} before calling \code{sandwich::vcovCL()}.
 #'       For count models fitted with \code{estimator = "gmm"} or
 #'       \code{estimator = "el"}, the default robust covariance is
 #'       \code{"HC1"} and HC2+ requests are downgraded to \code{"HC1"}.
@@ -62,11 +75,9 @@
 #' @param cluster Optional one-sided formula identifying a cluster variable
 #'   for cluster-robust variance estimation (e.g., \code{~ country_code}).
 #'   When provided and \code{vcov} is a character string, the variance is
-#'   computed using \code{sandwich::vcovCL()} with the specified HC type.
-#'   Note: clustered HC2 and HC3 are only applicable to standard linear and
-#'   generalized linear models; \code{sandwich::vcovCL()} will emit a warning
-#'   for non-GLM objects. Use \code{"HC0"} or \code{"HC1"} with clustering
-#'   to avoid this. Ignored when \code{vcov} is a function.
+#'   computed using \code{sandwich::vcovCL()} with the requested HC type, except
+#'   that HC2+ requests are reported in \code{vcov_requested} and computed as
+#'   \code{"HC1"}. Ignored when \code{vcov} is a function.
 #' @param weights Optional numeric vector of observation weights.
 #' @param constrained Logical. If \code{TRUE} and
 #'   \code{method \%in\% c("poisson", "nb")}, the fitted per-observation
@@ -217,7 +228,7 @@
 #' \emph{arXiv preprint} arXiv:2008.09407.
 #'
 #' Santos Silva, J. M. C. and Tenreyro, S. (2006). The log of gravity.
-#' \emph{The Review of Economics and Statistics}, 88(4), 641--658.
+#' \emph{The Review of Economics and Statistics}, 88(4), 641--658. \doi{10.1162/rest.88.4.641}
 #'
 #' @examples
 #' # Simulate data: 50 groups with known population structure
@@ -266,6 +277,7 @@ estimate_hidden_pop <- function(data,
                                 gamma = "estimate",
                                 cov_gamma = NULL,
                                 gamma_bounds = c(1e-10, 0.5),
+                                gamma_start = NULL,
                                 theta_start = 1,
                                 link_rho = c("power", "cloglog", "logit", "probit"),
                                 estimator = c("mle", "gmm", "el"),
@@ -290,6 +302,7 @@ estimate_hidden_pop <- function(data,
   call$method <- method
   call$gamma <- gamma
   call$gamma_bounds <- gamma_bounds
+  if (!is.null(gamma_start)) call$gamma_start <- gamma_start
   call$theta_start <- theta_start
   call$constrained <- constrained
   if (!is.null(cov_alpha)) call$cov_alpha <- cov_alpha
@@ -332,8 +345,115 @@ estimate_hidden_pop <- function(data,
   n_aux <- eval(auxiliary[[2]], data)
   N <- eval(reference_pop[[2]], data)
 
-  stopifnot(length(m) == length(N), length(m) == length(n_aux))
-  stopifnot(all(N > 0))
+  # ---- Validate the response and the two count inputs ----
+  .check_count <- function(x, label, formula) {
+    if (!is.numeric(x)) {
+      stop("'", label, "' (", deparse(formula), ") must be numeric, not ",
+           class(x)[1], ".", call. = FALSE)
+    }
+    if (anyNA(x)) {
+      stop("'", label, "' (", deparse(formula), ") contains ", sum(is.na(x)),
+           " missing value(s). Remove or impute them before fitting.",
+           call. = FALSE)
+    }
+    if (any(!is.finite(x))) {
+      stop("'", label, "' (", deparse(formula), ") contains non-finite values.",
+           call. = FALSE)
+    }
+    if (any(x < 0)) {
+      stop("'", label, "' (", deparse(formula), ") contains negative values; ",
+           "counts and population sizes must be non-negative.", call. = FALSE)
+    }
+    invisible(TRUE)
+  }
+  .check_count(m, "observed", observed)
+  .check_count(n_aux, "auxiliary", auxiliary)
+  .check_count(N, "reference_pop", reference_pop)
+
+  if (length(m) != length(N) || length(m) != length(n_aux)) {
+    stop("'observed', 'auxiliary' and 'reference_pop' must have the same ",
+         "length (got ", length(m), ", ", length(n_aux), ", ", length(N),
+         ").", call. = FALSE)
+  }
+  if (any(N <= 0)) {
+    stop("'reference_pop' must be strictly positive; ", sum(N <= 0),
+         " observation(s) are zero or negative.", call. = FALSE)
+  }
+  if (any(N < 1)) {
+    warning("Some reference populations are below 1, so log(N) < 0 and the ",
+            "corresponding N^alpha contributions shrink as alpha grows. ",
+            "The population-size estimator assumes N_i >= 1.", call. = FALSE)
+  }
+
+  # ---- Validate gamma and its bounds ----
+  if (!is.null(gamma)) {
+    if (is.character(gamma)) {
+      if (!identical(gamma, "estimate")) {
+        stop("'gamma' must be \"estimate\", a single non-negative number, or ",
+             "NULL; got \"", gamma[1], "\".", call. = FALSE)
+      }
+    } else if (is.numeric(gamma)) {
+      if (length(gamma) != 1L || !is.finite(gamma) || gamma < 0) {
+        stop("A numeric 'gamma' must be a single finite non-negative value.",
+             call. = FALSE)
+      }
+    } else {
+      stop("'gamma' must be \"estimate\", a single non-negative number, or ",
+           "NULL; got an object of class ", class(gamma)[1], ".",
+           call. = FALSE)
+    }
+  }
+  if (identical(gamma, "estimate")) {
+    if (!is.numeric(gamma_bounds) || length(gamma_bounds) != 2L ||
+        any(!is.finite(gamma_bounds))) {
+      stop("'gamma_bounds' must be a numeric vector of length 2 with finite ",
+           "values.", call. = FALSE)
+    }
+    if (gamma_bounds[1] < 0 || gamma_bounds[2] <= gamma_bounds[1]) {
+      stop("'gamma_bounds' must satisfy 0 <= lower < upper; got c(",
+           gamma_bounds[1], ", ", gamma_bounds[2], ").", call. = FALSE)
+    }
+  }
+
+  # ---- Validate weights ----
+  if (!is.null(weights)) {
+    if (!is.numeric(weights)) {
+      stop("'weights' must be numeric, not ", class(weights)[1], ".",
+           call. = FALSE)
+    }
+    if (length(weights) != length(m)) {
+      stop("'weights' must have one value per observation (got ",
+           length(weights), " for ", length(m), " observations).",
+           call. = FALSE)
+    }
+    if (anyNA(weights) || any(!is.finite(weights))) {
+      stop("'weights' must not contain missing or non-finite values.",
+           call. = FALSE)
+    }
+    if (any(weights < 0)) {
+      stop("'weights' must be non-negative.", call. = FALSE)
+    }
+    if (all(weights == 0)) {
+      stop("'weights' are all zero, so no observation contributes to the fit.",
+           call. = FALSE)
+    }
+  }
+
+  non_integer_m <- any(abs(m - round(m)) > sqrt(.Machine$double.eps))
+  if (identical(method, "nb") && non_integer_m) {
+    stop("method = 'nb' requires whole-number counts in 'observed'; the negative ",
+         "binomial likelihood is not defined for non-integer values. ",
+         "method = 'poisson' accepts them (pseudo-maximum likelihood).",
+         call. = FALSE)
+  }
+
+  if (identical(method, "nb")) {
+    if (!is.numeric(theta_start) || length(theta_start) != 1L ||
+        !is.finite(theta_start) || theta_start <= 0) {
+      stop("'theta_start' must be a single positive finite value.",
+           call. = FALSE)
+    }
+  }
 
   ratio <- n_aux / N
   log_N <- log(N)
@@ -345,21 +465,35 @@ estimate_hidden_pop <- function(data,
 
   if (no_gamma) {
     if (any(n_aux == 0)) {
-      warning("auxiliary contains zeros; log(n/N) will be -Inf. ",
-              "Consider using gamma = 'estimate' or a fixed gamma value.")
+      stop("'gamma = NULL' uses log(n/N), which is undefined for the ",
+           sum(n_aux == 0), " observation(s) where the auxiliary count is ",
+           "zero. Use gamma = \"estimate\" or a fixed positive gamma.",
+           call. = FALSE)
     }
     log_rate <- log(ratio)
     gamma_value <- NULL
     gamma_start <- NULL
   } else if (gamma_fixed) {
+    if (gamma == 0 && any(n_aux == 0)) {
+      stop("'gamma = 0' uses log(n/N), which is undefined for the ",
+           sum(n_aux == 0), " observation(s) where the auxiliary count is ",
+           "zero. Use gamma = \"estimate\" or a fixed positive gamma.",
+           call. = FALSE)
+    }
     log_rate <- log(gamma + ratio)
     gamma_value <- gamma
     gamma_start <- NULL
   } else if (estimate_gamma) {
-    gamma_start_val <- mean(gamma_bounds)
-    log_rate <- log(gamma_start_val + ratio)
+    ## log_rate is set once the design matrices exist (start screen below)
     gamma_value <- NULL
-    gamma_start <- gamma_start_val
+    if (!is.null(gamma_start)) {
+      if (!is.numeric(gamma_start) || length(gamma_start) != 1L ||
+          !is.finite(gamma_start) || gamma_start < gamma_bounds[1] ||
+          gamma_start > gamma_bounds[2]) {
+        stop("'gamma_start' must be a single value inside gamma_bounds = c(",
+             gamma_bounds[1], ", ", gamma_bounds[2], ").", call. = FALSE)
+      }
+    }
   }
 
   # ---- Validate cov_gamma ----
@@ -403,15 +537,34 @@ estimate_hidden_pop <- function(data,
   }
   p_gamma <- if (!is.null(X_gamma)) ncol(X_gamma) else 0L
 
+  # ---- Starting value for an estimated gamma ----
+  gamma_screen <- NULL
+  if (estimate_gamma && method != "ols") {
+    if (is.null(gamma_start)) {
+      gamma_screen <- .screen_gamma_start(m, log_N, ratio, X_alpha, X_beta,
+                                          gamma_bounds, weights)
+      gamma_start <- gamma_screen$start
+    }
+    log_rate <- log(gamma_start + ratio)
+  }
+
   # ---- Extract cluster variable (if provided) ----
   cluster_vec <- if (!is.null(cluster)) {
     eval(cluster[[2]], data)
   } else NULL
   if (!is.null(cluster_vec)) {
+    if (anyNA(cluster_vec)) {
+      stop("'cluster' (", deparse(cluster), ") contains ", sum(is.na(cluster_vec)),
+           " missing value(s). Remove or impute them before fitting.",
+           call. = FALSE)
+    }
     n_clusters <- length(unique(cluster_vec[!is.na(cluster_vec)]))
     if (n_clusters < 2L) {
       stop("Cluster-robust variance requires at least 2 clusters.",
            call. = FALSE)
+    }
+    if (!vcov_is_function) {
+      actual_vcov_type <- .normalize_cluster_vcov_type(actual_vcov_type)
     }
   }
 
@@ -424,10 +577,10 @@ estimate_hidden_pop <- function(data,
       if (estimate_gamma) {
         .fit_ols_gamma(m, N, ratio, log_N, X_alpha, X_beta,
                        gamma_start, gamma_bounds,
-                       weights = weights, vcov_type = actual_vcov_type)
+                       weights = weights)
       } else {
         .fit_ols(m, N, ratio, log_N, log_rate, X_alpha, X_beta,
-                 weights = weights, vcov_type = actual_vcov_type)
+                 weights = weights)
       }
     },
     "nls" = {
@@ -436,7 +589,7 @@ estimate_hidden_pop <- function(data,
                estimate_gamma = estimate_gamma,
                gamma_start = gamma_start,
                gamma_bounds = gamma_bounds,
-               weights = weights, vcov_type = actual_vcov_type,
+               weights = weights,
                link_rho = link_rho)
     },
     "poisson" = {
@@ -447,7 +600,7 @@ estimate_hidden_pop <- function(data,
                      gamma_start = gamma_start,
                      gamma_bounds = gamma_bounds,
                      X_gamma = X_gamma,
-                     weights = weights, vcov_type = actual_vcov_type,
+                     weights = weights,
                      constrained = constrained,
                      link_rho = link_rho)
       } else {
@@ -472,7 +625,7 @@ estimate_hidden_pop <- function(data,
                 gamma_bounds = gamma_bounds,
                 theta_start = theta_start,
                 X_gamma = X_gamma,
-                weights = weights, vcov_type = actual_vcov_type,
+                weights = weights,
                 constrained = constrained,
                 link_rho = link_rho)
       } else {
@@ -496,7 +649,7 @@ estimate_hidden_pop <- function(data,
       }
       .fit_iols(m, N, ratio, log_N, log_rate, X_alpha, X_beta,
                 gamma_value = gamma_value,
-                weights = weights, vcov_type = actual_vcov_type)
+                weights = weights)
     }
   )
 
@@ -516,20 +669,6 @@ estimate_hidden_pop <- function(data,
   } else {
     c(result$alpha_coefs, result$beta_coefs)
   }
-  vcov_names <- colnames(result$vcov)
-  if (is.null(vcov_names) || anyNA(vcov_names)) {
-    vcov_names <- names(all_coefs)
-    if (estimate_gamma && !has_cov_gamma && nrow(result$vcov) > length(vcov_names)) {
-      vcov_names <- c(vcov_names, colnames(X_gamma))
-    }
-    if (length(vcov_names) < nrow(result$vcov)) {
-      vcov_names <- c(vcov_names,
-                      rep(NA_character_, nrow(result$vcov) - length(vcov_names)))
-    }
-    vcov_names <- vcov_names[seq_len(nrow(result$vcov))]
-    rownames(result$vcov) <- colnames(result$vcov) <- vcov_names
-  }
-
   # Compute alpha/beta per observation (response scale for constrained)
   alpha_values <- if (!is.null(result$alpha_values)) {
     result$alpha_values
@@ -565,6 +704,45 @@ estimate_hidden_pop <- function(data,
             "). Consider using constrained = TRUE.")
   }
 
+  # ---- Optimiser trace and gamma-bound check ----
+  optim_info <- NULL
+  if (estimate_gamma || !is.null(result$optim_info)) {
+    optim_info <- c(
+      list(gamma_start = if (estimate_gamma) gamma_start else NULL,
+           gamma_start_source = if (!estimate_gamma) NULL
+                                else if (method == "ols") "ols_grid"
+                                else if (is.null(gamma_screen)) "user"
+                                else "screen",
+           gamma_screen = gamma_screen),
+      result$optim_info
+    )
+  }
+  if (!is.null(result$optim_info) && isTRUE(result$optim_info$max_grad >
+                                             1e-4 * (1 + abs(result$loglik)))) {
+    warning("The optimiser stopped with a non-negligible gradient (max |grad| = ",
+            signif(result$optim_info$max_grad, 3), "); the estimates may not be ",
+            "a maximum. Try another 'gamma_start' or narrower 'gamma_bounds'. ",
+            "See $optim_info.", call. = FALSE)
+  }
+  if (estimate_gamma) {
+    gamma_level <- if (has_cov_gamma && !is.null(result$gamma_coefs)) {
+      exp(unname(result$gamma_coefs[1]))
+    } else {
+      result$gamma_estimated
+    }
+    if (!is.null(gamma_level) && is.finite(gamma_level)) {
+      at_bound <- c(lower = abs(log(gamma_level) - log(gamma_bounds[1])) < 1e-4,
+                    upper = abs(log(gamma_level) - log(gamma_bounds[2])) < 1e-4)
+      if (any(at_bound)) {
+        message("Estimated gamma ", if (has_cov_gamma) "(intercept) ",
+                "is at its ", names(at_bound)[at_bound], " bound (",
+                signif(gamma_level, 3), "); the optimum may lie outside ",
+                "gamma_bounds = c(", gamma_bounds[1], ", ", gamma_bounds[2], ").")
+      }
+      optim_info$gamma_at_bound <- if (any(at_bound)) names(at_bound)[at_bound] else "none"
+    }
+  }
+
   out <- list(
     coefficients = all_coefs,
     alpha_coefs = result$alpha_coefs,
@@ -578,6 +756,11 @@ estimate_hidden_pop <- function(data,
     fitted.values = result$fitted,
     residuals = result$residuals,
     log_mu = result$log_mu,
+    ## Offset in force when this fit was produced (see profile_dependence()).
+    ## Stored so that anything recomputing log(mu) later, such as predict(),
+    ## reproduces the fitted values instead of reading whatever the global
+    ## state happens to be at call time.
+    dependence_offset = .current_dependence_offset(),
     n_obs = result$n_obs,
     df.residual = result$df.residual,
     loglik = result$loglik,
@@ -627,6 +810,8 @@ estimate_hidden_pop <- function(data,
     backend_vcov_full = result$backend_vcov_full,
     backend_vcov_model_full = result$backend_vcov_model_full,
     moment_backend = result$moment_backend,
+    optim_info = optim_info,
+    pseudo_loglik = non_integer_m && method == "poisson",
     call_args = list(
       observed = observed, auxiliary = auxiliary, reference_pop = reference_pop
     )
@@ -669,10 +854,14 @@ estimate_hidden_pop <- function(data,
       vcov_type   = actual_vcov_type,
       cluster     = cluster_vec
     )
-    vv <- .extract_vcov(V_nb_full)
-    out$vcov <- vv$vcov
-    out$vcov_full <- vv$vcov_full
-    out$theta_se <- sqrt(max(0, V_nb_full[p_ab + 1, p_ab + 1]))
+    ## V_nb_full is ordered (alpha, beta, log-theta, gamma...): the reported
+    ## coefficients skip theta, unlike the other methods' vcov_full.
+    coef_idx <- c(seq_len(p_ab), if (has_cov_gamma) p_ab + 1L + seq_len(p_gamma))
+    out$vcov <- V_nb_full[coef_idx, coef_idx, drop = FALSE]
+    dimnames(out$vcov) <- list(names(all_coefs), names(all_coefs))
+    out$vcov_full <- V_nb_full
+    ## The optimiser works on log(theta): delta method to the theta scale
+    out$theta_se <- as.numeric(out$theta) * sqrt(max(0, V_nb_full[p_ab + 1, p_ab + 1]))
     out$score_full <- result$score_full
     out$hessian_nll <- result$hessian_nll
     # Store both requested and actual vcov types.
@@ -787,8 +976,12 @@ print.uncounted <- function(x, ...) {
 #'
 #' For OLS and NLS fits, inference uses t-statistics with
 #' \eqn{n - p} degrees of freedom. For Poisson and NB fits, z-statistics
-#' (normal approximation) are used. Standard errors are always
-#' HC-robust (type controlled by \code{vcov_type} in the original call).
+#' (normal approximation) are used. Standard errors come from the covariance
+#' requested by the \code{vcov} argument of the original
+#' \code{\link{estimate_hidden_pop}} call: an HC type (\code{"HC3"} by
+#' default, \code{"HC1"} for \code{estimator = "gmm"} and
+#' \code{estimator = "el"}), or whatever a user-supplied \code{vcov} function
+#' returns. The type in force is shown in the printed header.
 #'
 #' @param object An \code{"uncounted"} object returned by
 #'   \code{\link{estimate_hidden_pop}}.
@@ -999,12 +1192,6 @@ update.uncounted <- function(object, ..., evaluate = TRUE) {
     # Delta method: SE(beta) = exp(zeta) * SE(zeta)
     se_zeta <- sqrt(as.numeric(z_row %*% V_beta %*% t(z_row)))
     se_beta <- beta_resp * se_zeta
-    # Label from beta covariates
-    label <- paste0("beta=", round(beta_resp, 4))
-    if (!is.null(x$cov_alpha_vars)) {
-      # Try to find a meaningful label — use the first obs with this pattern
-      label <- paste0("(", idx, ")")
-    }
     data.frame(
       group = key,
       beta = beta_resp,

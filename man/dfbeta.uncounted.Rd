@@ -17,8 +17,9 @@
 }
 \value{
 A matrix with one row per dropped unit and one column per coefficient.
-Each entry is the change in the coefficient estimate relative to the full
-model (\eqn{\hat\beta_{(-i)} - \hat\beta}).
+Each entry is \eqn{\hat\beta - \hat\beta_{(-i)}}, the same sign as
+\code{stats::dfbeta()} for \code{lm} and \code{glm} fits: positive means
+the unit pulls the coefficient up.
 }
 \description{
 Computes the change in estimated coefficients when each observation (or

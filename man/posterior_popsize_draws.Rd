@@ -43,6 +43,5 @@ column.}
 A draw-by-group matrix or wide data frame.
 }
 \description{
-Extract posterior draws of grouped population-size estimates from Bayesian
-uncounted fits or Bayesian \code{\link{popsize}} results.
+Extract Posterior Population-Size Draws
 }

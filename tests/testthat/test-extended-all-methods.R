@@ -26,17 +26,19 @@ test_that("DGP recovery: alpha estimate close to truth", {
   skip_on_cran()
   fit <- quick_fit(testdata, gamma = dgp$gamma)
   alpha_hat <- coef(fit)[["alpha"]]
-  expect_true(abs(alpha_hat - dgp$alpha) < 0.2,
-              info = paste("alpha_hat =", round(alpha_hat, 3),
-                           "vs truth =", dgp$alpha))
+  se_alpha <- sqrt(diag(vcov(fit)))[["alpha"]]
+  # Principled, tight recovery (was a loose |.| < 0.2): the estimate is within
+  # 0.05 of truth AND the truth lies inside the 95% Wald CI for alpha.
+  expect_lt(abs(alpha_hat - dgp$alpha), 0.05)
+  expect_lt(abs(alpha_hat - dgp$alpha), 1.96 * se_alpha)
 })
 
-test_that("DGP recovery: estimated gamma in reasonable range", {
+test_that("DGP recovery: estimated gamma close to truth", {
   skip_on_cran()
   fit <- quick_fit(testdata, gamma = "estimate")
-  expect_true(fit$gamma > 0.0001 & fit$gamma < 0.1,
-              info = paste("gamma_hat =", fit$gamma,
-                           "vs truth =", dgp$gamma))
+  # Tightened from (0.0001, 0.1): Poisson PMLE recovers gamma sharply, so
+  # require gamma_hat within 0.003 of the 0.005 truth (fixture gives ~0.00498).
+  expect_lt(abs(fit$gamma - dgp$gamma), 0.003)
 })
 
 test_that("Poisson on full data: base R comparison", {

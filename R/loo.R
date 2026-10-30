@@ -19,15 +19,23 @@
 #' relevant for assessing structural sensitivity: would the conclusion
 #' change if a country were excluded?
 #'
-#' **Interpretation of \code{dxi}.** \eqn{\Delta\xi_i = \hat{\xi}_{(-i)} -
-#' \hat{\xi}}: the change in total estimated population when observation
-#' (or country) \eqn{i} is removed.
+#' **Interpretation of \code{dxi}.** \code{dxi} measures influence on the
+#' estimate for a fixed target population:
+#' \eqn{\Delta\xi_i = \sum_j N_j^{\hat\alpha_{j(-i)}} - \sum_j N_j^{\hat\alpha_j}},
+#' where both sums run over \emph{all} rows and \eqn{\hat\alpha_{(-i)}} comes
+#' from the refit without unit \eqn{i}. It therefore reflects only how the
+#' coefficients move.
 #' \itemize{
-#'   \item \eqn{\Delta\xi_i < 0}: dropping \eqn{i} decreases the estimate
-#'     (observation was pulling the estimate up).
-#'   \item \eqn{\Delta\xi_i > 0}: dropping \eqn{i} increases the estimate
-#'     (observation was pulling the estimate down).
+#'   \item \eqn{\Delta\xi_i < 0}: without \eqn{i} the estimate is lower
+#'     (the unit was pulling the estimate up).
+#'   \item \eqn{\Delta\xi_i > 0}: without \eqn{i} the estimate is higher
+#'     (the unit was pulling the estimate down).
 #' }
+#' \code{dxi_subset} is the change when the unit also leaves the target:
+#' the total of \code{popsize()} on the refit, over the remaining rows only,
+#' minus \eqn{\hat\xi}. It is mostly negative because it includes the unit's
+#' own share of \eqn{\hat\xi}, so it is not an influence measure, but it answers
+#' \dQuote{what would we estimate if this unit were not in the data at all?}
 #'
 #' @param object An `"uncounted"` object (fitted model).
 #' @param by What to leave out: `"obs"` drops one row at a time,
@@ -42,10 +50,13 @@
 #'     each refit.}
 #'   \item{xi}{Data frame with \eqn{\xi} estimates from each refit.}
 #'   \item{dropped}{Character vector: label of dropped observation or country.}
-#'   \item{dfbeta}{Matrix (\code{n_drops} x \code{p}): change in coefficients
-#'     \eqn{\hat{\beta}_{(-i)} - \hat{\beta}}.}
-#'   \item{dxi}{Numeric vector: change in population size
-#'     \eqn{\hat{\xi}_{(-i)} - \hat{\xi}}.}
+#'   \item{dfbeta}{Matrix (\code{n_drops} x \code{p}): influence on the
+#'     coefficients, \eqn{\hat{\beta} - \hat{\beta}_{(-i)}}, the same sign as
+#'     \code{stats::dfbeta()}. Positive means the unit pulls the coefficient up.}
+#'   \item{dxi}{Numeric vector: influence on the population size for a fixed
+#'     target, using the refit's coefficients on all rows (see Details).}
+#'   \item{dxi_subset}{Numeric vector: change in population size when the unit
+#'     also leaves the target (see Details).}
 #'   \item{full_coefs}{Full-model coefficients.}
 #'   \item{full_ps}{Full-model population size data frame.}
 #'   \item{full_ps_total}{Full-model total \eqn{\hat{\xi}}.}
@@ -90,11 +101,11 @@ loo <- function(object, ...) {
 
 #' @rdname loo
 #' @export
+#' @exportS3Method loo::loo
 loo.uncounted <- function(object, by = c("obs", "country"),
                           verbose = FALSE, ...) {
   by <- match.arg(by)
   data <- object$data
-  call <- object$call
   n_obs <- nrow(data)
 
   # Determine groups to drop
@@ -120,32 +131,16 @@ loo.uncounted <- function(object, by = c("obs", "country"),
   coef_mat <- matrix(NA_real_, nrow = n_drops, ncol = p,
                      dimnames = list(drop_labels, names(full_coefs)))
   ps_list <- vector("list", n_drops)
+  xi_fixed <- rep(NA_real_, n_drops)
   converged <- logical(n_drops)
 
-  # Extract call arguments for refitting
-  # Formulas from call (safe to eval); non-formula args from fit object
+  # Refit arguments: same model as the original fit, including its weights
   cl <- object$call
-  method <- object$method
-  vcov_type <- object$vcov_type
-  cluster_formula <- if (!is.null(cl$cluster)) eval(cl$cluster) else NULL
-  observed <- eval(cl$observed)
-  auxiliary <- eval(cl$auxiliary)
-  reference_pop <- eval(cl$reference_pop)
+  refit_args <- .refit_args_from_object(object)
+  obs_weights <- object$obs_weights
   cov_alpha <- if (!is.null(cl$cov_alpha)) eval(cl$cov_alpha) else NULL
   cov_beta <- if (!is.null(cl$cov_beta)) eval(cl$cov_beta) else NULL
   cov_gamma <- if (!is.null(cl$cov_gamma)) eval(cl$cov_gamma) else NULL
-  gamma_arg <- if (object$gamma_estimated) "estimate"
-               else if (!is.null(object$gamma)) object$gamma
-               else NULL
-  gamma_bounds <- tryCatch(
-    if (!is.null(cl$gamma_bounds)) eval(cl$gamma_bounds) else c(1e-10, 0.5),
-    error = function(e) c(1e-10, 0.5)
-  )
-  theta_start <- if (!is.null(object$theta)) object$theta else 1
-  countries <- if (!is.null(cl$countries)) eval(cl$countries) else NULL
-  constrained_arg <- isTRUE(object$constrained)
-  estimator_arg <- object$estimator
-  link_rho_arg <- object$link_rho
 
   warned_rank <- FALSE
   for (i in seq_len(n_drops)) {
@@ -189,32 +184,21 @@ loo.uncounted <- function(object, by = c("obs", "country"),
     }
 
     # Refit
+    args <- refit_args
+    args$data <- data_i
+    if (!is.null(obs_weights)) args$weights <- obs_weights[-drop_idx]
     fit_i <- tryCatch(
-      estimate_hidden_pop(
-        data = data_i,
-        observed = observed,
-        auxiliary = auxiliary,
-        reference_pop = reference_pop,
-        method = method,
-        cov_alpha = cov_alpha,
-        cov_beta = cov_beta,
-        gamma = gamma_arg,
-        cov_gamma = cov_gamma,
-        gamma_bounds = gamma_bounds,
-        theta_start = theta_start,
-        link_rho = link_rho_arg,
-        estimator = estimator_arg,
-        vcov = vcov_type,
-        constrained = constrained_arg,
-        countries = countries,
-        cluster = cluster_formula
-      ),
+      suppressMessages(do.call(estimate_hidden_pop, args)),
       error = function(e) NULL
     )
 
-    if (!is.null(fit_i)) {
+    if (!is.null(fit_i) && isTRUE(fit_i$convergence == 0)) {
       coef_mat[i, ] <- fit_i$coefficients
       ps_list[[i]] <- tryCatch(popsize(fit_i), error = function(e) NULL)
+      ## Same target as the full fit: the refit's coefficients on every row
+      alpha_i <- as.numeric(object$X_alpha %*% fit_i$alpha_coefs)
+      if (isTRUE(object$constrained)) alpha_i <- .inv_logit(alpha_i)
+      xi_fixed[i] <- sum(object$N^alpha_i)
       converged[i] <- TRUE
     } else {
       converged[i] <- FALSE
@@ -229,11 +213,13 @@ loo.uncounted <- function(object, by = c("obs", "country"),
   }))
 
   # Compute differences
-  dfbeta <- sweep(coef_mat, 2, full_coefs, "-")
+  ## Same sign as stats::dfbeta(): full-sample estimate minus leave-one-out
+  dfbeta <- -sweep(coef_mat, 2, full_coefs, "-")
 
   # Population size differences (summed across groups if multiple)
   full_ps_total <- sum(full_ps$estimate)
-  dxi <- sapply(ps_list, function(x) {
+  dxi <- xi_fixed - full_ps_total
+  dxi_subset <- sapply(ps_list, function(x) {
     if (!is.null(x)) sum(x$estimate) - full_ps_total else NA_real_
   })
 
@@ -243,6 +229,7 @@ loo.uncounted <- function(object, by = c("obs", "country"),
     dropped = drop_labels,
     dfbeta = dfbeta,
     dxi = dxi,
+    dxi_subset = dxi_subset,
     full_coefs = full_coefs,
     full_ps = full_ps,
     full_ps_total = full_ps_total,
@@ -266,7 +253,8 @@ loo.uncounted <- function(object, by = c("obs", "country"),
 #' The table shows:
 #' \describe{
 #'   \item{dropped}{The observation index or country label that was removed.}
-#'   \item{dxi}{\eqn{\Delta\xi}: change in total population size estimate.}
+#'   \item{dxi}{\eqn{\Delta\xi}: influence on the total population size for a
+#'     fixed target (see \code{\link{loo}}).}
 #'   \item{pct_change}{Percentage change relative to full-model \eqn{\hat{\xi}}.}
 #' }
 #'
@@ -365,7 +353,6 @@ plot.uncounted_loo <- function(x, type = c("xi", "coef"), ...) {
     dxi <- x$dxi
     ok <- !is.na(dxi)
     ord <- order(dxi[ok])
-    n <- sum(ok)
 
     oldpar <- par(mar = c(4, 8, 3, 1))
     on.exit(par(oldpar))
@@ -500,7 +487,6 @@ compare_loo <- function(loo1, loo2,
   if (loo1$n_drops != loo2$n_drops)
     stop("Both LOO objects must have the same number of drops.")
 
-  n <- loo1$n_drops
   dropped <- loo1$dropped
 
   # Build labels for observations
@@ -640,7 +626,6 @@ plot.uncounted_loo_compare <- function(x, type = c("scatter", "bar"),
   } else {
     # Barplot
     tab <- head(x$table, n)
-    n_show <- nrow(tab)
 
     dxi1 <- tab[[3]]  # dxi for model 1
     dxi2 <- tab[[5]]  # dxi for model 2
@@ -650,14 +635,14 @@ plot.uncounted_loo_compare <- function(x, type = c("scatter", "bar"),
     oldpar <- par(mar = c(4, 10, 3, 1))
     on.exit(par(oldpar))
 
-    bp <- barplot(mat, beside = TRUE, horiz = TRUE,
-                  names.arg = tab$label,
-                  las = 1, cex.names = 0.65,
-                  col = c(adjustcolor("tomato", 0.7),
-                          adjustcolor("steelblue", 0.7)),
-                  border = NA,
-                  main = paste("LOO:", x$labels[1], "vs", x$labels[2]),
-                  xlab = expression(Delta * xi))
+    barplot(mat, beside = TRUE, horiz = TRUE,
+            names.arg = tab$label,
+            las = 1, cex.names = 0.65,
+            col = c(adjustcolor("tomato", 0.7),
+                    adjustcolor("steelblue", 0.7)),
+            border = NA,
+            main = paste("LOO:", x$labels[1], "vs", x$labels[2]),
+            xlab = expression(Delta * xi))
     abline(v = 0, lty = 2)
     legend("bottomright", legend = x$labels,
            fill = c(adjustcolor("tomato", 0.7),

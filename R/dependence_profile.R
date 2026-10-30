@@ -120,7 +120,7 @@ profile_dependence <- function(object,
       plot(results$delta[valid_ll], results$loglik[valid_ll],
            type = "b", pch = 19, cex = 0.6,
            xlab = expression(delta), ylab = "Log-likelihood",
-           main = expression("Log-likelihood" ~ ell(delta)),
+           main = expression("Log-likelihood" ~ italic(l)(delta)),
            ...)
       abline(v = 0, lty = 2, col = "red")
     }
@@ -270,38 +270,6 @@ print.uncounted_dependence_robustness <- function(x, ...) {
   invisible(x)
 }
 
-#' Build refit arguments from a fitted object
-#' @noRd
-.refit_args_from_object <- function(object) {
-  cl <- object$call
-
-  list(
-    data = object$data,
-    observed = object$call_args$observed,
-    auxiliary = object$call_args$auxiliary,
-    reference_pop = object$call_args$reference_pop,
-    method = object$method,
-    cov_alpha = if (!is.null(cl$cov_alpha)) cl$cov_alpha else NULL,
-    cov_beta = if (!is.null(cl$cov_beta)) cl$cov_beta else NULL,
-    gamma = if (isTRUE(object$gamma_estimated)) {
-      "estimate"
-    } else if (!is.null(object$gamma)) {
-      object$gamma
-    } else {
-      NULL
-    },
-    cov_gamma = if (!is.null(cl$cov_gamma)) cl$cov_gamma else NULL,
-    gamma_bounds = if (!is.null(cl$gamma_bounds)) cl$gamma_bounds else c(1e-10, 0.5),
-    theta_start = if (!is.null(object$theta)) object$theta else 1,
-    link_rho = object$link_rho,
-    estimator = object$estimator,
-    vcov = object$vcov_type,
-    weights = object$obs_weights,
-    constrained = isTRUE(object$constrained),
-    countries = if (!is.null(cl$countries)) cl$countries else NULL,
-    cluster = if (!is.null(cl$cluster)) cl$cluster else NULL
-  )
-}
 
 #' Refit a model under a fixed dependence offset
 #' @noRd
@@ -309,7 +277,7 @@ print.uncounted_dependence_robustness <- function(x, ...) {
   if (is.null(refit_args)) {
     refit_args <- .refit_args_from_object(object)
   }
-  .with_dependence_offset(delta, do.call(estimate_hidden_pop, refit_args))
+  .with_dependence_offset(delta, suppressMessages(do.call(estimate_hidden_pop, refit_args)))
 }
 
 #' Validate a dependence-profile data frame

@@ -15,6 +15,7 @@ estimate_hidden_pop(
   gamma = "estimate",
   cov_gamma = NULL,
   gamma_bounds = c(1e-10, 0.5),
+  gamma_start = NULL,
   theta_start = 1,
   link_rho = c("power", "cloglog", "logit", "probit"),
   estimator = c("mle", "gmm", "el"),
@@ -28,7 +29,10 @@ estimate_hidden_pop(
 \arguments{
 \item{data}{A data frame containing all variables.}
 
-\item{observed}{One-sided formula for the observed count (e.g., \code{~ m}).}
+\item{observed}{One-sided formula for the observed count (e.g., \code{~ m}).
+Must be whole numbers for \code{method = "nb"}. \code{method = "poisson"}
+also accepts non-integer values (pseudo-maximum likelihood); \code{$loglik}
+is then a pseudo-log-likelihood, flagged by \code{$pseudo_loglik}.}
 
 \item{auxiliary}{One-sided formula for the auxiliary count (e.g., \code{~ n}).}
 
@@ -61,6 +65,16 @@ Default \code{NULL} means a single scalar gamma (intercept only).}
 \item{gamma_bounds}{Numeric vector of length 2: lower and upper bounds for
 the estimated gamma parameter. Default \code{c(1e-10, 0.5)}.}
 
+\item{gamma_start}{Optional starting value for the estimated gamma (the
+gamma intercept when \code{cov_gamma} is used); must lie inside
+\code{gamma_bounds}. Default \code{NULL} screens 25 log-spaced values in
+\code{gamma_bounds} and starts from the one with the smallest Poisson
+profile deviance. Ignored unless \code{gamma = "estimate"}, and by
+\code{method = "ols"}, which profiles gamma over its own grid. Refits
+inside \code{bootstrap_popsize()}, \code{loo()} and the profile functions
+start from the original estimate. The screen and the optimiser's trace
+are stored in \code{$optim_info}.}
+
 \item{theta_start}{Starting value for the NB dispersion parameter (used
 only when \code{method = "nb"}). Default 1.}
 
@@ -84,7 +98,8 @@ Non-MLE estimators are currently available only for
 \itemize{
 \item A character string specifying the HC type: \code{"HC0"} through
 \code{"HC5"}, or \code{"HC4m"}. Default \code{"HC3"}. When \code{cluster}
-is also provided, this type is passed to \code{sandwich::vcovCL()}.
+is also provided, clustered HC2+ requests are downgraded to
+\code{"HC1"} before calling \code{sandwich::vcovCL()}.
 For count models fitted with \code{estimator = "gmm"} or
 \code{estimator = "el"}, the default robust covariance is
 \code{"HC1"} and HC2+ requests are downgraded to \code{"HC1"}.
@@ -115,11 +130,9 @@ for that.}
 \item{cluster}{Optional one-sided formula identifying a cluster variable
 for cluster-robust variance estimation (e.g., \code{~ country_code}).
 When provided and \code{vcov} is a character string, the variance is
-computed using \code{sandwich::vcovCL()} with the specified HC type.
-Note: clustered HC2 and HC3 are only applicable to standard linear and
-generalized linear models; \code{sandwich::vcovCL()} will emit a warning
-for non-GLM objects. Use \code{"HC0"} or \code{"HC1"} with clustering
-to avoid this. Ignored when \code{vcov} is a function.}
+computed using \code{sandwich::vcovCL()} with the requested HC type, except
+that HC2+ requests are reported in \code{vcov_requested} and computed as
+\code{"HC1"}. Ignored when \code{vcov} is a function.}
 }
 \value{
 An object of class \code{"uncounted"}, a list containing:
@@ -299,5 +312,5 @@ irregular foreigners in Poland using non-linear count regression models.
 \emph{arXiv preprint} arXiv:2008.09407.
 
 Santos Silva, J. M. C. and Tenreyro, S. (2006). The log of gravity.
-\emph{The Review of Economics and Statistics}, 88(4), 641--658.
+\emph{The Review of Economics and Statistics}, 88(4), 641--658. \doi{10.1162/rest.88.4.641}
 }

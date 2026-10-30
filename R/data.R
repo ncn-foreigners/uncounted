@@ -12,10 +12,11 @@
 #' \describe{
 #'   \item{year}{Year of observation (factor, 2019--2024).}
 #'   \item{sex}{Sex (factor: \code{"Female"}, \code{"Male"}).}
-#'   \item{country_code}{ISO 3166-1 alpha-3 country code (e.g. \code{"UKR"}).}
+#'   \item{country_code}{ISO 3166-1 alpha-3 country code (e.g. \code{"UKR"}), or
+#'     \code{"unknown/stateless"} for records without a country of origin.}
 #'   \item{country}{Country name in English.}
 #'   \item{continent}{Continent (\code{"Africa"}, \code{"Americas"}, \code{"Asia"},
-#'     \code{"Europe"}, \code{"Oceania"}).}
+#'     \code{"Europe"}, \code{"Oceania"}), or \code{"unknown/stateless"} (12 rows).}
 #'   \item{m}{Observed count: foreigners apprehended by the Border Guard for
 #'     unauthorized stay (the variable whose hidden population we estimate).}
 #'   \item{n}{Auxiliary count: foreigners identified by the Police (a second,
@@ -49,7 +50,7 @@
 #' unauthorized foreigners in Norway. \emph{Documents} 2008/11, Statistics
 #' Norway. \url{https://www.ssb.no/a/english/publikasjoner/pdf/doc_200811_en/doc_200811_en.pdf}
 #'
-#' Beresewicz, M. and Pawlukiewicz, K. (2020). Estimation of the number of
+#' Beręsewicz, M. and Pawlukiewicz, K. (2020). Estimation of the number of
 #' irregular foreigners in Poland using non-linear count regression models.
 #' \emph{arXiv preprint} arXiv:2008.09407.
 #'

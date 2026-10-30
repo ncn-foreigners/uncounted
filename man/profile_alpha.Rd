@@ -22,8 +22,12 @@ profile_alpha(
 auto-generates 30 points spanning \eqn{\pm 3} SE around the MLE.}
 
 \item{reoptimize}{Logical. If \code{TRUE}, optimize all other parameters at
-each grid point (true profile likelihood). If \code{FALSE} (default), hold
-everything else at the MLE (concentrated profile, faster).}
+each grid point, including an estimated gamma and the NB theta (true
+profile likelihood). If \code{FALSE} (default), hold everything else at the
+MLE (concentrated profile, faster). The criterion is the one the method
+optimises: the count likelihood for Poisson/NB and a weighted Gaussian on
+the log scale for OLS and on the raw scale for NLS. Not available for
+\code{method = "iols"}.}
 
 \item{plot}{Logical; produce the plot? Default \code{TRUE}.}
 

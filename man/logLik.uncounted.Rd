@@ -21,13 +21,20 @@ Extracts the log-likelihood from a fitted \code{uncounted} model.
 \details{
 For Poisson and Negative Binomial models, the true log-likelihood is returned
 as computed during maximum-likelihood estimation. For OLS and NLS models,
-a Gaussian pseudo-log-likelihood is returned, computed on the log scale as
+a Gaussian pseudo-log-likelihood is returned, on the scale each method
+optimises:
 
 \deqn{\ell = -\frac{n}{2}\bigl(\log(2\pi\hat\sigma^2) + 1\bigr)}
 
-where \eqn{\hat\sigma^2 = n^{-1}\sum(\log m_i - \log\hat\mu_i)^2}. This
-pseudo-log-likelihood enables AIC/BIC comparison among OLS/NLS variants but
-is not comparable to the true likelihood of count models.
+where \eqn{\hat\sigma^2 = n^{-1}\sum(\log m_i - \log\hat\mu_i)^2} for OLS
+and \eqn{\hat\sigma^2 = n^{-1}\sum(m_i - \hat\mu_i)^2} for NLS. iOLS
+reports a Gamma pseudo-log-likelihood without normalising constants.
+
+These values, and AIC/BIC based on them, are comparable only among models of
+the same family: OLS with OLS, NLS with NLS, iOLS with iOLS, and Poisson with
+NB. They live on different scales across families. See
+\code{\link{compare_models}}. With \code{weights}, every family reports the
+weighted sum \eqn{\sum_i w_i \log f(m_i)}, so weights of 2 double the value.
 }
 \examples{
 # Simulate synthetic data
@@ -47,5 +54,5 @@ BIC(fit)
 }
 \references{
 McCullagh, P. and Nelder, J. A. (1989). \emph{Generalized Linear Models},
-2nd ed. Chapman & Hall.
+2nd ed. Chapman & Hall. \doi{10.1007/978-1-4899-3242-6}
 }

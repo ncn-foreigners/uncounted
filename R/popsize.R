@@ -75,8 +75,10 @@
 #' rescaled by \eqn{\hat{\xi}^{BC}_g / \hat{\xi}_g}, matching the returned
 #' bias-corrected point estimate.
 #'
-#' **Total across groups.** When multiple groups exist, the total
-#' \eqn{\hat{\xi} = \sum_g \hat{\xi}_g} has its own delta-method CI
+#' **Total across groups.** Totals are not computed or reported by default,
+#' because summing across panel or time groups is usually not substantively
+#' meaningful. When \code{total = TRUE} is requested for non-overlapping
+#' groups, \eqn{\hat{\xi} = \sum_g \hat{\xi}_g} has its own delta-method CI
 #' computed via the gradient \eqn{\nabla_\alpha \xi} and a log-normal
 #' approximation for positivity. This is stored in \code{attr(result, "total")}.
 #'
@@ -85,14 +87,14 @@
 #' @param bias_correction Logical; apply analytical bias correction?
 #'   Default TRUE. Uses model-based variance (not HC-robust) to avoid
 #'   overcorrection from inflated leverage-driven standard errors.
-#' @param total Logical; if \code{TRUE} and multiple groups exist, compute a
-#'   delta-method total with SE and CI, stored in \code{attr(result, "total")}.
-#'   Default \code{FALSE}. \strong{Warning}: for panel data where groups are
-#'   defined by time periods (e.g., \code{by = ~ year}), the total sums
-#'   population estimates across years. This is generally not meaningful because
-#'   the same individuals may appear in multiple years. The total is only
-#'   appropriate when groups represent non-overlapping subpopulations
-#'   (e.g., \code{by = ~ sex} within a single year).
+#' @param total Logical; if \code{TRUE} and multiple groups exist, compute an
+#'   optional delta-method total with SE and CI, stored in
+#'   \code{attr(result, "total")}. Default \code{FALSE}. For panel data where
+#'   groups are defined by time periods (e.g., \code{by = ~ year}), the total
+#'   sums population estimates across years and is generally not meaningful
+#'   because the same individuals may appear in multiple years. Request totals
+#'   only for non-overlapping subpopulations (e.g., \code{by = ~ sex} within a
+#'   single year).
 #' @param ... Additional arguments (ignored).
 #'
 #' @return A data frame with columns:
@@ -148,10 +150,43 @@ popsize <- function(object, ...) {
 #'   covariate pattern from \code{cov_alpha}. When provided, the same fitted
 #'   alpha values are used but summed over the \code{by}-groups instead.
 #'   This is analogous to \code{singleRcapture::stratifyPopsize()}.
+#'   Rows with \code{NA} in a \code{by} variable form their own \code{"NA"}
+#'   group, with a message, so the groups always add up to the total.
 #'
 #' @export
 popsize.uncounted <- function(object, by = NULL, level = 0.95,
                                bias_correction = TRUE, total = FALSE, ...) {
+  if (!inherits(object, "uncounted")) {
+    stop("'object' must be an \"uncounted\" object from estimate_hidden_pop().",
+         call. = FALSE)
+  }
+  if (!is.null(by) && !inherits(by, "formula")) {
+    stop("'by' must be a one-sided formula such as ~ year, or NULL.",
+         call. = FALSE)
+  }
+  if (!is.numeric(level) || length(level) != 1L || !is.finite(level) ||
+      level <= 0 || level >= 1) {
+    stop("'level' must be a single number strictly between 0 and 1.",
+         call. = FALSE)
+  }
+  ## Reject anything that landed in ... rather than silently discarding it.
+  ## popsize() has no vcov argument, so popsize(fit, vcov = "HC0") used to
+  ## return the fit-time covariance without a word.
+  extra <- list(...)
+  if (length(extra) > 0L) {
+    nms <- names(extra)
+    if (is.null(nms)) nms <- rep("", length(extra))
+    labelled <- ifelse(nzchar(nms), nms, "<unnamed>")
+    if ("vcov" %in% nms) {
+      stop("popsize() has no 'vcov' argument. The interval uses the ",
+           "covariance selected when the model was fitted; change it with ",
+           "update(object, vcov = ...) or refit with ",
+           "estimate_hidden_pop(vcov = ...).", call. = FALSE)
+    }
+    stop("Unused argument(s) passed to popsize(): ",
+         paste(labelled, collapse = ", "), ".", call. = FALSE)
+  }
+
   alpha_coefs <- object$alpha_coefs
   V <- object$vcov
   V_model <- object$vcov_model
@@ -308,6 +343,11 @@ popsize.uncounted <- function(object, by = NULL, level = 0.95,
       log_se <- se_xi_total / xi_total
       total_lower <- xi_total * exp(-z_crit * log_se)
       total_upper <- xi_total * exp(z_crit * log_se)
+      if (bias_correction && isTRUE(xi_total_bc > 0)) {
+        total_bc_ratio <- xi_total_bc / xi_total
+        total_lower <- total_lower * total_bc_ratio
+        total_upper <- total_upper * total_bc_ratio
+      }
     } else {
       total_lower <- total_upper <- NA_real_
     }
@@ -524,7 +564,22 @@ xi <- function(object, ...) {
       stop("Variables not found in data: ", paste(missing, collapse = ", "))
     }
     by_data <- object$data[, by_vars, drop = FALSE]
-    group_factor <- interaction(by_data, drop = TRUE, sep = ", ")
+    ## Rows with an NA by-value form their own "NA" group, so the groups always
+    ## partition the data and add up to the ungrouped total
+    has_na <- vapply(by_data, anyNA, logical(1))
+    by_keys <- by_data
+    if (any(has_na)) {
+      message("'by' variable(s) ", paste(by_vars[has_na], collapse = ", "),
+              " contain NA in ", sum(rowSums(is.na(by_data)) > 0),
+              " row(s); these are reported as group \"NA\".")
+      by_keys[has_na] <- lapply(by_data[has_na], function(x) {
+        f <- as.factor(x)
+        ch <- as.character(f)
+        ch[is.na(ch)] <- "NA"
+        factor(ch, levels = unique(c(levels(f), "NA")))
+      })
+    }
+    group_factor <- interaction(by_keys, drop = TRUE, sep = ", ")
     group_labels <- levels(group_factor)
     out <- lapply(group_labels, function(lev) which(group_factor == lev))
     names(out) <- group_labels

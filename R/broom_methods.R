@@ -108,8 +108,11 @@ tidy.uncounted <- function(x, conf.int = FALSE, conf.level = 0.95, ...) {
       stringsAsFactors = FALSE
     )
     if (conf.int) {
-      theta_row$conf.low <- NA_real_
-      theta_row$conf.high <- NA_real_
+      # theta_se is the delta-method SE, so se / theta recovers SE(log theta);
+      # the interval is built on the log scale and stays positive
+      se_log <- theta_row$std.error / x$theta
+      theta_row$conf.low <- x$theta * exp(-crit * se_log)
+      theta_row$conf.high <- x$theta * exp(crit * se_log)
     }
     result <- rbind(result, theta_row)
   }
@@ -126,9 +129,11 @@ tidy.uncounted <- function(x, conf.int = FALSE, conf.level = 0.95, ...) {
 #'
 #' @param x An \code{uncounted} object.
 #' @param ... Additional arguments (ignored).
-#' @return A one-row data frame with columns: \code{method}, \code{nobs},
-#'   \code{logLik}, \code{AIC}, \code{BIC}, \code{deviance},
-#'   \code{df.residual}, \code{gamma}, \code{theta}.
+#' @return A one-row data frame with columns: \code{method},
+#'   \code{estimator}, \code{link_rho}, \code{nobs}, \code{logLik},
+#'   \code{AIC}, \code{BIC}, \code{deviance}, \code{df.residual}.
+#'   Estimated \code{gamma} and \code{theta} are not reported here; they are
+#'   parameter estimates and appear as rows in \code{\link{tidy.uncounted}}.
 #'
 #' @examples
 #' data(irregular_migration)

@@ -247,8 +247,10 @@ The total across all `by`-groups equals the total from the default grouping.
 ## Bootstrap Inference
 
 The `bootstrap_popsize()` function uses the fractional weighted bootstrap
-(FWB) of Xu et al. (2020). Cluster bootstrap by country is recommended
-to account for within-country correlation across years.
+(FWB) of Xu et al. (2020), via the `fwb` package (Greifer, 2026). Cluster
+bootstrap by country is recommended to account for within-country correlation
+across years. When refits are slow, `ci_type = "cheap"` (Lam, 2022) gives valid
+intervals from very few replications.
 
 ```{r bootstrap, eval = requireNamespace("fwb", quietly = TRUE)}
 set.seed(2025)
@@ -407,6 +409,11 @@ print(loo_pois)
 # #>   Ukraine  -12345.0       -8.50
 # #>   ...
 ```
+
+`dxi` holds the target fixed: it applies the refit's coefficients to all rows,
+so it measures how much the estimate moves because of that country. The
+`dxi_subset` component also removes the country from the total, so it includes
+the country's own share of $\hat\xi$.
 
 ```{r loo-plot, eval = TRUE}
 plot(loo_pois)

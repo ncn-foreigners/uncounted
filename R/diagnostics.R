@@ -4,13 +4,20 @@
 #'
 #' For Poisson and Negative Binomial models, the true log-likelihood is returned
 #' as computed during maximum-likelihood estimation. For OLS and NLS models,
-#' a Gaussian pseudo-log-likelihood is returned, computed on the log scale as
+#' a Gaussian pseudo-log-likelihood is returned, on the scale each method
+#' optimises:
 #'
 #' \deqn{\ell = -\frac{n}{2}\bigl(\log(2\pi\hat\sigma^2) + 1\bigr)}
 #'
-#' where \eqn{\hat\sigma^2 = n^{-1}\sum(\log m_i - \log\hat\mu_i)^2}. This
-#' pseudo-log-likelihood enables AIC/BIC comparison among OLS/NLS variants but
-#' is not comparable to the true likelihood of count models.
+#' where \eqn{\hat\sigma^2 = n^{-1}\sum(\log m_i - \log\hat\mu_i)^2} for OLS
+#' and \eqn{\hat\sigma^2 = n^{-1}\sum(m_i - \hat\mu_i)^2} for NLS. iOLS
+#' reports a Gamma pseudo-log-likelihood without normalising constants.
+#'
+#' These values, and AIC/BIC based on them, are comparable only among models of
+#' the same family: OLS with OLS, NLS with NLS, iOLS with iOLS, and Poisson with
+#' NB. They live on different scales across families. See
+#' \code{\link{compare_models}}. With \code{weights}, every family reports the
+#' weighted sum \eqn{\sum_i w_i \log f(m_i)}, so weights of 2 double the value.
 #'
 #' @param object An object of class \code{"uncounted"}.
 #' @param ... Additional arguments (ignored).
@@ -18,7 +25,7 @@
 #'   (number of estimated parameters) and \code{nobs} (number of observations).
 #' @references
 #' McCullagh, P. and Nelder, J. A. (1989). \emph{Generalized Linear Models},
-#' 2nd ed. Chapman & Hall.
+#' 2nd ed. Chapman & Hall. \doi{10.1007/978-1-4899-3242-6}
 #'
 #' @examples
 #' # Simulate synthetic data
@@ -44,12 +51,12 @@ logLik.uncounted <- function(object, ...) {
   } else if (object$method == "iols") {
     ll <- object$loglik
   } else {
-    # Gaussian pseudo-loglik on log scale (match transformation used in fitting)
-    n <- object$n_obs
-    log_m <- .log_m_transform(object$m)
-    resid_log <- log_m - object$log_mu
-    sigma2 <- sum(resid_log^2) / n
-    ll <- -n/2 * (log(2 * pi * sigma2) + 1)
+    # Gaussian pseudo-loglik on the scale the method optimises, weighted like
+    # the count likelihoods: sum_i w_i log f(m_i)
+    w <- .fit_weights(object)
+    sum_w <- sum(w)
+    sigma2 <- sum(w * .fit_scale_residuals(object)^2) / sum_w
+    ll <- -sum_w/2 * (log(2 * pi * sigma2) + 1)
   }
 
   structure(ll, df = n_par, nobs = object$n_obs, class = "logLik")
@@ -91,7 +98,7 @@ nobs.uncounted <- function(object, ...) {
 #' @return A numeric scalar giving the deviance.
 #' @references
 #' McCullagh, P. and Nelder, J. A. (1989). \emph{Generalized Linear Models},
-#' 2nd ed. Chapman & Hall.
+#' 2nd ed. Chapman & Hall. \doi{10.1007/978-1-4899-3242-6}
 #'
 #' @examples
 #' set.seed(123)
@@ -109,24 +116,23 @@ nobs.uncounted <- function(object, ...) {
 deviance.uncounted <- function(object, ...) {
   m <- object$m
   mu <- object$fitted.values
+  w <- .fit_weights(object)
 
   switch(object$method,
     "poisson" = {
       d <- ifelse(m == 0, 2 * mu, 2 * (m * log(m / mu) - (m - mu)))
-      sum(d)
+      sum(w * d)
     },
     "nb" = {
       theta <- object$theta
       d <- ifelse(m == 0,
                   2 * theta * log((theta + mu) / theta),
                   2 * (m * log(m / mu) - (m + theta) * log((m + theta) / (mu + theta))))
-      sum(d)
+      sum(w * d)
     },
     {
-      # OLS/NLS: RSS on log scale (match transformation used in fitting)
-      log_m <- .log_m_transform(m)
-      resid_log <- log_m - object$log_mu
-      sum(resid_log^2)
+      # OLS/NLS: RSS on the scale the method optimises
+      sum(w * .fit_scale_residuals(object)^2)
     }
   )
 }
@@ -183,7 +189,7 @@ deviance.uncounted <- function(object, ...) {
 #'
 #' @references
 #' McCullagh, P. and Nelder, J. A. (1989). \emph{Generalized Linear Models},
-#' 2nd ed. Chapman & Hall.
+#' 2nd ed. Chapman & Hall. \doi{10.1007/978-1-4899-3242-6}
 #'
 #' Hilbe, J. M. (2011). \emph{Negative Binomial Regression}, 2nd ed. Cambridge
 #' University Press.
@@ -240,10 +246,9 @@ residuals.uncounted <- function(object, type = c("response", "pearson", "devianc
           sign(m - mu) * sqrt(pmax(d, 0))
         },
         {
-          # OLS/NLS: standardized log residuals
-          log_m <- .log_m_transform(m)
-          resid_log <- log_m - object$log_mu
-          resid_log / sd(resid_log)
+          # OLS/NLS: standardized residuals on the fitting scale
+          resid_fit <- .fit_scale_residuals(object)
+          resid_fit / sd(resid_fit)
         }
       )
     },
@@ -259,10 +264,9 @@ residuals.uncounted <- function(object, type = c("response", "pearson", "devianc
           3 * (m^(2/3) - mu^(2/3)) / (2 * mu^(1/6) * (1 + mu/theta)^(1/6))
         },
         {
-          # OLS/NLS: standardized log residuals
-          log_m <- .log_m_transform(m)
-          resid_log <- log_m - object$log_mu
-          resid_log / sd(resid_log)
+          # OLS/NLS: standardized residuals on the fitting scale
+          resid_fit <- .fit_scale_residuals(object)
+          resid_fit / sd(resid_fit)
         }
       )
     }
@@ -276,8 +280,11 @@ residuals.uncounted <- function(object, type = c("response", "pearson", "devianc
   switch(object$method,
     "poisson" = mu,
     "nb" = mu + mu^2 / object$theta,
+    "nls" = rep(sum(.fit_scale_residuals(object)^2) /
+                  (object$n_obs - length(object$coefficients) - object$gamma_estimated),
+                object$n_obs),
     {
-      # OLS/NLS on log scale: V(m) ~ mu^2 * sigma2 via delta method
+      # OLS on log scale: V(m) ~ mu^2 * sigma2 via delta method
       n <- object$n_obs
       p <- length(object$coefficients) + object$gamma_estimated
       log_m <- .log_m_transform(object$m)
@@ -286,6 +293,22 @@ residuals.uncounted <- function(object, type = c("response", "pearson", "devianc
       mu^2 * sigma2
     }
   )
+}
+
+#' Observation weights of a fit, 1 when none were given
+#' @noRd
+.fit_weights <- function(object) {
+  if (is.null(object$obs_weights)) rep(1, object$n_obs) else object$obs_weights
+}
+
+#' Residuals on the scale the Gaussian methods optimise: raw for NLS, which
+#' minimises sum((m - mu)^2), and log for OLS and iOLS
+#' @noRd
+.fit_scale_residuals <- function(object) {
+  if (identical(object$method, "nls")) {
+    return(object$m - object$fitted.values)
+  }
+  .log_m_transform(object$m) - object$log_mu
 }
 
 #' Log-transform m consistently: log(m) if all positive, log(m+1) if zeros exist
@@ -319,8 +342,9 @@ residuals.uncounted <- function(object, type = c("response", "pearson", "devianc
 #'   (requires \code{countries} in the original fit).
 #' @param ... Additional arguments passed to \code{\link{loo}}.
 #' @return A matrix with one row per dropped unit and one column per coefficient.
-#'   Each entry is the change in the coefficient estimate relative to the full
-#'   model (\eqn{\hat\beta_{(-i)} - \hat\beta}).
+#'   Each entry is \eqn{\hat\beta - \hat\beta_{(-i)}}, the same sign as
+#'   \code{stats::dfbeta()} for \code{lm} and \code{glm} fits: positive means
+#'   the unit pulls the coefficient up.
 #'
 #' @seealso \code{\link{loo}}, \code{\link{dfpopsize}}
 #'
@@ -341,15 +365,17 @@ dfbeta.uncounted <- function(model, by = c("obs", "country"), ...) {
 
 #' Leave-One-Out Influence on Population Size
 #'
-#' Computes the change in the total estimated population size
-#' \eqn{\hat\xi = \sum_i N_i^{\hat\alpha_i}} when each observation (or country)
-#' is dropped. This is a convenience wrapper around \code{\link{loo}}.
+#' Computes the influence of each observation (or country) on the total
+#' estimated population size \eqn{\hat\xi = \sum_i N_i^{\hat\alpha_i}}, holding
+#' the target population fixed. This is a convenience wrapper around
+#' \code{\link{loo}}; see there for the definition.
 #'
 #' @param model A fitted \code{uncounted} object.
 #' @param by Character: \code{"obs"} (default) or \code{"country"}.
 #' @param ... Additional arguments passed to \code{\link{loo}}.
-#' @return A named numeric vector. Each element is the change in \eqn{\hat\xi}
-#'   when that unit is dropped (\eqn{\hat\xi_{(-i)} - \hat\xi}).
+#' @return A named numeric vector. Each element is the change in \eqn{\hat\xi},
+#'   summed over all rows, when the coefficients are re-estimated without that
+#'   unit (\code{dxi} in \code{\link{loo}}).
 #'
 #' @seealso \code{\link{loo}}, \code{\link{dfbeta.uncounted}}
 #'

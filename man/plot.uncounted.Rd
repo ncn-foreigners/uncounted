@@ -12,8 +12,9 @@
 \item{which}{Integer vector selecting which panels to display (default
 \code{1:4}).}
 
-\item{ask}{Logical; if \code{TRUE} (the default in interactive sessions),
-the user is prompted before each new page.}
+\item{ask}{Logical; if \code{TRUE}, the user is prompted before each new
+page. Defaults to \code{TRUE} in interactive sessions when more than one
+panel is requested, and \code{FALSE} otherwise.}
 
 \item{...}{Additional graphical arguments passed to \code{\link{plot}}.}
 }
@@ -65,5 +66,5 @@ unauthorized foreigners in Norway. \emph{Documents} 2008/11, Statistics
 Norway. \url{https://www.ssb.no/a/english/publikasjoner/pdf/doc_200811_en/doc_200811_en.pdf}
 
 McCullagh, P. and Nelder, J. A. (1989). \emph{Generalized Linear Models},
-2nd ed. Chapman & Hall.
+2nd ed. Chapman & Hall. \doi{10.1007/978-1-4899-3242-6}
 }

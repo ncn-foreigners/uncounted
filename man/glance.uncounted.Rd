@@ -12,9 +12,11 @@
 \item{...}{Additional arguments (ignored).}
 }
 \value{
-A one-row data frame with columns: \code{method}, \code{nobs},
-\code{logLik}, \code{AIC}, \code{BIC}, \code{deviance},
-\code{df.residual}, \code{gamma}, \code{theta}.
+A one-row data frame with columns: \code{method},
+\code{estimator}, \code{link_rho}, \code{nobs}, \code{logLik},
+\code{AIC}, \code{BIC}, \code{deviance}, \code{df.residual}.
+Estimated \code{gamma} and \code{theta} are not reported here; they are
+parameter estimates and appear as rows in \code{\link{tidy.uncounted}}.
 }
 \description{
 Returns a one-row data frame summarizing model fit, compatible with

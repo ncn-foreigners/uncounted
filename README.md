@@ -88,34 +88,34 @@ fit <- estimate_hidden_pop(
 
 summary(fit)
 #> Unauthorized population estimation
-#> Method: POISSON | vcov: HC3 
+#> Method: POISSON | estimator: MLE | link_rho: power | vcov: HC3 
 #> N obs: 1382 
-#> Gamma: 0.006954 (estimated) 
+#> Gamma: 0.00697 (estimated) 
 #> Log-likelihood: -5738.09 
-#> AIC: 11516.19  BIC: 11620.81 
-#> Deviance: 8873.39 
+#> AIC: 11516.18  BIC: 11620.81 
+#> Deviance: 8873.38 
 #> 
 #> Coefficients:
 #>                       Estimate  Std. Error z value  Pr(>|z|)    
-#> alpha:(Intercept)   8.2203e-01  1.4949e-01  5.4989 3.822e-08 ***
-#> alpha:year2020     -1.4497e-02  1.7895e-01 -0.0810   0.93543    
-#> alpha:year2021     -1.7807e-02  1.5228e-01 -0.1169   0.90691    
-#> alpha:year2022     -1.4721e-02  1.4893e-01 -0.0988   0.92126    
-#> alpha:year2023      3.3403e-02  1.5129e-01  0.2208   0.82525    
-#> alpha:year2024      1.1142e-02  1.6500e-01  0.0675   0.94616    
-#> alpha:ukr           7.5122e-03  7.5863e-02  0.0990   0.92112    
-#> alpha:sexMale       1.0979e-02  3.0053e-02  0.3653   0.71487    
-#> alpha:year2020:ukr  9.0019e-03  8.7711e-02  0.1026   0.91826    
-#> alpha:year2021:ukr  6.0173e-05  7.7873e-02  0.0008   0.99938    
-#> alpha:year2022:ukr -7.6404e-02  8.5391e-02 -0.8947   0.37092    
-#> alpha:year2023:ukr -1.5379e-01  8.7395e-02 -1.7597   0.07846 .  
-#> alpha:year2024:ukr -1.7573e-01  1.0221e-01 -1.7192   0.08558 .  
-#> beta:(Intercept)    7.1261e-01  2.9983e-01  2.3767   0.01747 *  
-#> beta:year2020       1.5887e-01  3.5610e-01  0.4461   0.65550    
-#> beta:year2021       2.2779e-01  3.0389e-01  0.7496   0.45350    
-#> beta:year2022       2.0279e-01  2.9758e-01  0.6815   0.49558    
-#> beta:year2023       1.8773e-01  2.9954e-01  0.6267   0.53083    
-#> beta:year2024      -1.1125e-02  3.2368e-01 -0.0344   0.97258    
+#> alpha:(Intercept)   0.82247146  0.14943954  5.5037 3.719e-08 ***
+#> alpha:year2020     -0.01497293  0.17900376 -0.0836   0.93334    
+#> alpha:year2021     -0.01825640  0.15231671 -0.1199   0.90460    
+#> alpha:year2022     -0.01519229  0.14896112 -0.1020   0.91877    
+#> alpha:year2023      0.03299293  0.15130742  0.2181   0.82739    
+#> alpha:year2024      0.01078376  0.16501697  0.0653   0.94790    
+#> alpha:ukr           0.00738549  0.07588025  0.0973   0.92246    
+#> alpha:sexMale       0.01098736  0.03007214  0.3654   0.71484    
+#> alpha:year2020:ukr  0.00913864  0.08771871  0.1042   0.91703    
+#> alpha:year2021:ukr  0.00018515  0.07788140  0.0024   0.99810    
+#> alpha:year2022:ukr -0.07628503  0.08542764 -0.8930   0.37187    
+#> alpha:year2023:ukr -0.15366171  0.08741086 -1.7579   0.07876 .  
+#> alpha:year2024:ukr -0.17562869  0.10224462 -1.7177   0.08585 .  
+#> beta:(Intercept)    0.71379989  0.30000749  2.3793   0.01735 *  
+#> beta:year2020       0.15778586  0.35639170  0.4427   0.65796    
+#> beta:year2021       0.22676150  0.30420688  0.7454   0.45602    
+#> beta:year2022       0.20168159  0.29788829  0.6770   0.49838    
+#> beta:year2023       0.18681604  0.29982712  0.6231   0.53323    
+#> beta:year2024      -0.01194996  0.32393841 -0.0369   0.97057    
 #> ---
 #> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 #> 
@@ -123,30 +123,30 @@ summary(fit)
 #> Population size estimation results:
 #>   (BC = bias-corrected using model-based variance)
 #>                              Observed Estimate Estimate (BC) CI lower CI upper
-#> year=2019, ukr=0, sex=Female      426    9,754         9,735    1,137   83,323
-#> year=2019, ukr=1, sex=Female    1,109   21,953        21,893    1,723  278,181
-#> year=2019, ukr=0, sex=Male      2,177   24,431        24,382    2,297  258,819
-#> year=2019, ukr=1, sex=Male      2,892   40,670        40,572    2,545  646,714
-#> year=2020, ukr=0, sex=Female      193    9,703         9,671    1,821   51,370
-#> year=2020, ukr=1, sex=Female      505   22,809        22,702    2,857  180,413
-#> year=2020, ukr=0, sex=Male      1,158   24,242        24,149    4,242  137,490
-#> year=2020, ukr=1, sex=Male      1,542   41,068        40,875    5,500  303,783
-#> year=2021, ukr=0, sex=Female      144   11,648        11,614    4,350   31,008
-#> year=2021, ukr=1, sex=Female      339   22,486        22,387    5,936   84,433
-#> year=2021, ukr=0, sex=Male      1,337   29,892        29,789   12,296   72,168
-#> year=2021, ukr=1, sex=Male      1,285   40,132        39,953   13,980  114,183
-#> year=2022, ukr=0, sex=Female      211   14,366        14,339    7,110   28,918
-#> year=2022, ukr=1, sex=Female      106   14,062        14,011    2,983   65,817
-#> year=2022, ukr=0, sex=Male      1,903   38,823        38,735   21,717   69,088
-#> year=2022, ukr=1, sex=Male        729   16,379        16,323    3,975   67,040
-#> year=2023, ukr=0, sex=Female      444   24,162        24,128    9,999   58,218
-#> year=2023, ukr=1, sex=Female       79    9,632         9,605    2,051   44,990
-#> year=2023, ukr=0, sex=Male      3,283   70,186        70,070   30,299  162,047
-#> year=2023, ukr=1, sex=Male        556   11,049        11,020    2,642   45,963
-#> year=2024, ukr=0, sex=Female      887   22,442        22,416    5,744   87,473
-#> year=2024, ukr=1, sex=Female       69    5,085         5,075      641   40,157
-#> year=2024, ukr=0, sex=Male      5,041   62,216        62,137   14,156  272,745
-#> year=2024, ukr=1, sex=Male        690    6,192         6,179      759   50,296
+#> year=2019, ukr=0, sex=Female      426    9,786         9,767    1,142   83,563
+#> year=2019, ukr=1, sex=Female    1,109   22,036        21,975    1,726  279,769
+#> year=2019, ukr=0, sex=Male      2,177   24,520        24,470    2,305  259,806
+#> year=2019, ukr=1, sex=Male      2,892   40,835        40,736    2,548  651,375
+#> year=2020, ukr=0, sex=Female      193    9,700         9,668    1,818   51,404
+#> year=2020, ukr=1, sex=Female      505   22,801        22,695    2,857  180,277
+#> year=2020, ukr=0, sex=Male      1,158   24,237        24,144    4,238  137,550
+#> year=2020, ukr=1, sex=Male      1,542   41,058        40,865    5,506  303,314
+#> year=2021, ukr=0, sex=Female      144   11,647        11,613    4,347   31,028
+#> year=2021, ukr=1, sex=Female      339   22,483        22,383    5,935   84,415
+#> year=2021, ukr=0, sex=Male      1,337   29,891        29,789   12,289   72,208
+#> year=2021, ukr=1, sex=Male      1,285   40,130        39,951   13,992  114,074
+#> year=2022, ukr=0, sex=Female      211   14,362        14,335    7,102   28,937
+#> year=2022, ukr=1, sex=Female      106   14,055        14,004    2,977   65,874
+#> year=2022, ukr=0, sex=Male      1,903   38,815        38,726   21,687   69,152
+#> year=2022, ukr=1, sex=Male        729   16,372        16,317    3,967   67,112
+#> year=2023, ukr=0, sex=Female      444   24,167        24,134    9,994   58,280
+#> year=2023, ukr=1, sex=Female       79    9,636         9,608    2,050   45,026
+#> year=2023, ukr=0, sex=Male      3,283   70,211        70,095   30,282  162,249
+#> year=2023, ukr=1, sex=Male        556   11,054        11,025    2,642   45,997
+#> year=2024, ukr=0, sex=Female      887   22,457        22,431    5,746   87,560
+#> year=2024, ukr=1, sex=Female       69    5,089         5,078      641   40,215
+#> year=2024, ukr=0, sex=Male      5,041   62,267        62,188   14,162  273,066
+#> year=2024, ukr=1, sex=Male        690    6,197         6,184      759   50,379
 ```
 
 ### Population size estimates
@@ -155,12 +155,12 @@ summary(fit)
 ## By year
 popsize(fit, by = ~ year)
 #>   group observed  estimate estimate_bc     lower     upper share_pct
-#> 1  2019     6604  96808.06    96581.24  8228.355 1133633.1  16.31464
-#> 2  2020     3398  97821.08    97397.04 15271.644  621163.2  16.48536
-#> 3  2021     3105 104157.85   103743.46 38794.612  277427.9  17.55327
-#> 4  2022     2949  83630.32    83407.98 37693.079  184566.8  14.09385
-#> 5  2023     4362 115029.17   114822.64 49241.000  267749.2  19.38537
-#> 6  2024     6687  95935.01    95806.63 23177.438  396027.8  16.16751
+#> 1  2019     6604  97176.45    96948.51  8246.165 1139804.1  16.36501
+#> 2  2020     3398  97796.22    97372.18 15272.198  620823.6  16.46939
+#> 3  2021     3105 104151.16   103736.69 38793.630  277398.7  17.53959
+#> 4  2022     2949  83604.67    83382.37 37643.431  184696.8  14.07946
+#> 5  2023     4362 115068.21   114861.52 49218.327  268054.0  19.37808
+#> 6  2024     6687  96009.35    95880.82 23187.477  396469.7  16.16847
 ```
 
 ### Hypothesis tests for population size
@@ -350,8 +350,8 @@ head(sort(abs(dp), decreasing = TRUE))
 
 ## Funding
 
-This work is supported by the National Science Centre, OPUS 20 grant no.
-2021/43/B/HS4/00469.
+This work is supported by the National Science Centre, OPUS 27 grant no.
+2024/53/B/HS4/01580.
 
 ## References
 
@@ -362,5 +362,7 @@ This work is supported by the National Science Centre, OPUS 20 grant no.
 - Beręsewicz, M., & Pawlukiewicz, K. (2020). Estimation of the number of
   irregular foreigners in Poland using non-linear count regression
   models. arXiv preprint arXiv:2008.09407.
+  <https://arxiv.org/abs/2008.09407>
 - Santos Silva, J.M.C. and Tenreyro, S. (2006). The log of gravity. *The
   Review of Economics and Statistics*, 88(4), 641–658.
+  <https://doi.org/10.1162/rest.88.4.641>

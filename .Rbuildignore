@@ -8,5 +8,8 @@
 ^_pkgdown\.yml$
 ^pkgdown$
 ^\.claude$
+^CLAUDE\.md$
 ^notes$
 ^Rplots\.pdf$
+^.*\.Rcheck$
+^.*\.tar\.gz$

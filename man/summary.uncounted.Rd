@@ -32,8 +32,12 @@ bias-corrected estimates and confidence intervals computed by
 \details{
 For OLS and NLS fits, inference uses t-statistics with
 \eqn{n - p} degrees of freedom. For Poisson and NB fits, z-statistics
-(normal approximation) are used. Standard errors are always
-HC-robust (type controlled by \code{vcov_type} in the original call).
+(normal approximation) are used. Standard errors come from the covariance
+requested by the \code{vcov} argument of the original
+\code{\link{estimate_hidden_pop}} call: an HC type (\code{"HC3"} by
+default, \code{"HC1"} for \code{estimator = "gmm"} and
+\code{estimator = "el"}), or whatever a user-supplied \code{vcov} function
+returns. The type in force is shown in the printed header.
 }
 \seealso{
 \code{\link{estimate_hidden_pop}}, \code{\link{popsize}}

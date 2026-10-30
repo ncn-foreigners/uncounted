@@ -9,7 +9,7 @@ bootstrap_popsize(
   R = 199,
   cluster = NULL,
   level = 0.95,
-  ci_type = c("perc", "bc"),
+  ci_type = c("perc", "bc", "cheap"),
   point_estimate = c("median", "plugin", "mean"),
   seed = NULL,
   verbose = TRUE,
@@ -29,11 +29,18 @@ When \code{NULL}, observation-level FWB is used.}
 
 \item{level}{Confidence level (default 0.95).}
 
-\item{ci_type}{Type of bootstrap CI: \code{"perc"} (percentile) or \code{"bc"}
-(bias-corrected percentile). Default \code{"perc"}.}
+\item{ci_type}{Type of bootstrap CI: \code{"perc"} (percentile), \code{"bc"}
+(bias-corrected percentile), or \code{"cheap"} (Lam, 2022), which keeps nominal
+coverage with very few replications because it needs only their spread
+around the plug-in estimate: \eqn{\exp\{\log\hat\xi \pm t_{R, 1-a/2} S\}}
+with \eqn{S^2 = R^{-1}\sum_r (\log\hat\xi^*_r - \log\hat\xi)^2}, computed
+on the log scale so the interval stays positive. Useful when refits are
+slow; \code{R} can be as small as 1, and \code{"perc"}/\code{"bc"} need at least 10
+converged replications. Default \code{"perc"}.}
 
 \item{point_estimate}{Which point estimate to report:
-\code{"median"} (default, recommended) -- bootstrap median, robust to skewness;
+\code{"median"} (default, recommended, except with \code{ci_type = "cheap"} where
+the default is \code{"plugin"}) -- bootstrap median, robust to skewness;
 \code{"plugin"} -- plug-in \eqn{\hat{\xi} = \sum N^{\hat{\alpha}}};
 \code{"mean"} -- bootstrap mean.}
 
@@ -69,7 +76,7 @@ Taylor approximation for constrained fits).}
 \code{median}, \code{mean}, \code{lower}, \code{upper}), or \code{NULL}
 if only one group.}
 \item{R}{Number of replications requested.}
-\item{ci_type}{CI type used (\code{"perc"} or \code{"bc"}).}
+\item{ci_type}{CI type used (\code{"perc"}, \code{"bc"} or \code{"cheap"}).}
 \item{point_estimate}{Point estimate type used.}
 \item{level}{Confidence level.}
 \item{n_converged}{Number of bootstrap replications where the model converged.}
@@ -154,5 +161,11 @@ boot_bc <- bootstrap_popsize(fit, R = 99, ci_type = "bc", seed = 123)
 \references{
 Xu, L., Gotwalt, C., Hong, Y., King, C. B., & Meeker, W. Q. (2020).
 Applications of the fractional-random-weight bootstrap.
-\emph{The American Statistician}, 74(4), 345--358.
+\emph{The American Statistician}, 74(4), 345--358. \doi{10.1080/00031305.2020.1731599}
+
+Greifer, N. (2026). fwb: An R package for the fractional weighted bootstrap.
+\emph{Journal of Open Source Software}, 11(124), 8880. \doi{10.21105/joss.08880}
+
+Lam, H. (2022). A cheap bootstrap method for fast inference.
+\emph{arXiv preprint}. \doi{10.48550/arXiv.2202.00090}
 }

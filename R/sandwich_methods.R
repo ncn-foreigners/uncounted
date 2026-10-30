@@ -101,7 +101,11 @@ vcovHC.uncounted <- function(x,
                              type = c("HC3", "const", "HC", "HC0", "HC1",
                                       "HC2", "HC4", "HC4m", "HC5"),
                              omega = NULL, ...) {
-  type <- match.arg(type)
+  type <- if (missing(type) && identical(x$estimator %in% c("gmm", "el"), TRUE)) {
+    "HC1"
+  } else {
+    match.arg(type)
+  }
   type <- .normalize_object_vcov_type(x, type)
   sandwich::sandwich(
     x,
@@ -125,6 +129,9 @@ vcovCL.uncounted <- function(x, cluster = NULL, type = NULL,
     type <- if (identical(x$estimator %in% c("gmm", "el"), TRUE)) "HC1" else "HC0"
   }
   type <- .normalize_object_vcov_type(x, type)
+  if (!is.null(cluster)) {
+    type <- .normalize_cluster_vcov_type(type)
+  }
   meat <- sandwich::meatCL(x, cluster = cluster, type = type, fix = fix, ...)
   if (isTRUE(sandwich)) {
     return(sandwich::sandwich(x, meat = meat))

@@ -157,6 +157,15 @@
   vcov_type
 }
 
+#' Normalize requested covariance type for clustered covariance
+#' @noRd
+.normalize_cluster_vcov_type <- function(vcov_type) {
+  if (vcov_type %in% c("HC2", "HC3", "HC4", "HC4m", "HC5")) {
+    return("HC1")
+  }
+  vcov_type
+}
+
 # ---- Design matrix helpers ----
 
 #' Build design matrix from a covariate formula
@@ -169,6 +178,16 @@
   if (is.null(cov_formula)) {
     return(matrix(1, nrow = nrow(data), ncol = 1,
                   dimnames = list(NULL, "(Intercept)")))
+  }
+  ## model.matrix() drops NA rows silently, which then breaks every n x p
+  ## computation downstream with a dimension error
+  vars <- intersect(all.vars(cov_formula), names(data))
+  has_na <- vapply(data[vars], anyNA, logical(1))
+  if (any(has_na)) {
+    n_na <- vapply(data[vars[has_na]], function(x) sum(is.na(x)), integer(1))
+    stop("Covariate(s) in ", deparse(cov_formula), " contain missing values: ",
+         paste0(vars[has_na], " (", n_na, ")", collapse = ", "),
+         ". Remove or impute them before fitting.", call. = FALSE)
   }
   X <- model.matrix(cov_formula, data = data)
   if (ncol(X) == 0) {
@@ -196,8 +215,18 @@
 
 #' Compute sandwich HC variance-covariance matrix
 #'
+#' The arguments follow one convention throughout: with working weights
+#' \eqn{W_i} and residuals \eqn{e_i}, the bread is
+#' \eqn{(\sum_i W_i x_i x_i')^{-1}} and the per-observation score is
+#' \eqn{s_i = \sqrt{W_i}\, e_i\, x_i}. Callers must scale \code{residuals}
+#' so that this holds: for a Poisson working model with weights
+#' \eqn{W_i = \mu_i}, pass the Pearson residual
+#' \eqn{(m_i - \mu_i)/\sqrt{\mu_i}}; when prior observation weights
+#' \eqn{a_i} are also present, pass \eqn{\sqrt{a_i}} times that residual so
+#' the meat picks up \eqn{a_i^2} as the sandwich package does.
+#'
 #' @param X Design matrix (n x p)
-#' @param residuals Residuals vector (n)
+#' @param residuals Residuals vector (n), scaled as described above.
 #' @param weights Working weights for bread (n). For OLS: rep(1,n). For Poisson: mu.
 #' @param hat_values Hat matrix diagonal (n). Needed for HC2+.
 #' @param vcov_type Character: "HC0", "HC1", "HC2", "HC3", "HC4", "HC4m", "HC5"
@@ -240,8 +269,11 @@
       }
     )
 
-    ## Score per observation: w_i * e_i * x_i = wX_i * (e_i * sqrt(w_i))
-    score_i <- wX * as.numeric(residuals * sqrt(weights))
+    ## Score per observation: sqrt(w_i) * e_i * x_i = wX_i * e_i.
+    ## This must match the score implied by the observation-level branch
+    ## below, whose meat is crossprod(wX * sqrt(adj * e^2)); with one
+    ## cluster per observation and CR0 the two branches then agree exactly.
+    score_i <- wX * as.numeric(residuals)
 
     ## Sum scores within clusters
     cl <- as.factor(cluster)
@@ -291,7 +323,9 @@
       1 / (1 - h)^delta
     },
     "HC5" = {
-      k <- pmin(n * h / p, pmax(4, 0.7 * n * h / p))
+      ## Cribari-Neto, Souza & Vasconcellos (2007): the upper cut-off is a
+      ## single constant driven by the maximum leverage, not by h_i.
+      k <- pmin(n * h / p, pmax(4, 0.7 * n * max(h) / p))
       1 / sqrt((1 - h)^k)
     },
     rep(1, n)  # fallback to HC0
@@ -343,6 +377,11 @@
                                   vcov_type = "HC0", cluster = NULL) {
   H_inv <- .solve_safe(hessian_nll)
   p <- ncol(score_full)
+  sandwich <- function(meat) {
+    V <- H_inv %*% meat %*% H_inv
+    dimnames(V) <- list(colnames(score_full), colnames(score_full))
+    V
+  }
 
   if (!is.null(cluster)) {
     cl <- as.factor(cluster)
@@ -359,7 +398,7 @@
     } else {
       (G / (G - 1)) * ((n_obs - 1) / (n_obs - p))
     }
-    return(H_inv %*% (correction * meat) %*% H_inv)
+    return(sandwich(correction * meat))
   }
 
   meat <- crossprod(score_full)
@@ -369,7 +408,7 @@
   if (vcov_type == "HC1") {
     meat <- meat * n_obs / (n_obs - p)
   }
-  H_inv %*% meat %*% H_inv
+  sandwich(meat)
 }
 
 #' Compute hat values for weighted least squares
@@ -434,4 +473,142 @@
     V <- sandwich::vcovHC(object, type = vcov)
   }
   V
+}
+
+# ---- Refit helpers ----
+
+#' Build refit arguments from a fitted object
+#' @noRd
+.refit_args_from_object <- function(object) {
+  cl <- object$call
+  gamma_bounds <- if (!is.null(cl$gamma_bounds)) cl$gamma_bounds else c(1e-10, 0.5)
+
+  list(
+    data = object$data,
+    observed = object$call_args$observed,
+    auxiliary = object$call_args$auxiliary,
+    reference_pop = object$call_args$reference_pop,
+    method = object$method,
+    cov_alpha = if (!is.null(cl$cov_alpha)) cl$cov_alpha else NULL,
+    cov_beta = if (!is.null(cl$cov_beta)) cl$cov_beta else NULL,
+    gamma = if (isTRUE(object$gamma_estimated)) {
+      "estimate"
+    } else if (!is.null(object$gamma)) {
+      object$gamma
+    } else {
+      NULL
+    },
+    cov_gamma = if (!is.null(cl$cov_gamma)) cl$cov_gamma else NULL,
+    gamma_bounds = gamma_bounds,
+    ## Warm start: refits begin at the original optimum instead of re-screening.
+    ## Clipped because exp(log(bound)) can round to just outside the bound.
+    gamma_start = if (isTRUE(object$gamma_estimated) &&
+                      !isTRUE(object$has_cov_gamma)) {
+      min(max(object$gamma, gamma_bounds[1]), gamma_bounds[2])
+    } else {
+      NULL
+    },
+    theta_start = if (!is.null(object$theta)) object$theta else 1,
+    link_rho = object$link_rho,
+    estimator = object$estimator,
+    vcov = object$vcov_type,
+    weights = object$obs_weights,
+    constrained = isTRUE(object$constrained),
+    countries = if (!is.null(cl$countries)) cl$countries else NULL,
+    cluster = if (!is.null(cl$cluster)) cl$cluster else NULL
+  )
+}
+
+# ---- Optimisation helpers ----
+
+#' Screen a starting value for an estimated gamma
+#'
+#' With gamma fixed and the power link, the Poisson model is a log-link GLM in
+#' (alpha, beta), so one glm.fit per grid point gives the exact Poisson
+#' profile deviance over gamma (for other links and for NB it is a screen
+#' only). Evaluates it on a log-spaced grid inside \code{gamma_bounds} and
+#' returns the grid, the deviance, and the best gamma. Screening on log-OLS
+#' starts instead was tried and picks the upper bound on heavy-tailed N.
+#' @noRd
+.screen_gamma_start <- function(m, log_N, ratio, X_alpha, X_beta,
+                                gamma_bounds, weights = NULL, n_grid = 25L) {
+  if (is.null(weights)) weights <- rep(1, length(m))
+  grid <- exp(seq(log(max(gamma_bounds[1], 1e-10)), log(gamma_bounds[2]),
+                  length.out = n_grid))
+  crit <- vapply(grid, function(g) {
+    Z <- cbind(X_alpha * log_N, X_beta * log(g + ratio))
+    fit <- tryCatch(
+      suppressWarnings(stats::glm.fit(Z, m, weights = weights,
+                                      family = stats::poisson(),
+                                      control = stats::glm.control(maxit = 50))),
+      error = function(e) NULL)
+    if (is.null(fit) || !is.finite(fit$deviance)) Inf else fit$deviance
+  }, numeric(1))
+  start <- if (all(!is.finite(crit))) mean(gamma_bounds) else grid[which.min(crit)]
+  list(start = start, grid = grid, deviance = crit)
+}
+
+#' L-BFGS-B with polishing restarts and a projected-gradient check
+#'
+#' A single L-BFGS-B run with the default tolerance (factr = 1e7) can stop on
+#' a flat stretch with convergence = 0 while the gradient is still far from
+#' zero; the parameters here are badly scaled, so this leaves xi off by
+#' 0.1-1% or, from a poor start, in a much worse region. The first run keeps
+#' the default tolerance and its convergence code; restarts from the returned
+#' point (fresh curvature memory) then polish with \code{factr}. A polish that
+#' ends in a line-search stall (code 52) has hit machine precision, which is
+#' not a failure, so the first run's code is kept. The loop stops once a
+#' restart improves the objective by less than a relative 1e-8.
+#' @noRd
+.optim_lbfgsb <- function(par, fn, gr, lower, upper, maxit = 1000L, factr = 10,
+                          max_restarts = 3L, hessian = FALSE) {
+  run <- function(p, factr) {
+    stats::optim(p, fn, gr = gr, method = "L-BFGS-B", lower = lower,
+                 upper = upper, control = list(maxit = maxit, factr = factr))
+  }
+  opt <- run(par, 1e7)
+  restarts <- 0L
+  while (restarts < max_restarts) {
+    pol <- run(opt$par, factr)
+    restarts <- restarts + 1L
+    gain <- opt$value - pol$value
+    if (pol$value <= opt$value) {
+      opt$par <- pol$par
+      opt$value <- pol$value
+      if (pol$convergence != 52L) {
+        opt$convergence <- pol$convergence
+        opt$message <- pol$message
+      }
+    }
+    if (gain < 1e-8 * (1 + abs(opt$value))) break
+  }
+
+  ## Projected gradient: components blocked by an active bound satisfy KKT
+  g <- gr(opt$par)
+  at_lower <- is.finite(lower) & opt$par <= lower + 1e-8
+  at_upper <- is.finite(upper) & opt$par >= upper - 1e-8
+  g_proj <- g
+  g_proj[at_lower & g > 0] <- 0
+  g_proj[at_upper & g < 0] <- 0
+
+  if (hessian) opt$hessian <- stats::optimHess(opt$par, fn, gr)
+  opt$restarts <- restarts
+  opt$max_grad <- max(abs(g_proj))
+  opt$at_lower <- at_lower
+  opt$at_upper <- at_upper
+  opt
+}
+
+#' Map unconstrained start values to the constrained link scale
+#'
+#' Under treatment coding only the intercept is on the response scale, so only
+#' it goes through \code{transform}; contrasts start at 0 (no difference). Without
+#' an intercept every column is its own level and is transformed.
+#' @noRd
+.constrained_start <- function(coefs, X, transform) {
+  int <- grep("(Intercept)", colnames(X), fixed = TRUE)
+  if (length(int) != 1L) return(transform(coefs))
+  out <- numeric(length(coefs))
+  out[int] <- transform(coefs[int])
+  out
 }

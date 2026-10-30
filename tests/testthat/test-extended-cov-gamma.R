@@ -253,9 +253,10 @@ test_that("one-column cov_gamma formula works (not misclassified as scalar)", {
   sim <- make_cov_gamma_data()
   # Continuous covariate, no intercept → p_gamma == 1 but has_cov_gamma == TRUE
   sim$data$z <- rnorm(nrow(sim$data))
-  fit <- estimate_hidden_pop(sim$data, ~ m, ~ n, ~ N,
+  # No level parameter for gamma, so the optimiser may legitimately warn
+  fit <- suppressWarnings(estimate_hidden_pop(sim$data, ~ m, ~ n, ~ N,
                              method = "poisson", gamma = "estimate",
-                             cov_gamma = ~ 0 + z)
+                             cov_gamma = ~ 0 + z))
 
   expect_true(isTRUE(fit$has_cov_gamma))
   expect_equal(fit$p_gamma, 1L)
@@ -313,9 +314,9 @@ test_that("lrtest warns for fixed-gamma vs cov_gamma = ~ 0 + z (no intercept)", 
 
   fit_fixed <- estimate_hidden_pop(sim$data, ~ m, ~ n, ~ N,
                                    method = "poisson", gamma = 0.005)
-  fit_cov <- estimate_hidden_pop(sim$data, ~ m, ~ n, ~ N,
+  fit_cov <- suppressWarnings(estimate_hidden_pop(sim$data, ~ m, ~ n, ~ N,
                                  method = "poisson", gamma = "estimate",
-                                 cov_gamma = ~ 0 + z)
+                                 cov_gamma = ~ 0 + z))
   # ~ 0 + z has no constant column, so fixed gamma is NOT nested
   expect_warning(lrtest(fit_fixed, fit_cov), "not.*nested")
 })

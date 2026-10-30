@@ -1,3 +1,189 @@
+# uncounted (development version)
+
+## Bug fixes
+
+* **Estimated gamma could stop at a wrong optimum.** `gamma = "estimate"`
+  started at `mean(gamma_bounds)` (0.25 by default), and with covariates or
+  weights Poisson/NB fits could stop at gamma near 0.29 with `convergence = 0`,
+  understating xi by about 2.5x; refit loops such as `profile_dependence()`
+  jumped between optima. The start now comes from a profile-deviance screen
+  over `gamma_bounds`, and L-BFGS-B is polished with restarts, so point
+  estimates can change slightly (typically below 0.2% of xi) even where the
+  old fit was in the right basin.
+
+* **`constrained = TRUE` with covariates stopped far from the optimum.** Start
+  values were transformed to the link scale for every coefficient, contrasts
+  included, so Poisson/NB fits with factor covariates converged to a poor point
+  (xi about 14x too small) with `convergence = 0`. Only the intercept is
+  transformed now; contrasts start at 0.
+
+* **`bootstrap_popsize()` ignored the fit's weights.** Replicates used the FWB
+  weights alone, so intervals for a weighted fit belonged to the unweighted
+  model. FWB weights now multiply the user's weights, and refits go through the
+  shared refit builder.
+
+* **`loo()`, `dfbeta()` and `dfpopsize()` ignored the fit's weights.** Refits
+  now use the shared refit builder with the weights of the remaining rows, and
+  a refit that does not converge is reported as such.
+
+* **Poisson and NB with non-integer `observed` returned the start values.**
+  The objective was a constant, so the fit reported `convergence = 0` with
+  `loglik = -1e20`. `method = "poisson"` now handles non-integer values as
+  pseudo-maximum likelihood (flagged by `$pseudo_loglik`, with warnings in
+  `compare_models()` and `lrtest()`), and `method = "nb"` gives a clear error.
+
+* **NB with `cov_gamma` reported the wrong standard errors.** `vcov()` and
+  `summary()` took the first rows of a matrix ordered (alpha, beta, log-theta,
+  gamma), so the log-theta variance was shown for `gamma:(Intercept)` and the
+  last gamma coefficient was dropped. The NB `$vcov_full` now has names, which
+  also fixes the NA gamma standard errors in `tidy()` and `print()`.
+
+* **NB `theta_se` was on the log scale.** The MLE path reported SE(log theta)
+  while `tidy()` labelled it SE(theta) (0.73 vs about 290). It is now on the
+  theta scale, matching the GMM/EL path, and `tidy(conf.int = TRUE)` gives a
+  log-scale interval for theta instead of NA.
+
+* **`tidy()` understated the OLS gamma standard error** (about 29x on the test
+  fixture). The OLS Jacobian used the raw gamma scale while `tidy()` assumes
+  log gamma, as for Poisson and NB. Coefficient standard errors are unaffected.
+
+* **OLS with `gamma = "estimate"` ignored `gamma_bounds`.** The search grid was
+  hard-coded. It is now log-spaced inside the bounds, and the final search runs
+  on the log scale, so small gamma values are located accurately.
+
+* **`predict(newdata =)` ignored expressions in `reference_pop` and
+  `auxiliary`.** Formulas such as `~ I(N / 2)` read the raw variable instead of
+  evaluating the expression, so predictions did not match `fitted()`.
+
+* **`popsize(by =)` silently dropped rows with `NA` in the `by` variable.** They
+  vanished from the table and the total, while the total's standard error still
+  used every row. They now form an `"NA"` group, with a message, so the groups
+  always add up to the ungrouped total.
+
+* **NLS fit statistics used the OLS criterion.** `logLik()`, `AIC()`, `BIC()`,
+  `deviance()` and the Pearson and deviance residuals of NLS fits were on the
+  log scale that OLS optimises, so OLS always won `compare_models()`. They are
+  now on the raw scale NLS optimises. `compare_models()` also warns when mixing
+  OLS, NLS and iOLS, and its documentation states that likelihood columns are
+  comparable only within one family.
+
+* **`profile_alpha()` and `profile_beta()` used the wrong objective for NLS and
+  weighted OLS**, so the profile did not peak at the estimate. They now use the
+  criterion each method optimises. `reoptimize = TRUE` now also re-optimises an
+  estimated gamma and the NB theta, so it is a true profile likelihood; before,
+  the curve was too narrow. Profiling iOLS now gives a clear error.
+
+* **`loo()$dxi` and `dfpopsize()` mostly measured a unit's own share of xi.** The
+  refit's total covered only the remaining rows, so most values were negative
+  whatever the unit's influence. `dxi` now applies the refit's coefficients to
+  all rows, which is the influence on the estimate for a fixed target. The old
+  quantity is kept as `dxi_subset`. **Values of `dxi` and `dfpopsize()` change.**
+
+* **`run_app()` could not fit uploaded data with few distinct values.** Columns
+  with 20 or fewer distinct values became factors at upload, including m, n and
+  N, so realistic small panels failed with "must be numeric, not factor".
+
+* **`boot_params` was shifted by one row.** Row 1 of `bootstrap_popsize()$boot_params`
+  was the full-sample fit and the last replicate was lost, which also affected
+  the parameter table in `summary()`. Parameters now come back with each replicate.
+
+* **`NA` in the `cluster` variable** is now an error for every method. NB used
+  to treat it as one more cluster, with only a `rowsum()` warning.
+
+* `gamma = 0` with zero auxiliary counts now gives a clear error instead of
+  `NA/NaN/Inf in 'x'`.
+
+* `NA` in a covariate now gives an error naming the variable instead of
+  `number of rows of matrices must match`.
+
+* `lrtest()`'s nesting check no longer depends on the scale of the covariates.
+
+* **`hypotheses_popsize()` could count the total twice.** With
+  `include_total = TRUE`, a filter such as `xi[TRUE]` summed the Total row with
+  its components. Such a filter is now an error, and `xi["Total"]` selects the
+  total also when groups come from a `by` variable.
+
+* The null model of the pseudo-R2 in `compare_models()` now keeps the fit's
+  weights, countries and gamma bounds.
+
+* **Fit statistics handled weights inconsistently.** `logLik()` was weighted for
+  Poisson and NB but not OLS and NLS, and `deviance()` and Pearson X2 were never
+  weighted. All now use the weighted sum, so `logLik()`, `AIC()`, `BIC()` and
+  `deviance()` of weighted OLS/NLS fits change.
+
+* The running mean in `plot.uncounted()` now covers all points. It could skip the
+  largest fitted values and gave `NA` windows below 10 observations.
+
+* The Shiny population-size plot now draws a single group, centres the bars on
+  the bias-corrected estimate like the interval, and its result is cleared when
+  its model is removed or refitted under the same name.
+
+* **`lrtest()` accepted fits to different data.** Only the number of observations
+  was compared. It now requires the same `observed`, `auxiliary`, `reference_pop`
+  and `weights`.
+
+* **`lrtest()` accepted non-nested Poisson and NB pairs.** Models were ordered by
+  parameter count, so NB with no covariates against Poisson with many ran as "NB
+  nested in Poisson". An NB model is never nested in a Poisson model, so such a
+  pair, or a Poisson model whose specification is not contained in the NB model's,
+  is now an error pointing to `compare_models()`.
+
+* **`lrtest()` boundary p-value.** For Poisson against NB with extra covariates it
+  was a plain chi-squared despite printing "boundary-corrected", and with `LR = 0`
+  it was 0.5. It is now the mixture `0.5 chi2_q + 0.5 chi2_(q+1)`, which is 1 at
+  `LR = 0`, and the printed text names the mixture used.
+
+## New features
+
+* `estimate_hidden_pop()` gains `gamma_start` to set the starting value, and
+  fits now store `$optim_info`: the start and its source, the screen, restarts,
+  the final projected gradient, and `gamma_at_bound`. A message is shown when
+  an estimated gamma ends on a bound, and a warning when the optimiser stops
+  with a non-negligible gradient.
+
+* `bootstrap_popsize()` gains `ci_type = "cheap"` (Lam, 2022), a valid interval
+  from very few replications, computed on the log scale. Requires
+  `fwb (>= 1.0.0)`, whose bootstrap weights depend only on the seed, so numbers
+  under a fixed seed differ from `fwb` < 1.0.0.
+
+* `lrtest()` now reports the Pearson dispersion of the larger model and notes when
+  it exceeds 1.5: with overdispersion an LR test between two Poisson models rejects
+  far too often (about 79% at a nominal 5% in a simulation with NB size 2).
+
+* `lrtest()` gains `test = "Wald"`, a robust test of the larger model's extra alpha
+  and beta coefficients using its stored sandwich covariance. It stays near its
+  nominal level under overdispersion (about 8% at a nominal 5% in the simulation
+  above, with n = 200).
+
+* New `feedback_sensitivity()`: sensitivity analysis for the "no feedback"
+  assumption, indexed by the elasticity of detection with respect to the
+  unauthorized population. It transforms the fitted cell-level estimates and
+  bootstrap replicates without refitting, so the fit is the same for every `delta`.
+  `anchor` is required, because it can reverse the direction of the result.
+
+* New `feedback_identified_set()`: bounds on the population size over a range of
+  `delta`, found by optimization rather than at its ends because totals need not be
+  monotone, with an Imbens-Manski interval for the true value or a union interval
+  for the whole set.
+
+* New `feedback_tipping()`: how much detection feedback overturns a threshold or a
+  contrast in the `xi[...]` syntax of `hypotheses_popsize()`, for the point estimate
+  and for the one-sided bootstrap test.
+
+* New `feedback_calibrate()`: the unauthorized share of the foreign population per
+  cell, whose negative is the mechanical congestion elasticity, to help choose
+  `delta_grid`.
+
+* `feedback_sensitivity()` accepts `delta_prior = list(mean = , sd = )`, a normal
+  distribution for `delta` truncated to the admissible range, and keeps the draws
+  so that changes between years can be computed.
+
+## Breaking changes
+
+* `dfbeta()` and `loo()$dfbeta` now return `beta_hat - beta_hat(-i)`, the sign
+  used by `stats::dfbeta()` for `lm` and `glm` fits. They used to return the
+  opposite, so a positive value now means the unit pulls the coefficient up.
+
 # uncounted 2.1.0
 
 ## New features
@@ -12,6 +198,32 @@
   `residuals()`, `loo()`, `tidy()`, and `glance()` methods for
   `uncounted_bayes` objects. Predictions delegate to the underlying
   `brmsfit` posterior prediction functions, while `loo()` wraps `brms::loo()`.
+
+## Documentation
+
+* **Reference verification**: Verified every package reference against
+  Crossref/arXiv and added DOIs throughout the vignettes, `README`, and
+  roxygen `@references`. Normalized author names (Beręsewicz, Bellégo) and
+  corrected the Benatia et al. citation year to 2025 (arXiv v3).
+
+* **Theory vignette**: Corrected the NLS optimizer (L-BFGS-B, not
+  Levenberg-Marquardt), aligned the population-size confidence-interval
+  description with the delta-method implementation, and clarified that the
+  Poisson PMLE reports HC3 robust standard errors by default (its point
+  estimates coincide with a Poisson GLM).
+
+* **Metadata**: Listed iOLS among the estimation methods in `DESCRIPTION`;
+  updated the funding acknowledgement to NCN OPUS 27.
+
+## Testing
+
+* **Confidence-interval calibration**: Added a Monte Carlo test confirming
+  that the 95% analytic and cluster fractional-weighted-bootstrap intervals
+  for the population size attain approximately nominal coverage under a
+  correctly specified model.
+
+* **Parameter recovery**: Tightened the data-generating-process recovery
+  assertions for the community-anchor (alpha) and detection offset (gamma).
 
 # uncounted 2.0.0
 
@@ -237,7 +449,7 @@
 * **README and examples**: The README now reflects the current package surface
   (`iols`, bounded `link_rho`, count-model `gmm`/`el`), uses the `ukr`
   interaction example in `cov_alpha`, suppresses bootstrap progress via
-  `verbose = FALSE`, and updates the funding line to NCN OPUS 20.
+  `verbose = FALSE`, and updates the funding line to NCN OPUS 27.
 
 # uncounted 1.0.0
 
@@ -348,8 +560,8 @@
   without sigma^2 scaling, preventing inflated bias correction on zero-heavy
   data.
 
-* **Removed nonexistent reference**: Replaced Beresewicz, Gudaszewski & Walsh
-  (2025) with the correct Zhang (2008) and Beresewicz & Pawlukiewicz (2020)
+* **Removed nonexistent reference**: Replaced Beręsewicz, Gudaszewski & Walsh
+  (2025) with the correct Zhang (2008) and Beręsewicz & Pawlukiewicz (2020)
   references.
 
 ## Enhancements
@@ -363,7 +575,7 @@
 ## New features
 
 * **iOLS estimator** (`method = "iols"`): Iterated OLS targeting the Gamma PML
-  (GPML) score equations, following Benatia, Bellego & Pape (2024). Two-phase
+  (GPML) score equations, following Benatia, Bellégo & Pape (2025). Two-phase
   algorithm: Phase 1 warms up with increasing delta and empirical centering;
   Phase 2 uses the exact limiting transform `y_tilde = log(mu) + (m/mu - 1)/(1+rho)`
   to solve `Z'(m/mu - 1) = 0`. Converges on complex specifications including
@@ -430,7 +642,7 @@
 ## Documentation
 
 * Fixed references: replaced incorrect Zhang (2008) citation, added URLs,
-  added Beresewicz & Pawlukiewicz (2020).
+  added Beręsewicz & Pawlukiewicz (2020).
 
 * OLS `log(m+1)` fitted-value scale limitation documented.
 

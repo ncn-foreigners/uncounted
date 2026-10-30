@@ -114,3 +114,50 @@ test_that("predict caps cov_gamma linear predictor like the fitting path", {
   expect_true(all(is.finite(pred_link)))
   expect_equal(pred_link, as.numeric(manual_link), tolerance = 1e-10)
 })
+
+test_that("predict() reproduces fitted() under a dependence offset", {
+  ## profile_dependence() refits inside .with_dependence_offset(), which sets
+  ## process-global state read by .compute_log_mu(). That state is back to 0
+  ## by the time predict() runs, so predict(fit, newdata = <training data>)
+  ## used to differ from fitted(fit) by exactly exp(-delta).
+  d <- small_data()
+  delta <- 0.3
+
+  fit_plain <- quick_fit(d, method = "poisson", gamma = 0.005)
+  expect_equal(fit_plain$dependence_offset, 0)
+
+  fit_off <- uncounted:::.with_dependence_offset(
+    delta, quick_fit(d, method = "poisson", gamma = 0.005)
+  )
+  ## The offset is recorded on the fit, and global state is restored.
+  expect_equal(fit_off$dependence_offset, delta)
+  expect_equal(uncounted:::.current_dependence_offset(), 0)
+
+  ## The offset enters the likelihood, so the fit adapts to it: coefficients
+  ## and fitted values genuinely differ from the plain fit. That is what makes
+  ## the predict() mismatch below a real inconsistency rather than a constant.
+  expect_false(isTRUE(all.equal(unname(coef(fit_off)),
+                                unname(coef(fit_plain)))))
+
+  expect_equal(unname(predict(fit_off, newdata = d)), unname(fitted(fit_off)),
+               tolerance = 1e-10)
+  expect_equal(unname(predict(fit_off, newdata = d, type = "link")),
+               unname(fit_off$log_mu), tolerance = 1e-10)
+
+  ## A fit object from before this field existed must still predict.
+  fit_legacy <- fit_off
+  fit_legacy$dependence_offset <- NULL
+  expect_silent(p <- predict(fit_legacy, newdata = d))
+  expect_length(p, nrow(d))
+})
+
+test_that("predict(newdata) evaluates expressions in reference_pop and auxiliary", {
+  d <- testdata
+  d$N2 <- d$N / 2
+  d$n2 <- d$n / 2
+  fit <- estimate_hidden_pop(d, ~m, ~I(n2 * 2), ~I(N2 * 2), gamma = 0.005)
+  expect_equal(unname(predict(fit, newdata = d)), unname(fitted(fit)))
+
+  fit_log <- estimate_hidden_pop(d, ~m, ~n, ~I(2 * N2), gamma = 0.005)
+  expect_equal(unname(predict(fit_log, newdata = d, type = "link")), unname(fit_log$log_mu))
+})

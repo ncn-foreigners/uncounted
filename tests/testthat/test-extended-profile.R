@@ -151,3 +151,35 @@ test_that("profile_alpha with plot = TRUE runs without error", {
   fit <- quick_fit(d, gamma = 0.005)
   expect_no_error(profile_alpha(fit, plot = TRUE))
 })
+
+test_that("profile_gamma() refits with the original weights and cluster", {
+  ## profile_gamma() used to rebuild the refit call by hand and omitted
+  ## weights, cluster and countries, so a weighted or clustered fit was
+  ## profiled by unweighted, unclustered refits.
+  d <- testdata
+  w <- rep(c(1, 3, 0.5, 2), length.out = nrow(d))
+  grid <- seq(0.001, 0.05, length.out = 5)
+
+  fit_w <- estimate_hidden_pop(d, ~ m, ~ n, ~ N, method = "poisson",
+                               gamma = "estimate", weights = w)
+  fit_u <- estimate_hidden_pop(d, ~ m, ~ n, ~ N, method = "poisson",
+                               gamma = "estimate")
+
+  prof_w <- profile_gamma(fit_w, gamma_grid = grid, plot = FALSE)
+  prof_u <- profile_gamma(fit_u, gamma_grid = grid, plot = FALSE)
+
+  ## The two profiles must not coincide: they are different likelihoods.
+  expect_false(isTRUE(all.equal(prof_w$loglik, prof_u$loglik)))
+
+  ## The weighted profile must live on the weighted log-likelihood scale,
+  ## i.e. near the weighted fit, not near the unweighted one.
+  expect_lt(abs(max(prof_w$loglik) - fit_w$loglik),
+            abs(max(prof_w$loglik) - fit_u$loglik))
+
+  ## A clustered fit profiles without error and keeps its cluster spec.
+  fit_c <- estimate_hidden_pop(d, ~ m, ~ n, ~ N, method = "poisson",
+                               gamma = "estimate", cluster = ~ country)
+  prof_c <- profile_gamma(fit_c, gamma_grid = grid, plot = FALSE)
+  expect_true(all(is.finite(prof_c$loglik)))
+  expect_equal(nrow(prof_c), length(grid))
+})

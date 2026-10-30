@@ -4,18 +4,22 @@
 \alias{lrtest}
 \title{Likelihood ratio test for nested uncounted models}
 \usage{
-lrtest(object1, object2)
+lrtest(object1, object2, test = c("LR", "Wald"))
 }
 \arguments{
 \item{object1}{An \code{"uncounted"} model (Poisson or NB).}
 
 \item{object2}{An \code{"uncounted"} model (Poisson or NB). The function
 automatically identifies the simpler model regardless of argument order.}
+
+\item{test}{\code{"LR"} (default) for the likelihood ratio test, or
+\code{"Wald"} for a robust Wald test (see Details).}
 }
 \value{
 An object of class \code{"uncounted_lrtest"} with components
-\code{statistic}, \code{df}, \code{p_value}, \code{boundary}, model
-descriptions, and log-likelihoods.
+\code{test}, \code{statistic}, \code{df}, \code{p_value}, \code{boundary},
+\code{dispersion}, model descriptions, and log-likelihoods. For
+\code{test = "Wald"} also \code{vcov_type}.
 }
 \description{
 Performs a likelihood ratio test between two nested \code{uncounted} models
@@ -34,17 +38,47 @@ to the difference in the number of estimated parameters.
 When comparing a Poisson model (H0) against a Negative Binomial model (H1),
 the dispersion parameter \eqn{\theta} lies on the boundary of its parameter
 space under \eqn{H_0} (\eqn{\theta \to \infty}). The standard
-\eqn{\chi^2} approximation is invalid in this setting. Following Self &
-Liang (1987), the p-value is corrected as
+\eqn{\chi^2} approximation is invalid in this setting. Following Chernoff
+(1954) and Self & Liang (1987), with \eqn{q} further parameters tested at
+interior points (covariates in the NB model only), the p-value is
 
-\deqn{p = 0.5\,\Pr(\chi^2_1 > LR)}
+\deqn{p = 0.5\,\Pr(\chi^2_q > LR) + 0.5\,\Pr(\chi^2_{q+1} > LR)}
 
-which corresponds to a 50:50 mixture of a point mass at zero and a
-\eqn{\chi^2_1}.
+where \eqn{\chi^2_0} is a point mass at zero. With the same mean model
+(\eqn{q = 0}) this is \eqn{0.5\Pr(\chi^2_1 > LR)} for \eqn{LR > 0} and 1 for
+\eqn{LR = 0}, which happens with probability one half under \eqn{H_0}.
+
+\strong{Nesting.} A Poisson model is nested in an NB model only if its alpha,
+beta and gamma specifications are contained in the NB model's. An NB model is
+never nested in a Poisson model, however many covariates the Poisson model has,
+so such pairs are an error: use \code{\link{compare_models}} for them. For two
+models of the same family, specifications that are not nested give a warning.
+
+\strong{Overdispersion.} The \eqn{\chi^2} reference also needs the larger
+model to be correctly specified. Otherwise the statistic converges to
+\eqn{\sum_j \lambda_j Z_j^2}, where \eqn{\lambda_j} are eigenvalues of
+\eqn{A^{-1}B} in the tested directions, \eqn{A} is the Hessian and \eqn{B} the
+outer product of the scores (Kent, 1982; White, 1982). With overdispersion the
+\eqn{\lambda_j} are roughly the dispersion, so comparing two Poisson models
+rejects far too often: at a nominal 5\\%, about 79\\% on data simulated with an
+NB size of 2 and an irrelevant covariate. The result therefore includes the
+Pearson dispersion of the larger model (\code{NA} for Poisson against NB, which
+tests overdispersion itself), and printing adds a note when it exceeds 1.5. The
+same applies to \code{weights} that are not frequency weights, since the
+weighted log-likelihood is then a pseudo-likelihood.
+
+\strong{Robust alternative.} \code{test = "Wald"} tests the larger model's extra
+alpha and beta coefficients with its stored covariance (the robust sandwich by
+default), \eqn{(Rb)'(RVR')^{-1}(Rb) \sim \chi^2_r}, and stays near its nominal
+level under overdispersion (about 8\\% at a nominal 5\\% in the same simulation
+with n = 200). It needs two models of the same method, with the same gamma
+specification and constraint setting, so it does not cover Poisson against NB or
+comparisons of gamma specifications.
 
 This function is intended for comparing count models only (Poisson and NB).
 OLS/NLS models are not supported because they use a pseudo-log-likelihood.
-The models must be fitted to the same data (identical number of observations).
+The models must be fitted to the same observations and weights: the same
+\code{observed}, \code{auxiliary}, \code{reference_pop} and \code{weights}.
 }
 \examples{
 set.seed(42)
@@ -64,8 +98,18 @@ lrtest(fit_po, fit_nb)
 
 }
 \references{
+Chernoff, H. (1954). On the distribution of the likelihood ratio.
+\emph{Annals of Mathematical Statistics}, 25(3), 573--578.
+\doi{10.1214/aoms/1177728725}
+
+Kent, J. T. (1982). Robust properties of likelihood ratio tests.
+\emph{Biometrika}, 69(1), 19--27. \doi{10.1093/biomet/69.1.19}
+
 Self, S. G. and Liang, K.-Y. (1987). Asymptotic properties of maximum
 likelihood estimators and likelihood ratio tests under nonstandard
 conditions. \emph{Journal of the American Statistical Association},
-82(398), 605--610.
+82(398), 605--610. \doi{10.1080/01621459.1987.10478472}
+
+White, H. (1982). Maximum likelihood estimation of misspecified models.
+\emph{Econometrica}, 50(1), 1--25. \doi{10.2307/1912526}
 }

@@ -230,3 +230,24 @@ test_that("bootstrap hypotheses support compact xi filters and functions", {
   expect_equal(fun$contrast, mean(boot$t[, 2]) - mean(boot$t[, 1]))
   expect_equal(fun$n_draws, 12)
 })
+
+test_that("a filter cannot select Total together with its components", {
+  fit <- estimate_hidden_pop(testdata, ~m, ~n, ~N, cov_alpha = ~sex, gamma = 0.005)
+  ps <- popsize(fit, by = ~sex)
+  ## Used to return twice the total
+  expect_error(hypotheses_popsize(ps, "xi[TRUE] = 0", estimate = "estimate",
+                                  include_total = TRUE),
+               "count them twice")
+  expect_error(hypotheses_popsize(ps, "xi[group != 'F'] = 0", estimate = "estimate",
+                                  include_total = TRUE),
+               "count them twice")
+  ## These remain valid
+  total <- hypotheses_popsize(ps, "xi['Total'] = 0", estimate = "estimate",
+                              include_total = TRUE)
+  expect_equal(total$estimate, sum(ps$estimate))
+  expect_equal(hypotheses_popsize(ps, "xi[TRUE] = 0", estimate = "estimate")$estimate,
+               sum(ps$estimate))
+  by_var <- hypotheses_popsize(ps, "xi[sex != 'F'] = 0", estimate = "estimate",
+                               include_total = TRUE)
+  expect_equal(by_var$estimate, ps$estimate[ps$group == "M"])
+})

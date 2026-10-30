@@ -62,9 +62,7 @@ A data frame with one row per hypothesis and columns
 \code{alternative_hypothesis}, \code{estimate}, \code{null.value},
 \code{contrast}, \code{std.error}, \code{statistic}, \code{p.value},
 \code{s.value}, \code{conf.low}, \code{conf.high}, \code{alternative},
-\code{method}, \code{estimate_type}, and \code{n_draws}. Bayesian results
-also include \code{p_greater}, \code{p_less}, \code{p_h1}, \code{p_h0},
-\code{posterior_odds}, \code{evidence_ratio}, and optional ROPE columns.
+\code{method}, \code{estimate_type}, and \code{n_draws}.
 }
 \description{
 Tests scalar hypotheses and contrasts involving population size estimates

@@ -2,8 +2,16 @@
 #' @noRd
 .is_col_subspace <- function(A, B) {
   if (ncol(A) > ncol(B)) return(FALSE)
+  # Column spaces do not depend on column scale, so normalise: otherwise the
+  # QR rank decision and the tolerance would depend on the covariates' units
+  unit_cols <- function(X) {
+    norms <- sqrt(colSums(X^2))
+    norms[norms == 0] <- 1
+    sweep(X, 2, norms, "/")
+  }
+  A <- unit_cols(A)
   # Project each column of A onto column space of B
-  Q <- qr(B)
+  Q <- qr(unit_cols(B))
   proj <- qr.fitted(Q, A)
   max(abs(A - proj)) < 1e-8
 }
@@ -20,7 +28,8 @@
 #'     constraints.}
 #'   \item{\code{n_par}}{Number of estimated parameters.}
 #'   \item{\code{logLik}}{Log-likelihood (true for count models, Gaussian
-#'     pseudo-log-likelihood for OLS/NLS).}
+#'     pseudo-log-likelihood for OLS/NLS on the scale each one optimises). See
+#'     \code{\link{logLik.uncounted}}.}
 #'   \item{\code{AIC, BIC}}{Akaike and Bayesian information criteria.}
 #'   \item{\code{Deviance}}{Model deviance (see
 #'     \code{\link{deviance.uncounted}}).}
@@ -40,9 +49,14 @@
 #'     Only for Poisson/NB.}
 #' }
 #'
-#' A warning is issued when comparing OLS/NLS pseudo-log-likelihoods with true
-#' count-model likelihoods, since AIC/BIC values are not comparable across
-#' these families.
+#' \strong{Comparability.} \code{logLik}, \code{AIC}, \code{BIC} and
+#' \code{Deviance} are comparable only within one likelihood family: OLS
+#' (log-scale Gaussian), NLS (raw-scale Gaussian), iOLS (Gamma
+#' pseudo-likelihood without constants), or Poisson/NB (count likelihoods). A
+#' table can still mix families, for example to line up \code{RMSE} and
+#' \code{R2_cor}, which are on the response scale for every method. In that
+#' case a warning is issued and the columns are kept, but their values must not
+#' be compared across families.
 #'
 #' @param ... Two or more objects of class \code{"uncounted"}. Named arguments
 #'   are used as model labels.
@@ -84,6 +98,17 @@ compare_models <- function(..., sort_by = c("AIC", "BIC", "loglik")) {
     warning("Comparing pseudo-loglik (OLS/NLS/iOLS) with count likelihood ",
             "(Poisson/NB) is not meaningful for AIC/BIC.", call. = FALSE)
   }
+  pseudo_used <- unique(methods[methods %in% c("ols", "nls", "iols")])
+  if (length(pseudo_used) > 1L) {
+    warning("Models come from different pseudo-likelihoods (",
+            paste(toupper(pseudo_used), collapse = ", "), "); logLik, AIC, BIC ",
+            "and Deviance are not comparable across them.", call. = FALSE)
+  }
+  if (any(vapply(models, function(x) isTRUE(x$pseudo_loglik), logical(1)))) {
+    warning("Some Poisson fits have non-integer 'observed' values, so their ",
+            "log-likelihood is a pseudo-likelihood; AIC/BIC are not formally ",
+            "valid for them.", call. = FALSE)
+  }
   count_estimators <- unique(vapply(models, function(x) {
     if (x$method %in% c("poisson", "nb")) x$estimator else NA_character_
   }, character(1)))
@@ -105,7 +130,7 @@ compare_models <- function(..., sort_by = c("AIC", "BIC", "loglik")) {
 
     # Pearson chi-squared
     v <- .variance_function(x)
-    pearson <- sum((x$m - x$fitted.values)^2 / v)
+    pearson <- sum(.fit_weights(x) * (x$m - x$fitted.values)^2 / v)
 
     rmse <- sqrt(mean(x$residuals^2))
 
@@ -170,6 +195,100 @@ print.uncounted_comparison <- function(x, ...) {
   invisible(x)
 }
 
+#' Pearson dispersion X^2 / (n - p) under the model's own variance function
+#' @noRd
+.pearson_dispersion <- function(object) {
+  w <- .fit_weights(object)
+  x2 <- sum(w * (object$m - object$fitted.values)^2 / .variance_function(object))
+  x2 / (sum(w) - .count_params(object))
+}
+
+#' Restrictions R b = 0 equivalent to col(X2 b) lying in col(X1)
+#'
+#' Under H0 the part of X2 b outside col(X1) vanishes, so the restrictions are the
+#' row space of the residual of X2 on X1. Works for any nested parameterisation,
+#' not only added dummies.
+#' @noRd
+.nested_restrictions <- function(X1, X2) {
+  norms <- sqrt(colSums(X2^2))
+  norms[norms == 0] <- 1
+  resid <- qr.resid(qr(X1), X2)
+  dec <- svd(sweep(resid, 2, norms, "/"))
+  r <- sum(dec$d > 1e-8 * max(dec$d, 1))
+  sweep(t(dec$v[, seq_len(r), drop = FALSE]), 2, norms, "/")
+}
+
+#' Wald test of the extra alpha and beta coefficients of the larger model
+#' @noRd
+.wald_nested <- function(object1, object2, is_boundary, nested) {
+  if (is_boundary || object1$method != object2$method) {
+    stop("test = 'Wald' compares two models of the same method. For Poisson ",
+         "against NB, use test = 'LR', which handles the boundary.", call. = FALSE)
+  }
+  if (!nested) {
+    stop("test = 'Wald' requires nested models.", call. = FALSE)
+  }
+  if (!identical(isTRUE(object1$constrained), isTRUE(object2$constrained))) {
+    stop("test = 'Wald' requires the same constraint setting in both models.",
+         call. = FALSE)
+  }
+  same_gamma <- if (isTRUE(object1$has_cov_gamma) || isTRUE(object2$has_cov_gamma)) {
+    isTRUE(object1$has_cov_gamma) && isTRUE(object2$has_cov_gamma) &&
+      .is_col_subspace(object1$X_gamma, object2$X_gamma) &&
+      .is_col_subspace(object2$X_gamma, object1$X_gamma)
+  } else if (isTRUE(object1$gamma_estimated) || isTRUE(object2$gamma_estimated)) {
+    isTRUE(object1$gamma_estimated) && isTRUE(object2$gamma_estimated)
+  } else {
+    identical(object1$gamma, object2$gamma)
+  }
+  if (!same_gamma) {
+    stop("test = 'Wald' requires the same gamma specification in both models; ",
+         "it tests alpha and beta covariates only.", call. = FALSE)
+  }
+
+  p_alpha <- object2$p_alpha
+  p_beta <- object2$p_beta
+  R_alpha <- .nested_restrictions(object1$X_alpha, object2$X_alpha)
+  R_beta <- .nested_restrictions(object1$X_beta, object2$X_beta)
+  R <- rbind(cbind(R_alpha, matrix(0, nrow(R_alpha), p_beta)),
+             cbind(matrix(0, nrow(R_beta), p_alpha), R_beta))
+  df <- nrow(R)
+  if (df == 0L) {
+    stop("The models have the same alpha and beta specifications; there is ",
+         "nothing for test = 'Wald' to test.", call. = FALSE)
+  }
+
+  idx <- seq_len(p_alpha + p_beta)
+  Rb <- R %*% coef(object2)[idx]
+  statistic <- as.numeric(crossprod(Rb, solve(R %*% vcov(object2)[idx, idx] %*% t(R), Rb)))
+
+  result <- list(
+    test = "Wald",
+    statistic = statistic,
+    df = df,
+    p_value = pchisq(statistic, df = df, lower.tail = FALSE),
+    boundary = FALSE,
+    dispersion = .pearson_dispersion(object2),
+    vcov_type = object2$vcov_type,
+    model1 = paste(toupper(object1$method),
+                   if (isTRUE(object1$constrained)) "(constrained)" else ""),
+    model2 = paste(toupper(object2$method),
+                   if (isTRUE(object2$constrained)) "(constrained)" else ""),
+    ll1 = object1$loglik, ll2 = object2$loglik
+  )
+  class(result) <- "uncounted_lrtest"
+  result
+}
+
+#' p-value when one parameter is on the boundary and df - 1 are tested at interior
+#' points: 0.5 chi2_{df-1} + 0.5 chi2_df, with chi2_0 a point mass at 0
+#' @noRd
+.lr_boundary_p <- function(lr, df) {
+  p_lower <- if (df == 1) as.numeric(lr == 0) else
+    pchisq(lr, df = df - 1, lower.tail = FALSE)
+  0.5 * p_lower + 0.5 * pchisq(lr, df = df, lower.tail = FALSE)
+}
+
 #' Likelihood ratio test for nested uncounted models
 #'
 #' Performs a likelihood ratio test between two nested \code{uncounted} models
@@ -187,30 +306,73 @@ print.uncounted_comparison <- function(x, ...) {
 #' When comparing a Poisson model (H0) against a Negative Binomial model (H1),
 #' the dispersion parameter \eqn{\theta} lies on the boundary of its parameter
 #' space under \eqn{H_0} (\eqn{\theta \to \infty}). The standard
-#' \eqn{\chi^2} approximation is invalid in this setting. Following Self &
-#' Liang (1987), the p-value is corrected as
+#' \eqn{\chi^2} approximation is invalid in this setting. Following Chernoff
+#' (1954) and Self & Liang (1987), with \eqn{q} further parameters tested at
+#' interior points (covariates in the NB model only), the p-value is
 #'
-#' \deqn{p = 0.5\,\Pr(\chi^2_1 > LR)}
+#' \deqn{p = 0.5\,\Pr(\chi^2_q > LR) + 0.5\,\Pr(\chi^2_{q+1} > LR)}
 #'
-#' which corresponds to a 50:50 mixture of a point mass at zero and a
-#' \eqn{\chi^2_1}.
+#' where \eqn{\chi^2_0} is a point mass at zero. With the same mean model
+#' (\eqn{q = 0}) this is \eqn{0.5\Pr(\chi^2_1 > LR)} for \eqn{LR > 0} and 1 for
+#' \eqn{LR = 0}, which happens with probability one half under \eqn{H_0}.
+#'
+#' \strong{Nesting.} A Poisson model is nested in an NB model only if its alpha,
+#' beta and gamma specifications are contained in the NB model's. An NB model is
+#' never nested in a Poisson model, however many covariates the Poisson model has,
+#' so such pairs are an error: use \code{\link{compare_models}} for them. For two
+#' models of the same family, specifications that are not nested give a warning.
+#'
+#' \strong{Overdispersion.} The \eqn{\chi^2} reference also needs the larger
+#' model to be correctly specified. Otherwise the statistic converges to
+#' \eqn{\sum_j \lambda_j Z_j^2}, where \eqn{\lambda_j} are eigenvalues of
+#' \eqn{A^{-1}B} in the tested directions, \eqn{A} is the Hessian and \eqn{B} the
+#' outer product of the scores (Kent, 1982; White, 1982). With overdispersion the
+#' \eqn{\lambda_j} are roughly the dispersion, so comparing two Poisson models
+#' rejects far too often: at a nominal 5\%, about 79\% on data simulated with an
+#' NB size of 2 and an irrelevant covariate. The result therefore includes the
+#' Pearson dispersion of the larger model (\code{NA} for Poisson against NB, which
+#' tests overdispersion itself), and printing adds a note when it exceeds 1.5. The
+#' same applies to \code{weights} that are not frequency weights, since the
+#' weighted log-likelihood is then a pseudo-likelihood.
+#'
+#' \strong{Robust alternative.} \code{test = "Wald"} tests the larger model's extra
+#' alpha and beta coefficients with its stored covariance (the robust sandwich by
+#' default), \eqn{(Rb)'(RVR')^{-1}(Rb) \sim \chi^2_r}, and stays near its nominal
+#' level under overdispersion (about 8\% at a nominal 5\% in the same simulation
+#' with n = 200). It needs two models of the same method, with the same gamma
+#' specification and constraint setting, so it does not cover Poisson against NB or
+#' comparisons of gamma specifications.
 #'
 #' This function is intended for comparing count models only (Poisson and NB).
 #' OLS/NLS models are not supported because they use a pseudo-log-likelihood.
-#' The models must be fitted to the same data (identical number of observations).
+#' The models must be fitted to the same observations and weights: the same
+#' \code{observed}, \code{auxiliary}, \code{reference_pop} and \code{weights}.
 #'
 #' @param object1 An \code{"uncounted"} model (Poisson or NB).
 #' @param object2 An \code{"uncounted"} model (Poisson or NB). The function
 #'   automatically identifies the simpler model regardless of argument order.
+#' @param test \code{"LR"} (default) for the likelihood ratio test, or
+#'   \code{"Wald"} for a robust Wald test (see Details).
 #' @return An object of class \code{"uncounted_lrtest"} with components
-#'   \code{statistic}, \code{df}, \code{p_value}, \code{boundary}, model
-#'   descriptions, and log-likelihoods.
+#'   \code{test}, \code{statistic}, \code{df}, \code{p_value}, \code{boundary},
+#'   \code{dispersion}, model descriptions, and log-likelihoods. For
+#'   \code{test = "Wald"} also \code{vcov_type}.
 #'
 #' @references
+#' Chernoff, H. (1954). On the distribution of the likelihood ratio.
+#' \emph{Annals of Mathematical Statistics}, 25(3), 573--578.
+#' \doi{10.1214/aoms/1177728725}
+#'
+#' Kent, J. T. (1982). Robust properties of likelihood ratio tests.
+#' \emph{Biometrika}, 69(1), 19--27. \doi{10.1093/biomet/69.1.19}
+#'
 #' Self, S. G. and Liang, K.-Y. (1987). Asymptotic properties of maximum
 #' likelihood estimators and likelihood ratio tests under nonstandard
 #' conditions. \emph{Journal of the American Statistical Association},
-#' 82(398), 605--610.
+#' 82(398), 605--610. \doi{10.1080/01621459.1987.10478472}
+#'
+#' White, H. (1982). Maximum likelihood estimation of misspecified models.
+#' \emph{Econometrica}, 50(1), 1--25. \doi{10.2307/1912526}
 #'
 #' @examples
 #' set.seed(42)
@@ -229,7 +391,8 @@ print.uncounted_comparison <- function(x, ...) {
 #' lrtest(fit_po, fit_nb)
 #'
 #' @export
-lrtest <- function(object1, object2) {
+lrtest <- function(object1, object2, test = c("LR", "Wald")) {
+  test <- match.arg(test)
   if (!inherits(object1, "uncounted") || !inherits(object2, "uncounted"))
     stop("Both objects must be of class 'uncounted'")
 
@@ -244,26 +407,36 @@ lrtest <- function(object1, object2) {
 
   if (object1$n_obs != object2$n_obs)
     stop("Models must be fitted to the same data (different n_obs)")
+  ## The statistic compares two likelihoods of the same observations. Different
+  ## data or weights leave a term that does not vanish under H0 and grows with n.
+  same_vals <- function(a, b) isTRUE(all.equal(as.numeric(a), as.numeric(b)))
+  differs <- c(observed = !same_vals(object1$m, object2$m),
+               auxiliary = !same_vals(object1$n_aux, object2$n_aux),
+               reference_pop = !same_vals(object1$N, object2$N),
+               weights = !same_vals(.fit_weights(object1), .fit_weights(object2)))
+  if (any(differs)) {
+    stop("Models must be fitted to the same data and weights; they differ in: ",
+         paste(names(differs)[differs], collapse = ", "), ".", call. = FALSE)
+  }
+  if (isTRUE(object1$pseudo_loglik) || isTRUE(object2$pseudo_loglik)) {
+    warning("Non-integer 'observed' values: the log-likelihood is a ",
+            "pseudo-likelihood, so the chi-squared reference is not valid.",
+            call. = FALSE)
+  }
+
+  # Boundary case: Poisson is NB with 1/theta = 0, so only Poisson can be the
+  # restricted model of the pair, whatever the parameter counts
+  is_boundary <- setequal(c(object1$method, object2$method), c("poisson", "nb"))
 
   # Ensure object2 is the more complex model (more parameters)
-  p1 <- .count_params(object1)
-  p2 <- .count_params(object2)
-  if (p1 > p2) {
+  swap <- if (is_boundary) {
+    object1$method == "nb"
+  } else {
+    .count_params(object1) > .count_params(object2)
+  }
+  if (swap) {
     tmp <- object1; object1 <- object2; object2 <- tmp
   }
-
-  ll1 <- object1$loglik
-  ll2 <- object2$loglik
-  lr_stat <- max(0, 2 * (ll2 - ll1))  # clamp to 0 if simpler model fits better
-  df <- .count_params(object2) - .count_params(object1)
-
-  if (df == 0) {
-    stop("Models have the same number of parameters -- not nested.")
-  }
-
-  # Boundary correction for Poisson vs NB (Self & Liang, 1987)
-  is_boundary <- (object1$method == "poisson" && object2$method == "nb") ||
-                 (object1$method == "nb" && object2$method == "poisson")
 
   # Warn for different methods (only Poisson vs NB is a valid cross-method LR)
   if (object1$method != object2$method && !is_boundary) {
@@ -298,22 +471,44 @@ lrtest <- function(object1, object2) {
       (is.numeric(object1$gamma) && isTRUE(object2$gamma_estimated)) ||
       (isTRUE(object1$gamma_estimated) && isTRUE(object2$gamma_estimated))
   }
-  if (!(nested_alpha && nested_beta && gamma_ok)) {
+  nested <- nested_alpha && nested_beta && gamma_ok
+  if (is_boundary && !nested) {
+    stop("Poisson and NB models are nested only when the Poisson model is the ",
+         "restricted one, with its alpha, beta and gamma specifications contained ",
+         "in the NB model's. These are not nested; compare them with AIC/BIC ",
+         "instead (see compare_models()).", call. = FALSE)
+  }
+  if (!nested) {
     warning("Models may not be nested: covariate or gamma specifications differ. ",
             "LR test is only valid for nested models.", call. = FALSE)
   }
 
-  if (is_boundary && df == 1) {
-    p_value <- 0.5 * pchisq(lr_stat, df = 1, lower.tail = FALSE)
+  if (test == "Wald") {
+    return(.wald_nested(object1, object2, is_boundary, nested))
+  }
+
+  ll1 <- object1$loglik
+  ll2 <- object2$loglik
+  lr_stat <- max(0, 2 * (ll2 - ll1))  # clamp to 0 if simpler model fits better
+  df <- .count_params(object2) - .count_params(object1)
+
+  if (df == 0) {
+    stop("Models have the same number of parameters -- not nested.")
+  }
+
+  if (is_boundary) {
+    p_value <- .lr_boundary_p(lr_stat, df)
   } else {
     p_value <- pchisq(lr_stat, df = df, lower.tail = FALSE)
   }
 
   result <- list(
+    test = "LR",
     statistic = lr_stat,
     df = df,
     p_value = p_value,
     boundary = is_boundary,
+    dispersion = if (is_boundary) NA_real_ else .pearson_dispersion(object2),
     model1 = paste(toupper(object1$method),
                    if(object1$constrained) "(constrained)" else ""),
     model2 = paste(toupper(object2$method),
@@ -326,15 +521,32 @@ lrtest <- function(object1, object2) {
 
 #' @export
 print.uncounted_lrtest <- function(x, ...) {
+  if (identical(x$test, "Wald")) {
+    cat("Wald test of the larger model's extra coefficients (", x$vcov_type,
+        " covariance)\n", sep = "")
+    cat(strrep("-", 40), "\n")
+    cat("Model 1:", x$model1, "\n")
+    cat("Model 2:", x$model2, "\n")
+    cat("Wald statistic:", round(x$statistic, 4), "on", x$df, "df\n")
+    cat("p-value:", format.pval(x$p_value, digits = 4), "\n")
+    return(invisible(x))
+  }
   cat("Likelihood ratio test\n")
   cat(strrep("-", 40), "\n")
   cat("Model 1:", x$model1, " (logLik =", round(x$ll1, 2), ")\n")
   cat("Model 2:", x$model2, " (logLik =", round(x$ll2, 2), ")\n")
   cat("LR statistic:", round(x$statistic, 4), "on", x$df, "df\n")
   if (x$boundary) {
-    cat("(Boundary-corrected: 0.5 * P(chi2 > LR), Self & Liang 1987)\n")
+    cat(sprintf("(Boundary-corrected: 0.5 * chi2_%d + 0.5 * chi2_%d, Self & Liang 1987)\n",
+                x$df - 1L, x$df))
   }
   cat("p-value:", format.pval(x$p_value, digits = 4), "\n")
+  if (isTRUE(x$dispersion > 1.5)) {
+    cat("Note: Pearson dispersion of the larger model is ", round(x$dispersion, 2),
+        ". With overdispersion the LR statistic\n",
+        "is not chi-squared and this test rejects too often. ",
+        "Consider test = \"Wald\"; see ?lrtest.\n", sep = "")
+  }
   invisible(x)
 }
 
@@ -349,23 +561,17 @@ print.uncounted_lrtest <- function(x, ...) {
 .pseudo_r2_deviance <- function(object) {
   if (!object$method %in% c("poisson", "nb")) return(NA_real_)
 
-  # Fit null model (no covariates) on the same data
-  null_fit <- tryCatch({
-    estimate_hidden_pop(
-      data = object$data,
-      observed = object$call_args$observed,
-      auxiliary = object$call_args$auxiliary,
-      reference_pop = object$call_args$reference_pop,
-      method = object$method,
-      estimator = object$estimator,
-      link_rho = object$link_rho,
-      gamma = if (object$gamma_estimated) "estimate" else object$gamma,
-      cov_gamma = if (!is.null(object$call$cov_gamma)) eval(object$call$cov_gamma) else NULL,
-      theta_start = if (!is.null(object$theta)) object$theta else 1,
-      vcov = "HC0",
-      constrained = isTRUE(object$constrained)
-    )
-  }, error = function(e) NULL)
+  # Fit null model (no covariates): otherwise the same model, including its
+  # weights, countries and gamma bounds
+  null_args <- .refit_args_from_object(object)
+  null_args$cov_alpha <- NULL
+  null_args$cov_beta <- NULL
+  null_args$vcov <- "HC0"
+  null_args$cluster <- NULL
+  null_fit <- tryCatch(
+    suppressMessages(do.call(estimate_hidden_pop, null_args)),
+    error = function(e) NULL
+  )
 
   if (is.null(null_fit)) return(NA_real_)
 
@@ -383,7 +589,7 @@ print.uncounted_lrtest <- function(x, ...) {
 #' @references Cameron, A.C. and Windmeijer, F.A.G. (1996). R-squared measures
 #'   for count data regression models with applications to health-care
 #'   utilization. \emph{Journal of Business & Economic Statistics}, 14(2),
-#'   209--220.
+#'   209--220. \doi{10.1080/07350015.1996.10524648}
 #' @noRd
 .pseudo_r2_cameron_windmeijer <- function(object) {
   if (!object$method %in% c("poisson", "nb")) return(NA_real_)
