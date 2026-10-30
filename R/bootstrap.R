@@ -202,7 +202,7 @@ bootstrap_popsize <- function(object, R = 199, cluster = NULL,
     args$data <- data
     args$weights <- if (is.null(base_weights)) w else base_weights * w
     fit_w <- tryCatch(
-      do.call(uncounted::estimate_hidden_pop, args),
+      suppressMessages(do.call(uncounted::estimate_hidden_pop, args)),
       error = function(e) NULL
     )
 

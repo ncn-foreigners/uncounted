@@ -90,3 +90,16 @@ test_that("profile_dependence() is smooth in delta", {
   expect_true(all(diff(prof$xi) > 0))
   expect_lt(diff(range(prof$xi)) / prof$xi[4], 0.05)
 })
+
+test_that("refit loops do not repeat the gamma-bound message", {
+  fit <- suppressMessages(
+    estimate_hidden_pop(testdata, ~m, ~n, ~N, cov_alpha = ~year, gamma_start = 0.4)
+  )
+  expect_identical(fit$optim_info$gamma_at_bound, "upper")
+  expect_no_message(bootstrap_popsize(fit, R = 2, seed = 1, verbose = FALSE, ci_type = "cheap"))
+  expect_no_message(profile_dependence(fit, c(-0.1, 0.1), plot = FALSE))
+  small <- suppressMessages(
+    estimate_hidden_pop(small_data(), ~m, ~n, ~N, gamma = "estimate", gamma_start = 0.5)
+  )
+  expect_no_message(loo(small))
+})

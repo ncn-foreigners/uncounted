@@ -187,7 +187,7 @@ loo.uncounted <- function(object, by = c("obs", "country"),
     args$data <- data_i
     if (!is.null(obs_weights)) args$weights <- obs_weights[-drop_idx]
     fit_i <- tryCatch(
-      do.call(estimate_hidden_pop, args),
+      suppressMessages(do.call(estimate_hidden_pop, args)),
       error = function(e) NULL
     )
 

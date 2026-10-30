@@ -277,7 +277,7 @@ print.uncounted_dependence_robustness <- function(x, ...) {
   if (is.null(refit_args)) {
     refit_args <- .refit_args_from_object(object)
   }
-  .with_dependence_offset(delta, do.call(estimate_hidden_pop, refit_args))
+  .with_dependence_offset(delta, suppressMessages(do.call(estimate_hidden_pop, refit_args)))
 }
 
 #' Validate a dependence-profile data frame
