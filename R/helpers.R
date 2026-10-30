@@ -481,6 +481,7 @@
 #' @noRd
 .refit_args_from_object <- function(object) {
   cl <- object$call
+  gamma_bounds <- if (!is.null(cl$gamma_bounds)) cl$gamma_bounds else c(1e-10, 0.5)
 
   list(
     data = object$data,
@@ -498,10 +499,15 @@
       NULL
     },
     cov_gamma = if (!is.null(cl$cov_gamma)) cl$cov_gamma else NULL,
-    gamma_bounds = if (!is.null(cl$gamma_bounds)) cl$gamma_bounds else c(1e-10, 0.5),
-    ## Warm start: refits begin at the original optimum instead of re-screening
+    gamma_bounds = gamma_bounds,
+    ## Warm start: refits begin at the original optimum instead of re-screening.
+    ## Clipped because exp(log(bound)) can round to just outside the bound.
     gamma_start = if (isTRUE(object$gamma_estimated) &&
-                      !isTRUE(object$has_cov_gamma)) object$gamma else NULL,
+                      !isTRUE(object$has_cov_gamma)) {
+      min(max(object$gamma, gamma_bounds[1]), gamma_bounds[2])
+    } else {
+      NULL
+    },
     theta_start = if (!is.null(object$theta)) object$theta else 1,
     link_rho = object$link_rho,
     estimator = object$estimator,

@@ -103,3 +103,20 @@ test_that("refit loops do not repeat the gamma-bound message", {
   )
   expect_no_message(loo(small))
 })
+
+test_that("refits work when gamma ends on a bound", {
+  ## exp(log(bound)) can round to just outside the bound, which used to fail the
+  ## gamma_start check in every refit
+  set.seed(42)
+  d <- data.frame(country = rep(paste0("C", 1:5), each = 3),
+                  N = rpois(15, 500000), n = rpois(15, 1000), m = rpois(15, 50))
+  fit <- suppressWarnings(suppressMessages(
+    estimate_hidden_pop(d, ~m, ~n, ~N, countries = ~country)
+  ))
+  expect_identical(fit$optim_info$gamma_at_bound, "lower")
+  args <- .refit_args_from_object(fit)
+  expect_gte(args$gamma_start, args$gamma_bounds[1])
+  b <- suppressWarnings(bootstrap_popsize(fit, R = 5, cluster = ~country, seed = 1,
+                                          verbose = FALSE, ci_type = "cheap"))
+  expect_gt(b$n_converged, 0L)
+})
