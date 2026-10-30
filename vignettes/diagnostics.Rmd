@@ -506,7 +506,7 @@ fit_fb <- estimate_hidden_pop(
 feedback_calibrate(fit_fb)
 boot_fb <- suppressWarnings(bootstrap_popsize(
   fit_fb, R = 49, cluster = ~ country_code, seed = 123, verbose = FALSE,
-  by = ~ year, total = TRUE
+  by = ~ year
 ))
 ```
 
@@ -520,11 +520,11 @@ relative to \(N\). Those cells have a below-typical \(\xi_{0i} / N_i\), so they 
 
 ```{r feedback-profile, eval = requireNamespace("fwb", quietly = TRUE)}
 fb_geo <- suppressWarnings(feedback_sensitivity(
-  fit_fb, anchor = "geomean", by = ~ year, total = TRUE, boot = boot_fb
+  fit_fb, anchor = "geomean", by = ~ year, boot = boot_fb
 ))
 fb_geo
 fb_share <- suppressWarnings(feedback_sensitivity(
-  fit_fb, anchor = "share", by = ~ year, total = TRUE, boot = boot_fb
+  fit_fb, anchor = "share", by = ~ year, boot = boot_fb
 ))
 fb_share
 ```
@@ -535,8 +535,28 @@ cell (Papua New Guinea, 2023, N = 1) has fitted detection slightly above 1 alrea
 `$a2_excluded`. The lower end of the `"geomean"` range is also set by a very small cell,
 as `$diagnostics` shows, although such cells barely contribute to the total.
 
-```{r feedback-plot, eval = requireNamespace("fwb", quietly = TRUE), fig.width = 6, fig.height = 4}
+```{r feedback-plot, eval = requireNamespace("fwb", quietly = TRUE), fig.width = 7, fig.height = 5}
 plot(fb_geo)
+```
+
+Results are by year: a sum over years is not a population size, because the same
+people can be present in several years. The admissible range only excludes what is
+impossible, not what is implausible, so a whole range can give too much weight to its
+ends. A distribution for \(\delta\) reflects that values near 0 are considered more
+likely (Greenland, 2005). The result depends completely on this choice, since the data
+do not update it, so the standard deviation below is an illustration to be varied.
+
+```{r feedback-prior, eval = requireNamespace("fwb", quietly = TRUE)}
+set.seed(1)
+fb_prior <- suppressWarnings(feedback_sensitivity(
+  fit_fb, anchor = "geomean", by = ~ year, boot = boot_fb,
+  delta_prior = list(mean = 0, sd = 0.05)
+))
+fb_prior$monte_carlo
+
+## Year-to-year change, from the same draws
+draws <- attr(fb_prior$monte_carlo, "draws")
+t(apply(draws[-1, ] - draws[-nrow(draws), ], 1, quantile, probs = c(0.025, 0.5, 0.975)))
 ```
 
 `feedback_identified_set()` bounds the population size over the admissible range, with
@@ -565,6 +585,9 @@ feedback_tipping(fb_share, hypothesis = "xi[year == 2024] - xi[year == 2019] > 0
   https://doi.org/10.1111/biom.12734
 
 - Beręsewicz, M., & Pawlukiewicz, K. (2020). Estimation of the number of irregular foreigners in Poland using non-linear count regression models. arXiv preprint arXiv:2008.09407. https://arxiv.org/abs/2008.09407
+- Greenland, S. (2005). Multiple-bias modelling for analysis of observational data.
+  *Journal of the Royal Statistical Society: Series A*, 168(2), 267--306.
+  https://doi.org/10.1111/j.1467-985X.2004.00349.x
 - Imbens, G. W. and Manski, C. F. (2004). Confidence intervals for partially identified
   parameters. *Econometrica*, 72(6), 1845--1857.
   https://doi.org/10.1111/j.1468-0262.2004.00555.x

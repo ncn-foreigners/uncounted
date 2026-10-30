@@ -24,6 +24,9 @@
 #' @param by Optional one-sided formula for the reported groups, with the same
 #'   meaning as in \code{\link{popsize}}.
 #' @param total Logical; add a \code{"Total"} row when there are several groups?
+#'   With \code{by = ~ year} this adds up the years and is not a population size,
+#'   because the same people can be present in several years (see
+#'   \code{\link{popsize}}). Use it only for non-overlapping groups.
 #' @param boot Optional \code{\link{bootstrap_popsize}} result for the same fit.
 #'   Its replicate coefficients are transformed; the bootstrap is not re-run. The
 #'   anchor stays at its point-estimate value in every replicate, because it is
@@ -33,11 +36,13 @@
 #' @param p_max Upper limit for the implied detection in constraint A2.
 #' @param keep_cells Logical; return cell-level matrices in \code{$cells}?
 #' @param delta_prior Optional Monte Carlo sensitivity analysis (Greenland, 2005):
-#'   a function of \code{R} returning \code{R} draws of \eqn{\delta}, or
+#'   a distribution for \eqn{\delta} instead of a range. Either
+#'   \code{list(mean = , sd = )} for a normal distribution truncated to the
+#'   admissible range, a function of \code{R} returning \code{R} draws, or
 #'   \code{TRUE} for a uniform distribution on the admissible range. One draw is
 #'   used per bootstrap replicate, so \code{boot} is required. The data do not
 #'   update this distribution, because \eqn{\delta} is not identified: the result
-#'   depends completely on the distribution chosen.
+#'   depends completely on the distribution chosen, so report it and try others.
 #' @param x Object to print or plot.
 #' @param group For \code{plot()}: labels of the groups to draw. Defaults to
 #'   \code{"Total"} when available, otherwise the first six groups.
@@ -122,8 +127,9 @@
 #'     \eqn{1 - (1 - \hat\alpha_i) / (1 + \delta)} for \code{"share"}, and \code{NA}
 #'     for \code{"value"}.}
 #'   \item{\code{monte_carlo}}{With \code{delta_prior}: data frame with \code{group},
-#'     \code{median}, \code{lower} and \code{upper}, and the draws in
-#'     \code{attr(, "delta")}.}
+#'     \code{median}, \code{lower} and \code{upper}. The \eqn{\delta} draws are in
+#'     \code{attr(, "delta")} and the totals in \code{attr(, "draws")} (groups by
+#'     replicates), from which changes between years can be computed.}
 #' }
 #'
 #' @references
@@ -535,8 +541,23 @@ plot.uncounted_feedback <- function(x, group = NULL, plausible = NULL, ...) {
     }
     delta_prior <- function(R) stats::runif(R, admissible_range[1], admissible_range[2])
   }
+  if (is.list(delta_prior)) {
+    if (!all(c("mean", "sd") %in% names(delta_prior)) || !is.numeric(delta_prior$sd) ||
+        delta_prior$sd <= 0) {
+      stop("A list 'delta_prior' needs 'mean' and a positive 'sd'.", call. = FALSE)
+    }
+    if (anyNA(admissible_range)) {
+      stop("There is no admissible range to truncate delta to; supply a function.",
+           call. = FALSE)
+    }
+    spec <- delta_prior
+    delta_prior <- function(R) {
+      p <- stats::pnorm(admissible_range, spec$mean, spec$sd)
+      stats::qnorm(stats::runif(R, p[1], p[2]), spec$mean, spec$sd)
+    }
+  }
   if (!is.function(delta_prior)) {
-    stop("'delta_prior' must be a function, TRUE, or NULL.", call. = FALSE)
+    stop("'delta_prior' must be a function, a list, TRUE, or NULL.", call. = FALSE)
   }
   draws <- delta_prior(n_rep)
   if (!is.numeric(draws) || length(draws) != n_rep || anyNA(draws) || any(draws <= -1)) {
@@ -554,7 +575,9 @@ plot.uncounted_feedback <- function(x, group = NULL, plausible = NULL, ...) {
     upper = apply(totals, 1, stats::quantile, probs = 1 - a, names = FALSE),
     stringsAsFactors = FALSE
   )
+  dimnames(totals) <- list(out$group, NULL)
   attr(out, "delta") <- draws
+  attr(out, "draws") <- totals
   out
 }
 

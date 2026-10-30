@@ -281,6 +281,17 @@ test_that("the Monte Carlo version uses one delta per replicate", {
   expect_error(quiet_feedback(fit, "geomean", boot = b, delta_prior = function(R) rep(-2, R)),
                "above -1")
   expect_error(quiet_feedback(fit, "geomean", boot = b, delta_prior = "x"), "function")
+
+  ## Truncated normal: inside the admissible range, and the draws are kept
+  set.seed(1)
+  n <- quiet_feedback(fit, "geomean", boot = b, delta_grid = grid,
+                      delta_prior = list(mean = 0, sd = 0.05))
+  d <- attr(n$monte_carlo, "delta")
+  expect_true(all(d >= n$admissible_range[1] & d <= n$admissible_range[2]))
+  expect_equal(n$monte_carlo$median, median(attr(n$monte_carlo, "draws")[1, ]))
+  expect_equal(unname(attr(n$monte_carlo, "draws")[1, 3]),
+               sum(exp(n$log_K + (n$replicates[, 3] - n$log_K) / (1 + d[3]))))
+  expect_error(quiet_feedback(fit, "geomean", boot = b, delta_prior = list(mean = 0)), "sd")
 })
 
 test_that("print and plot run", {

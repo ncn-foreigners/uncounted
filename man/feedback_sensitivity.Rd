@@ -51,7 +51,10 @@ countries barely move, so the analysis concerns changes within countries.}
 \item{by}{Optional one-sided formula for the reported groups, with the same
 meaning as in \code{\link{popsize}}.}
 
-\item{total}{Logical; add a \code{"Total"} row when there are several groups?}
+\item{total}{Logical; add a \code{"Total"} row when there are several groups?
+With \code{by = ~ year} this adds up the years and is not a population size,
+because the same people can be present in several years (see
+\code{\link{popsize}}). Use it only for non-overlapping groups.}
 
 \item{boot}{Optional \code{\link{bootstrap_popsize}} result for the same fit.
 Its replicate coefficients are transformed; the bootstrap is not re-run. The
@@ -67,11 +70,13 @@ part of the assumption rather than an estimate.}
 \item{keep_cells}{Logical; return cell-level matrices in \code{$cells}?}
 
 \item{delta_prior}{Optional Monte Carlo sensitivity analysis (Greenland, 2005):
-a function of \code{R} returning \code{R} draws of \eqn{\delta}, or
+a distribution for \eqn{\delta} instead of a range. Either
+\code{list(mean = , sd = )} for a normal distribution truncated to the
+admissible range, a function of \code{R} returning \code{R} draws, or
 \code{TRUE} for a uniform distribution on the admissible range. One draw is
 used per bootstrap replicate, so \code{boot} is required. The data do not
 update this distribution, because \eqn{\delta} is not identified: the result
-depends completely on the distribution chosen.}
+depends completely on the distribution chosen, so report it and try others.}
 
 \item{x}{Object to print or plot.}
 
@@ -103,8 +108,9 @@ An object of class \code{"uncounted_feedback"}, a list with:
 \eqn{1 - (1 - \hat\alpha_i) / (1 + \delta)} for \code{"share"}, and \code{NA}
 for \code{"value"}.}
 \item{\code{monte_carlo}}{With \code{delta_prior}: data frame with \code{group},
-\code{median}, \code{lower} and \code{upper}, and the draws in
-\code{attr(, "delta")}.}
+\code{median}, \code{lower} and \code{upper}. The \eqn{\delta} draws are in
+\code{attr(, "delta")} and the totals in \code{attr(, "draws")} (groups by
+replicates), from which changes between years can be computed.}
 }
 }
 \description{

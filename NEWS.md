@@ -174,6 +174,10 @@
   cell, whose negative is the mechanical congestion elasticity, to help choose
   `delta_grid`.
 
+* `feedback_sensitivity()` accepts `delta_prior = list(mean = , sd = )`, a normal
+  distribution for `delta` truncated to the admissible range, and keeps the draws
+  so that changes between years can be computed.
+
 ## Breaking changes
 
 * `dfbeta()` and `loo()$dfbeta` now return `beta_hat - beta_hat(-i)`, the sign
