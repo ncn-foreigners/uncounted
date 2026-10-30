@@ -71,19 +71,7 @@ plot.uncounted <- function(x, which = 1:4, ask = interactive() && length(which) 
   old_par <- par(no.readonly = TRUE)
   on.exit(par(old_par), add = TRUE)
 
-  # Running mean helper
-  running_mean <- function(x_val, y_val, n_windows = 10) {
-    ord <- order(x_val)
-    x_s <- x_val[ord]; y_s <- y_val[ord]
-    n <- length(x_s)
-    w <- max(1, n %/% n_windows)
-    xm <- ym <- numeric(n_windows)
-    for (i in seq_len(n_windows)) {
-      idx <- seq(max(1, (i-1)*w + 1), min(n, i*w))
-      xm[i] <- mean(x_s[idx]); ym[i] <- mean(y_s[idx])
-    }
-    list(x = xm, y = ym)
-  }
+  running_mean <- .running_mean
 
   # Panel 1: sqrt(m) vs sqrt(mu)
   if (1 %in% which) {
@@ -433,6 +421,21 @@ profile_gamma <- function(object, gamma_grid = seq(1e-4, 0.5, length.out = 20),
   }
 
   invisible(results)
+}
+
+
+# ---- Smoother for residual plots ----
+
+#' Running mean over consecutive blocks covering all points, in x order
+#' @noRd
+.running_mean <- function(x_val, y_val, n_windows = 10) {
+  ord <- order(x_val)
+  n <- length(ord)
+  ## Blocks of nearly equal size: integer division would leave out up to
+  ## n_windows - 1 of the largest values
+  block <- ceiling(seq_len(n) * min(n_windows, n) / n)
+  list(x = as.numeric(tapply(x_val[ord], block, mean)),
+       y = as.numeric(tapply(y_val[ord], block, mean)))
 }
 
 

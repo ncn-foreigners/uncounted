@@ -111,6 +111,9 @@
   weighted. All now use the weighted sum, so `logLik()`, `AIC()`, `BIC()` and
   `deviance()` of weighted OLS/NLS fits change.
 
+* The running mean in `plot.uncounted()` now covers all points. It could skip the
+  largest fitted values and gave `NA` windows below 10 observations.
+
 ## New features
 
 * `estimate_hidden_pop()` gains `gamma_start` to set the starting value, and
