@@ -155,6 +155,12 @@
   nominal level under overdispersion (about 8% at a nominal 5% in the simulation
   above, with n = 200).
 
+* New `feedback_sensitivity()`: sensitivity analysis for the "no feedback"
+  assumption, indexed by the elasticity of detection with respect to the
+  unauthorized population. It transforms the fitted cell-level estimates and
+  bootstrap replicates without refitting, so the fit is the same for every `delta`.
+  `anchor` is required, because it can reverse the direction of the result.
+
 ## Breaking changes
 
 * `dfbeta()` and `loo()$dfbeta` now return `beta_hat - beta_hat(-i)`, the sign
