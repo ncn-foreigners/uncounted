@@ -90,6 +90,9 @@
 * **`NA` in the `cluster` variable** is now an error for every method. NB used
   to treat it as one more cluster, with only a `rowsum()` warning.
 
+* `gamma = 0` with zero auxiliary counts now gives a clear error instead of
+  `NA/NaN/Inf in 'x'`.
+
 ## New features
 
 * `estimate_hidden_pop()` gains `gamma_start` to set the starting value, and

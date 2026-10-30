@@ -13,3 +13,12 @@ test_that("NA in the cluster variable is an error for every method", {
     )
   }
 })
+
+test_that("gamma = 0 with zero auxiliary counts gives a clear error", {
+  ## Used to fail with "NA/NaN/Inf in 'x'" from lm.fit
+  expect_true(any(testdata$n == 0))
+  expect_error(estimate_hidden_pop(testdata, ~m, ~n, ~N, gamma = 0), "'gamma = 0'.*zero")
+  ## Still allowed when every auxiliary count is positive
+  fit <- estimate_hidden_pop(positive_data(), ~m, ~n, ~N, gamma = 0)
+  expect_s3_class(fit, "uncounted")
+})

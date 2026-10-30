@@ -474,6 +474,12 @@ estimate_hidden_pop <- function(data,
     gamma_value <- NULL
     gamma_start <- NULL
   } else if (gamma_fixed) {
+    if (gamma == 0 && any(n_aux == 0)) {
+      stop("'gamma = 0' uses log(n/N), which is undefined for the ",
+           sum(n_aux == 0), " observation(s) where the auxiliary count is ",
+           "zero. Use gamma = \"estimate\" or a fixed positive gamma.",
+           call. = FALSE)
+    }
     log_rate <- log(gamma + ratio)
     gamma_value <- gamma
     gamma_start <- NULL
