@@ -302,3 +302,93 @@ test_that("print and plot run", {
   expect_no_error(plot(xb, group = c("F", "M"), plausible = c(-0.1, 0.1)))
   expect_error(plot(x, group = "nope"), "Unknown group")
 })
+
+# ---- feedback_identified_set() ----
+
+test_that("the identified set finds an interior minimum", {
+  ## Value anchor, one cell at 10K and sixty at K/10: over [-0.2, 0.2] the minimum is
+  ## interior, at 10^(1 / (1 + d)) = sqrt(60), with total 2 sqrt(60) K
+  K <- 3
+  x <- quiet_feedback(feedback_fit(), "value", K = K, delta_grid = grid, p_max = Inf)
+  xi0 <- c(10 * K, rep(K / 10, 60))
+  x$log_xi0 <- log(xi0)
+  x$log_K <- rep(log(K), 61)
+  x$group_id <- rep(1L, 61)
+  x$labels <- "(all)"
+  set <- feedback_identified_set(x, delta_range = c(-0.2, 0.2))
+
+  expect_equal(set$delta_at_min, 1 / log10(sqrt(60)) - 1, tolerance = 1e-5)
+  expect_equal(set$L, 2 * sqrt(60) * K, tolerance = 1e-8)
+  end_value <- K * (10^(1 / 1.2) + 60 * 10^(-1 / 1.2))
+  expect_lt(set$L, end_value)
+  expect_equal(end_value / K, 15.62, tolerance = 1e-3)
+})
+
+test_that("the bounds match a brute-force search", {
+  fit <- feedback_fit(cov_alpha = ~sex)
+  x <- quiet_feedback(fit, "value", K = 40, by = ~sex, total = TRUE, delta_grid = grid)
+  D <- c(-0.15, 0.25)
+  set <- feedback_identified_set(x, delta_range = D)
+  dense <- seq(D[1], D[2], length.out = 4001)
+  tot <- sapply(dense, function(d) sum(exp(x$log_K + (x$log_xi0 - x$log_K) / (1 + d))))
+  row <- set[set$group == "Total", ]
+  expect_equal(row$L, min(tot), tolerance = 1e-7)
+  expect_equal(row$U, max(tot), tolerance = 1e-7)
+  expect_equal(nrow(set), 3L)
+  expect_true(all(is.na(set$ci_lower)))
+  expect_output(print(set), "Identified set")
+})
+
+test_that("the default range is the admissible range", {
+  x <- quiet_feedback(feedback_fit(), "geomean")
+  set <- feedback_identified_set(x)
+  expect_equal(attr(set, "delta_range"), x$admissible_range)
+  expect_error(feedback_identified_set(x, delta_range = c(0.2, 0.1)), "delta range")
+  expect_error(feedback_identified_set(list()), "feedback_sensitivity")
+})
+
+test_that("the Imbens-Manski constant stays between its limits", {
+  expect_equal(.im_critical(0, 0.5, 0.95), qnorm(0.975), tolerance = 1e-6)
+  expect_equal(.im_critical(100, 0.5, 0.95), qnorm(0.95), tolerance = 1e-6)
+  for (r in c(0.01, 0.1, 0.5, 1, 2, 3)) {
+    cc <- .im_critical(r, 1, 0.95)
+    expect_gt(cc, qnorm(0.95))
+    expect_lt(cc, qnorm(0.975))
+    expect_equal(pnorm(cc + r) - pnorm(-cc), 0.95, tolerance = 1e-6)
+  }
+  cs <- sapply(c(0.1, 0.5, 1, 2), function(r) .im_critical(r, 1, 0.95))
+  expect_true(all(diff(cs) < 0))
+  expect_equal(.im_critical(1, 0, 0.95), qnorm(0.95))
+  expect_equal(.im_critical(0, 0, 0.95), qnorm(0.975))
+})
+
+test_that("identified-set intervals follow their definitions", {
+  skip_if_not_installed("fwb")
+  fit <- feedback_fit()
+  b <- bootstrap_popsize(fit, R = 30, seed = 1, verbose = FALSE)
+  x <- quiet_feedback(fit, "geomean", boot = b)
+  D <- x$admissible_range
+  im <- feedback_identified_set(x)
+  u <- feedback_identified_set(x, method = "union")
+
+  bounds <- apply(x$replicates, 2, function(a) {
+    tot <- sapply(seq(D[1], D[2], length.out = 41),
+                  function(d) sum(exp(x$log_K + (a - x$log_K) / (1 + d))))
+    c(min(tot), max(tot))
+  })
+  expect_equal(im$se_L, sd(log(bounds[1, ])), tolerance = 1e-4)
+  expect_equal(im$se_U, sd(log(bounds[2, ])), tolerance = 1e-4)
+  expect_equal(im$c, .im_critical(im$Delta, max(im$se_L, im$se_U), 0.95))
+  expect_equal(im$ci_lower, exp(log(im$L) - im$c * im$se_L))
+  expect_equal(im$ci_upper, exp(log(im$U) + im$c * im$se_U))
+  expect_equal(u$ci_lower, unname(quantile(bounds[1, ], 0.025)), tolerance = 1e-4)
+  expect_equal(u$ci_upper, unname(quantile(bounds[2, ], 0.975)), tolerance = 1e-4)
+
+  ## A one-point range is point identification: the two-sided constant
+  pt <- feedback_identified_set(x, delta_range = c(0, 0))
+  expect_equal(pt$Delta, 0)
+  expect_equal(pt$c, qnorm(0.975), tolerance = 1e-6)
+
+  iq <- feedback_identified_set(x, se = "iqr")
+  expect_equal(iq$se_L, IQR(log(bounds[1, ])) / 1.349, tolerance = 1e-4)
+})

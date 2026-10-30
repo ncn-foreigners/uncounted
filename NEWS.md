@@ -161,6 +161,11 @@
   bootstrap replicates without refitting, so the fit is the same for every `delta`.
   `anchor` is required, because it can reverse the direction of the result.
 
+* New `feedback_identified_set()`: bounds on the population size over a range of
+  `delta`, found by optimization rather than at its ends because totals need not be
+  monotone, with an Imbens-Manski interval for the true value or a union interval
+  for the whole set.
+
 ## Breaking changes
 
 * `dfbeta()` and `loo()$dfbeta` now return `beta_hat - beta_hat(-i)`, the sign

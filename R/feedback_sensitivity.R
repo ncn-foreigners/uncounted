@@ -559,3 +559,175 @@ plot.uncounted_feedback <- function(x, group = NULL, plausible = NULL, ...) {
 
 #' @noRd
 .feedback_fmt <- function(x) format(round(x), big.mark = ",", trim = TRUE, scientific = FALSE)
+
+
+#' Identified Set for Population Size under Detection Feedback
+#'
+#' Bounds the population size over a range of \eqn{\delta}, with a confidence
+#' interval for the true value or for the whole set.
+#'
+#' @param x An \code{"uncounted_feedback"} object.
+#' @param delta_range Length-2 range of \eqn{\delta}. Defaults to
+#'   \code{x$admissible_range}.
+#' @param level Confidence level.
+#' @param method \code{"imbens_manski"} covers the true \eqn{\xi_g} (Imbens and
+#'   Manski, 2004). \code{"union"} covers the whole set, so it is wider.
+#' @param se How to measure the spread of the replicate bounds on the log scale:
+#'   \code{"sd"}, or \code{"iqr"} for \eqn{\mathrm{IQR} / 1.349}.
+#' @param ... Ignored.
+#'
+#' @details
+#' With \eqn{D} = \code{delta_range}, the bounds are
+#' \eqn{L_g = \min_{\delta \in D} \xi_g(\delta)} and
+#' \eqn{U_g = \max_{\delta \in D} \xi_g(\delta)}. They are found on a grid and refined
+#' with \code{optimize()}, not read from the ends of \eqn{D}, because group totals
+#' need not be monotone in \eqn{\delta}. Replicate bounds are replicate-wise minima
+#' and maxima over \eqn{D}.
+#'
+#' \code{"imbens_manski"}, on the log scale with
+#' \eqn{\Delta = \log U_g - \log L_g}, solves for \eqn{c} in
+#' \deqn{\Phi\left(c + \frac{\Delta}{\max(s_L, s_U)}\right) - \Phi(-c) = \mathrm{level},}
+#' which lies between \code{qnorm(level)} and \code{qnorm((1 + level) / 2)}, and
+#' returns \eqn{\exp(\log L_g - c s_L)} and \eqn{\exp(\log U_g + c s_U)}.
+#' \code{"union"} returns the \eqn{(1 - \mathrm{level}) / 2} quantile of the replicate
+#' \eqn{L_g} and the \eqn{(1 + \mathrm{level}) / 2} quantile of the replicate \eqn{U_g}.
+#'
+#' \strong{Validity.} The Imbens--Manski interval requires superefficient estimation
+#' of \eqn{\Delta} (Stoye, 2009). Stoye's Lemma 3 gives this when the bounds are jointly
+#' asymptotically normal and \eqn{U_g \ge L_g} by construction, as here. Normality
+#' can fail when the minimum or maximum over \eqn{D} is attained at more than one
+#' \eqn{\delta}, so treat the intervals with caution if \code{delta_at_min} or
+#' \code{delta_at_max} is interior to \eqn{D}. \eqn{D} itself is treated as fixed.
+#'
+#' @return A data frame of class \code{"uncounted_feedback_set"} with one row per group
+#'   and columns \code{group}, \code{L}, \code{U}, \code{delta_at_min},
+#'   \code{delta_at_max}, \code{ci_lower}, \code{ci_upper}, \code{c}, \code{Delta},
+#'   \code{se_L} and \code{se_U}. Without a bootstrap in \code{x} the interval columns
+#'   are \code{NA}.
+#'
+#' @references
+#' Imbens, G. W. and Manski, C. F. (2004). Confidence intervals for partially
+#' identified parameters. \emph{Econometrica}, 72(6), 1845--1857.
+#' \doi{10.1111/j.1468-0262.2004.00555.x}
+#'
+#' Stoye, J. (2009). More on confidence intervals for partially identified
+#' parameters. \emph{Econometrica}, 77(4), 1299--1315. \doi{10.3982/ECTA7347}
+#'
+#' @seealso \code{\link{feedback_sensitivity}}
+#'
+#' @export
+feedback_identified_set <- function(x, delta_range = NULL, level = 0.95,
+                                    method = c("imbens_manski", "union"),
+                                    se = c("sd", "iqr")) {
+  if (!inherits(x, "uncounted_feedback")) {
+    stop("'x' must come from feedback_sensitivity().", call. = FALSE)
+  }
+  method <- match.arg(method)
+  se <- match.arg(se)
+  if (!is.numeric(level) || length(level) != 1L || !is.finite(level) ||
+      level <= 0 || level >= 1) {
+    stop("'level' must be a single number between 0 and 1.", call. = FALSE)
+  }
+  D <- if (is.null(delta_range)) x$admissible_range else delta_range
+  if (!is.numeric(D) || length(D) != 2L || anyNA(D) || D[1] > D[2] || D[1] <= -1) {
+    stop("The delta range must be two increasing values above -1. x has no ",
+         "admissible range if delta = 0 is inadmissible; then supply 'delta_range'.",
+         call. = FALSE)
+  }
+  grid <- sort(unique(c(seq(D[1], D[2], length.out = 41L),
+                        x$delta_grid[x$delta_grid >= D[1] & x$delta_grid <= D[2]])))
+
+  members <- split(seq_along(x$group_id), x$group_id)
+  labels <- x$labels
+  if (isTRUE(x$total)) {
+    members <- c(members, list(seq_along(x$group_id)))
+    labels <- c(labels, "Total")
+  }
+
+  rows <- lapply(seq_along(members), function(g) {
+    idx <- members[[g]]
+    lo <- .feedback_extreme(x$log_xi0[idx], x$log_K[idx], grid, minimum = TRUE)
+    hi <- .feedback_extreme(x$log_xi0[idx], x$log_K[idx], grid, minimum = FALSE)
+    out <- data.frame(group = labels[g], L = lo$value, U = hi$value,
+                      delta_at_min = lo$delta, delta_at_max = hi$delta,
+                      ci_lower = NA_real_, ci_upper = NA_real_, c = NA_real_,
+                      Delta = log(hi$value) - log(lo$value),
+                      se_L = NA_real_, se_U = NA_real_, stringsAsFactors = FALSE)
+    if (is.null(x$replicates)) return(out)
+
+    L_b <- apply(x$replicates[idx, , drop = FALSE], 2, function(a) {
+      .feedback_extreme(a, x$log_K[idx], grid, minimum = TRUE)$value
+    })
+    U_b <- apply(x$replicates[idx, , drop = FALSE], 2, function(a) {
+      .feedback_extreme(a, x$log_K[idx], grid, minimum = FALSE)$value
+    })
+    spread <- if (se == "sd") stats::sd else function(v) stats::IQR(v) / 1.349
+    out$se_L <- spread(log(L_b))
+    out$se_U <- spread(log(U_b))
+    if (method == "imbens_manski") {
+      out$c <- .im_critical(out$Delta, max(out$se_L, out$se_U), level)
+      out$ci_lower <- exp(log(out$L) - out$c * out$se_L)
+      out$ci_upper <- exp(log(out$U) + out$c * out$se_U)
+    } else {
+      out$ci_lower <- unname(stats::quantile(L_b, (1 - level) / 2))
+      out$ci_upper <- unname(stats::quantile(U_b, (1 + level) / 2))
+    }
+    out
+  })
+  out <- do.call(rbind, rows)
+  rownames(out) <- NULL
+  attr(out, "delta_range") <- D
+  attr(out, "level") <- level
+  attr(out, "method") <- method
+  class(out) <- c("uncounted_feedback_set", "data.frame")
+  out
+}
+
+#' @rdname feedback_identified_set
+#' @export
+print.uncounted_feedback_set <- function(x, ...) {
+  D <- attr(x, "delta_range")
+  cat("Identified set over delta in [", signif(D[1], 3), ", ", signif(D[2], 3), "]\n", sep = "")
+  has_ci <- any(is.finite(x$ci_lower))
+  if (has_ci) {
+    cat(100 * attr(x, "level"), "% interval: ", attr(x, "method"), "\n", sep = "")
+  }
+  tab <- data.frame(group = x$group, L = .feedback_fmt(x$L), U = .feedback_fmt(x$U),
+                    delta_at_min = signif(x$delta_at_min, 3),
+                    delta_at_max = signif(x$delta_at_max, 3))
+  if (has_ci) {
+    tab$ci_lower <- .feedback_fmt(x$ci_lower)
+    tab$ci_upper <- .feedback_fmt(x$ci_upper)
+  }
+  print(tab, row.names = FALSE)
+  invisible(x)
+}
+
+#' Minimum or maximum of a total over delta: grid, then refined when interior
+#' @noRd
+.feedback_extreme <- function(log_xi0, log_K, grid, minimum = TRUE) {
+  total <- function(d) sum(exp(log_K + (log_xi0 - log_K) / (1 + d)))
+  values <- vapply(grid, total, numeric(1))
+  best <- if (minimum) which.min(values) else which.max(values)
+  if (best == 1L || best == length(grid)) {
+    return(list(delta = grid[best], value = values[best]))
+  }
+  opt <- stats::optimize(total, grid[c(best - 1L, best + 1L)], maximum = !minimum,
+                         tol = 1e-8)
+  list(delta = if (minimum) opt$minimum else opt$maximum, value = opt$objective)
+}
+
+#' Imbens-Manski critical value for an identified set of length delta
+#' @noRd
+.im_critical <- function(delta, se_max, level) {
+  upper <- stats::qnorm((1 + level) / 2)
+  lower <- stats::qnorm(level)
+  if (!is.finite(se_max) || se_max <= 0) {
+    return(if (delta > 0) lower else upper)
+  }
+  ratio <- delta / se_max
+  f <- function(c) stats::pnorm(c + ratio) - stats::pnorm(-c) - level
+  if (f(lower) >= 0) return(lower)
+  if (f(upper) <= 0) return(upper)
+  stats::uniroot(f, c(lower, upper), tol = 1e-10)$root
+}
