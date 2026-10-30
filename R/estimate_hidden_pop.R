@@ -547,6 +547,11 @@ estimate_hidden_pop <- function(data,
     eval(cluster[[2]], data)
   } else NULL
   if (!is.null(cluster_vec)) {
+    if (anyNA(cluster_vec)) {
+      stop("'cluster' (", deparse(cluster), ") contains ", sum(is.na(cluster_vec)),
+           " missing value(s). Remove or impute them before fitting.",
+           call. = FALSE)
+    }
     n_clusters <- length(unique(cluster_vec[!is.na(cluster_vec)]))
     if (n_clusters < 2L) {
       stop("Cluster-robust variance requires at least 2 clusters.",

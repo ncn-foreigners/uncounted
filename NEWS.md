@@ -87,6 +87,9 @@
   was the full-sample fit and the last replicate was lost, which also affected
   the parameter table in `summary()`. Parameters now come back with each replicate.
 
+* **`NA` in the `cluster` variable** is now an error for every method. NB used
+  to treat it as one more cluster, with only a `rowsum()` warning.
+
 ## New features
 
 * `estimate_hidden_pop()` gains `gamma_start` to set the starting value, and
