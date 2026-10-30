@@ -31,8 +31,9 @@ dfbeta(model, by = c("obs", "country"), ...)
 ## Value
 
 A matrix with one row per dropped unit and one column per coefficient.
-Each entry is the change in the coefficient estimate relative to the
-full model (\\\hat\beta\_{(-i)} - \hat\beta\\).
+Each entry is \\\hat\beta - \hat\beta\_{(-i)}\\, the same sign as
+[`stats::dfbeta()`](https://rdrr.io/r/stats/influence.measures.html) for
+`lm` and `glm` fits: positive means the unit pulls the coefficient up.
 
 ## See also
 
@@ -49,10 +50,10 @@ fit <- estimate_hidden_pop(d, ~ m, ~ n, ~ N, method = "poisson",
 db <- dfbeta(fit)
 head(db)
 #>           alpha          beta
-#> 1  4.618242e-03  1.448704e-02
-#> 2 -1.379703e-04 -4.409443e-04
-#> 3  3.970809e-03  1.264425e-02
-#> 4  3.043501e-04  9.516993e-04
-#> 5  1.259357e-03  9.422888e-04
-#> 6 -2.749349e-05 -8.519565e-05
+#> 1 -4.618242e-03 -1.448704e-02
+#> 2  1.379703e-04  4.409443e-04
+#> 3 -3.970809e-03 -1.264425e-02
+#> 4 -3.043500e-04 -9.516994e-04
+#> 5 -1.259357e-03 -9.422888e-04
+#> 6  2.749344e-05  8.519567e-05
 ```

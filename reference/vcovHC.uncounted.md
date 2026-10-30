@@ -27,7 +27,7 @@ vcovHC(
 - omega:
 
   Optional omega function passed to
-  [`sandwich::meatHC()`](https://sandwich.R-Forge.R-project.org/reference/vcovHC.html)
+  [`sandwich::meatHC()`](https://zeileis.codeberg.page/sandwich/reference/vcovHC.html)
 
 - ...:
 

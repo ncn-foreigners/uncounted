@@ -1,7 +1,6 @@
 # Default Priors for Bayesian Hidden-Population Models
 
-Construct weakly informative default priors for
-[`estimate_hidden_pop_bayes`](https://ncn-foreigners.github.io/uncounted/reference/estimate_hidden_pop_bayes.md).
+Default Priors for Bayesian Hidden-Population Models
 
 ## Usage
 

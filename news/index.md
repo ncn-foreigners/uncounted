@@ -1,5 +1,265 @@
 # Changelog
 
+## uncounted (development version)
+
+### Bug fixes
+
+- **Estimated gamma could stop at a wrong optimum.**
+  `gamma = "estimate"` started at `mean(gamma_bounds)` (0.25 by
+  default), and with covariates or weights Poisson/NB fits could stop at
+  gamma near 0.29 with `convergence = 0`, understating xi by about 2.5x;
+  refit loops such as
+  [`profile_dependence()`](https://ncn-foreigners.github.io/uncounted/reference/profile_dependence.md)
+  jumped between optima. The start now comes from a profile-deviance
+  screen over `gamma_bounds`, and L-BFGS-B is polished with restarts, so
+  point estimates can change slightly (typically below 0.2% of xi) even
+  where the old fit was in the right basin.
+
+- **`constrained = TRUE` with covariates stopped far from the optimum.**
+  Start values were transformed to the link scale for every coefficient,
+  contrasts included, so Poisson/NB fits with factor covariates
+  converged to a poor point (xi about 14x too small) with
+  `convergence = 0`. Only the intercept is transformed now; contrasts
+  start at 0.
+
+- **[`bootstrap_popsize()`](https://ncn-foreigners.github.io/uncounted/reference/bootstrap_popsize.md)
+  ignored the fit’s weights.** Replicates used the FWB weights alone, so
+  intervals for a weighted fit belonged to the unweighted model. FWB
+  weights now multiply the user’s weights, and refits go through the
+  shared refit builder.
+
+- **[`loo()`](https://ncn-foreigners.github.io/uncounted/reference/loo.md),
+  [`dfbeta()`](https://rdrr.io/r/stats/influence.measures.html) and
+  [`dfpopsize()`](https://ncn-foreigners.github.io/uncounted/reference/dfpopsize.md)
+  ignored the fit’s weights.** Refits now use the shared refit builder
+  with the weights of the remaining rows, and a refit that does not
+  converge is reported as such.
+
+- **Poisson and NB with non-integer `observed` returned the start
+  values.** The objective was a constant, so the fit reported
+  `convergence = 0` with `loglik = -1e20`. `method = "poisson"` now
+  handles non-integer values as pseudo-maximum likelihood (flagged by
+  `$pseudo_loglik`, with warnings in
+  [`compare_models()`](https://ncn-foreigners.github.io/uncounted/reference/compare_models.md)
+  and
+  [`lrtest()`](https://ncn-foreigners.github.io/uncounted/reference/lrtest.md)),
+  and `method = "nb"` gives a clear error.
+
+- **NB with `cov_gamma` reported the wrong standard errors.**
+  [`vcov()`](https://rdrr.io/r/stats/vcov.html) and
+  [`summary()`](https://rdrr.io/r/base/summary.html) took the first rows
+  of a matrix ordered (alpha, beta, log-theta, gamma), so the log-theta
+  variance was shown for `gamma:(Intercept)` and the last gamma
+  coefficient was dropped. The NB `$vcov_full` now has names, which also
+  fixes the NA gamma standard errors in
+  [`tidy()`](https://generics.r-lib.org/reference/tidy.html) and
+  [`print()`](https://rdrr.io/r/base/print.html).
+
+- **NB `theta_se` was on the log scale.** The MLE path reported SE(log
+  theta) while
+  [`tidy()`](https://generics.r-lib.org/reference/tidy.html) labelled it
+  SE(theta) (0.73 vs about 290). It is now on the theta scale, matching
+  the GMM/EL path, and `tidy(conf.int = TRUE)` gives a log-scale
+  interval for theta instead of NA.
+
+- **[`tidy()`](https://generics.r-lib.org/reference/tidy.html)
+  understated the OLS gamma standard error** (about 29x on the test
+  fixture). The OLS Jacobian used the raw gamma scale while
+  [`tidy()`](https://generics.r-lib.org/reference/tidy.html) assumes log
+  gamma, as for Poisson and NB. Coefficient standard errors are
+  unaffected.
+
+- **OLS with `gamma = "estimate"` ignored `gamma_bounds`.** The search
+  grid was hard-coded. It is now log-spaced inside the bounds, and the
+  final search runs on the log scale, so small gamma values are located
+  accurately.
+
+- **`predict(newdata =)` ignored expressions in `reference_pop` and
+  `auxiliary`.** Formulas such as `~ I(N / 2)` read the raw variable
+  instead of evaluating the expression, so predictions did not match
+  [`fitted()`](https://rdrr.io/r/stats/fitted.values.html).
+
+- **`popsize(by =)` silently dropped rows with `NA` in the `by`
+  variable.** They vanished from the table and the total, while the
+  total’s standard error still used every row. They now form an `"NA"`
+  group, with a message, so the groups always add up to the ungrouped
+  total.
+
+- **NLS fit statistics used the OLS criterion.**
+  [`logLik()`](https://rdrr.io/r/stats/logLik.html),
+  [`AIC()`](https://rdrr.io/r/stats/AIC.html),
+  [`BIC()`](https://rdrr.io/r/stats/AIC.html),
+  [`deviance()`](https://rdrr.io/r/stats/deviance.html) and the Pearson
+  and deviance residuals of NLS fits were on the log scale that OLS
+  optimises, so OLS always won
+  [`compare_models()`](https://ncn-foreigners.github.io/uncounted/reference/compare_models.md).
+  They are now on the raw scale NLS optimises.
+  [`compare_models()`](https://ncn-foreigners.github.io/uncounted/reference/compare_models.md)
+  also warns when mixing OLS, NLS and iOLS, and its documentation states
+  that likelihood columns are comparable only within one family.
+
+- **[`profile_alpha()`](https://ncn-foreigners.github.io/uncounted/reference/profile_alpha.md)
+  and
+  [`profile_beta()`](https://ncn-foreigners.github.io/uncounted/reference/profile_beta.md)
+  used the wrong objective for NLS and weighted OLS**, so the profile
+  did not peak at the estimate. They now use the criterion each method
+  optimises. `reoptimize = TRUE` now also re-optimises an estimated
+  gamma and the NB theta, so it is a true profile likelihood; before,
+  the curve was too narrow. Profiling iOLS now gives a clear error.
+
+- **`loo()$dxi` and
+  [`dfpopsize()`](https://ncn-foreigners.github.io/uncounted/reference/dfpopsize.md)
+  mostly measured a unit’s own share of xi.** The refit’s total covered
+  only the remaining rows, so most values were negative whatever the
+  unit’s influence. `dxi` now applies the refit’s coefficients to all
+  rows, which is the influence on the estimate for a fixed target. The
+  old quantity is kept as `dxi_subset`. **Values of `dxi` and
+  [`dfpopsize()`](https://ncn-foreigners.github.io/uncounted/reference/dfpopsize.md)
+  change.**
+
+- **[`run_app()`](https://ncn-foreigners.github.io/uncounted/reference/run_app.md)
+  could not fit uploaded data with few distinct values.** Columns with
+  20 or fewer distinct values became factors at upload, including m, n
+  and N, so realistic small panels failed with “must be numeric, not
+  factor”.
+
+- **`boot_params` was shifted by one row.** Row 1 of
+  `bootstrap_popsize()$boot_params` was the full-sample fit and the last
+  replicate was lost, which also affected the parameter table in
+  [`summary()`](https://rdrr.io/r/base/summary.html). Parameters now
+  come back with each replicate.
+
+- **`NA` in the `cluster` variable** is now an error for every method.
+  NB used to treat it as one more cluster, with only a
+  [`rowsum()`](https://rdrr.io/r/base/rowsum.html) warning.
+
+- `gamma = 0` with zero auxiliary counts now gives a clear error instead
+  of `NA/NaN/Inf in 'x'`.
+
+- `NA` in a covariate now gives an error naming the variable instead of
+  `number of rows of matrices must match`.
+
+- [`lrtest()`](https://ncn-foreigners.github.io/uncounted/reference/lrtest.md)’s
+  nesting check no longer depends on the scale of the covariates.
+
+- **[`hypotheses_popsize()`](https://ncn-foreigners.github.io/uncounted/reference/hypotheses_popsize.md)
+  could count the total twice.** With `include_total = TRUE`, a filter
+  such as `xi[TRUE]` summed the Total row with its components. Such a
+  filter is now an error, and `xi["Total"]` selects the total also when
+  groups come from a `by` variable.
+
+- The null model of the pseudo-R2 in
+  [`compare_models()`](https://ncn-foreigners.github.io/uncounted/reference/compare_models.md)
+  now keeps the fit’s weights, countries and gamma bounds.
+
+- **Fit statistics handled weights inconsistently.**
+  [`logLik()`](https://rdrr.io/r/stats/logLik.html) was weighted for
+  Poisson and NB but not OLS and NLS, and
+  [`deviance()`](https://rdrr.io/r/stats/deviance.html) and Pearson X2
+  were never weighted. All now use the weighted sum, so
+  [`logLik()`](https://rdrr.io/r/stats/logLik.html),
+  [`AIC()`](https://rdrr.io/r/stats/AIC.html),
+  [`BIC()`](https://rdrr.io/r/stats/AIC.html) and
+  [`deviance()`](https://rdrr.io/r/stats/deviance.html) of weighted
+  OLS/NLS fits change.
+
+- The running mean in
+  [`plot.uncounted()`](https://ncn-foreigners.github.io/uncounted/reference/plot.uncounted.md)
+  now covers all points. It could skip the largest fitted values and
+  gave `NA` windows below 10 observations.
+
+- The Shiny population-size plot now draws a single group, centres the
+  bars on the bias-corrected estimate like the interval, and its result
+  is cleared when its model is removed or refitted under the same name.
+
+- **[`lrtest()`](https://ncn-foreigners.github.io/uncounted/reference/lrtest.md)
+  accepted fits to different data.** Only the number of observations was
+  compared. It now requires the same `observed`, `auxiliary`,
+  `reference_pop` and `weights`.
+
+- **[`lrtest()`](https://ncn-foreigners.github.io/uncounted/reference/lrtest.md)
+  accepted non-nested Poisson and NB pairs.** Models were ordered by
+  parameter count, so NB with no covariates against Poisson with many
+  ran as “NB nested in Poisson”. An NB model is never nested in a
+  Poisson model, so such a pair, or a Poisson model whose specification
+  is not contained in the NB model’s, is now an error pointing to
+  [`compare_models()`](https://ncn-foreigners.github.io/uncounted/reference/compare_models.md).
+
+- **[`lrtest()`](https://ncn-foreigners.github.io/uncounted/reference/lrtest.md)
+  boundary p-value.** For Poisson against NB with extra covariates it
+  was a plain chi-squared despite printing “boundary-corrected”, and
+  with `LR = 0` it was 0.5. It is now the mixture
+  `0.5 chi2_q + 0.5 chi2_(q+1)`, which is 1 at `LR = 0`, and the printed
+  text names the mixture used.
+
+### New features
+
+- [`estimate_hidden_pop()`](https://ncn-foreigners.github.io/uncounted/reference/estimate_hidden_pop.md)
+  gains `gamma_start` to set the starting value, and fits now store
+  `$optim_info`: the start and its source, the screen, restarts, the
+  final projected gradient, and `gamma_at_bound`. A message is shown
+  when an estimated gamma ends on a bound, and a warning when the
+  optimiser stops with a non-negligible gradient.
+
+- [`bootstrap_popsize()`](https://ncn-foreigners.github.io/uncounted/reference/bootstrap_popsize.md)
+  gains `ci_type = "cheap"` (Lam, 2022), a valid interval from very few
+  replications, computed on the log scale. Requires `fwb (>= 1.0.0)`,
+  whose bootstrap weights depend only on the seed, so numbers under a
+  fixed seed differ from `fwb` \< 1.0.0.
+
+- [`lrtest()`](https://ncn-foreigners.github.io/uncounted/reference/lrtest.md)
+  now reports the Pearson dispersion of the larger model and notes when
+  it exceeds 1.5: with overdispersion an LR test between two Poisson
+  models rejects far too often (about 79% at a nominal 5% in a
+  simulation with NB size 2).
+
+- [`lrtest()`](https://ncn-foreigners.github.io/uncounted/reference/lrtest.md)
+  gains `test = "Wald"`, a robust test of the larger model’s extra alpha
+  and beta coefficients using its stored sandwich covariance. It stays
+  near its nominal level under overdispersion (about 8% at a nominal 5%
+  in the simulation above, with n = 200).
+
+- New
+  [`feedback_sensitivity()`](https://ncn-foreigners.github.io/uncounted/reference/feedback_sensitivity.md):
+  sensitivity analysis for the “no feedback” assumption, indexed by the
+  elasticity of detection with respect to the unauthorized population.
+  It transforms the fitted cell-level estimates and bootstrap replicates
+  without refitting, so the fit is the same for every `delta`. `anchor`
+  is required, because it can reverse the direction of the result.
+
+- New
+  [`feedback_identified_set()`](https://ncn-foreigners.github.io/uncounted/reference/feedback_identified_set.md):
+  bounds on the population size over a range of `delta`, found by
+  optimization rather than at its ends because totals need not be
+  monotone, with an Imbens-Manski interval for the true value or a union
+  interval for the whole set.
+
+- New
+  [`feedback_tipping()`](https://ncn-foreigners.github.io/uncounted/reference/feedback_tipping.md):
+  how much detection feedback overturns a threshold or a contrast in the
+  `xi[...]` syntax of
+  [`hypotheses_popsize()`](https://ncn-foreigners.github.io/uncounted/reference/hypotheses_popsize.md),
+  for the point estimate and for the one-sided bootstrap test.
+
+- New
+  [`feedback_calibrate()`](https://ncn-foreigners.github.io/uncounted/reference/feedback_calibrate.md):
+  the unauthorized share of the foreign population per cell, whose
+  negative is the mechanical congestion elasticity, to help choose
+  `delta_grid`.
+
+- [`feedback_sensitivity()`](https://ncn-foreigners.github.io/uncounted/reference/feedback_sensitivity.md)
+  accepts `delta_prior = list(mean = , sd = )`, a normal distribution
+  for `delta` truncated to the admissible range, and keeps the draws so
+  that changes between years can be computed.
+
+### Breaking changes
+
+- [`dfbeta()`](https://rdrr.io/r/stats/influence.measures.html) and
+  `loo()$dfbeta` now return `beta_hat - beta_hat(-i)`, the sign used by
+  [`stats::dfbeta()`](https://rdrr.io/r/stats/influence.measures.html)
+  for `lm` and `glm` fits. They used to return the opposite, so a
+  positive value now means the unit pulls the coefficient up.
+
 ## uncounted 2.1.0
 
 ### New features
@@ -24,6 +284,33 @@
   `brmsfit` posterior prediction functions, while
   [`loo()`](https://ncn-foreigners.github.io/uncounted/reference/loo.md)
   wraps [`brms::loo()`](https://mc-stan.org/loo/reference/loo.html).
+
+### Documentation
+
+- **Reference verification**: Verified every package reference against
+  Crossref/arXiv and added DOIs throughout the vignettes, `README`, and
+  roxygen `@references`. Normalized author names (Beręsewicz, Bellégo)
+  and corrected the Benatia et al. citation year to 2025 (arXiv v3).
+
+- **Theory vignette**: Corrected the NLS optimizer (L-BFGS-B, not
+  Levenberg-Marquardt), aligned the population-size confidence-interval
+  description with the delta-method implementation, and clarified that
+  the Poisson PMLE reports HC3 robust standard errors by default (its
+  point estimates coincide with a Poisson GLM).
+
+- **Metadata**: Listed iOLS among the estimation methods in
+  `DESCRIPTION`; updated the funding acknowledgement to NCN OPUS 27.
+
+### Testing
+
+- **Confidence-interval calibration**: Added a Monte Carlo test
+  confirming that the 95% analytic and cluster
+  fractional-weighted-bootstrap intervals for the population size attain
+  approximately nominal coverage under a correctly specified model.
+
+- **Parameter recovery**: Tightened the data-generating-process recovery
+  assertions for the community-anchor (alpha) and detection offset
+  (gamma).
 
 ## uncounted 2.0.0
 
@@ -224,8 +511,8 @@
   app.
 
 - **Robust covariance support for non-MLE count fits**:
-  [`sandwich::vcovHC()`](https://sandwich.R-Forge.R-project.org/reference/vcovHC.html),
-  [`sandwich::vcovCL()`](https://sandwich.R-Forge.R-project.org/reference/vcovCL.html),
+  [`sandwich::vcovHC()`](https://zeileis.codeberg.page/sandwich/reference/vcovHC.html),
+  [`sandwich::vcovCL()`](https://zeileis.codeberg.page/sandwich/reference/vcovCL.html),
   and
   [`fwb::vcovFWB()`](https://ngreifer.github.io/fwb/reference/vcovFWB.html)
   now work for `estimator = "gmm"` and `estimator = "el"`. HC0/HC1 are
@@ -304,7 +591,7 @@
   surface (`iols`, bounded `link_rho`, count-model `gmm`/`el`), uses the
   `ukr` interaction example in `cov_alpha`, suppresses bootstrap
   progress via `verbose = FALSE`, and updates the funding line to NCN
-  OPUS 20.
+  OPUS 27.
 
 ## uncounted 1.0.0
 
@@ -313,11 +600,12 @@
 - **Covariate-varying gamma** (`cov_gamma`): The gamma offset parameter
   can now vary across observations via a formula interface, analogous to
   `cov_alpha` and `cov_beta`. The parameterization is
-  $\gamma_{i} = \exp\left( \mathbf{X}_{\gamma,i}\prime{\mathbf{δ}} \right)$,
+  $`\gamma_i = \exp(\mathbf{X}_{\gamma,i}' \boldsymbol{\delta})`$,
   ensuring positivity. Available for `method = "poisson"` and
   `method = "nb"`.
 
   ``` r
+
   fit <- estimate_hidden_pop(
     data, observed = ~ m, auxiliary = ~ n, reference_pop = ~ N,
     method = "poisson", gamma = "estimate",
@@ -446,10 +734,10 @@
   information) without sigma^2 scaling, preventing inflated bias
   correction on zero-heavy data.
 
-- **Removed nonexistent reference**: Replaced Beresewicz, Gudaszewski &
+- **Removed nonexistent reference**: Replaced Beręsewicz, Gudaszewski &
   Walsh
 
-  2025. with the correct Zhang (2008) and Beresewicz &
+  2025. with the correct Zhang (2008) and Beręsewicz &
         Pawlukiewicz (2020) references.
 
 ### Enhancements
@@ -463,8 +751,8 @@
 ### New features
 
 - **iOLS estimator** (`method = "iols"`): Iterated OLS targeting the
-  Gamma PML (GPML) score equations, following Benatia, Bellego & Pape
-  (2024). Two-phase algorithm: Phase 1 warms up with increasing delta
+  Gamma PML (GPML) score equations, following Benatia, Bellégo & Pape
+  (2025). Two-phase algorithm: Phase 1 warms up with increasing delta
   and empirical centering; Phase 2 uses the exact limiting transform
   `y_tilde = log(mu) + (m/mu - 1)/(1+rho)` to solve `Z'(m/mu - 1) = 0`.
   Converges on complex specifications including `year * UKR`
@@ -536,13 +824,13 @@
   Includes base R oracle tests against
   [`glm()`](https://rdrr.io/r/stats/glm.html),
   [`lm()`](https://rdrr.io/r/stats/lm.html),
-  [`sandwich::vcovHC()`](https://sandwich.R-Forge.R-project.org/reference/vcovHC.html),
+  [`sandwich::vcovHC()`](https://zeileis.codeberg.page/sandwich/reference/vcovHC.html),
   and [`MASS::glm.nb()`](https://rdrr.io/pkg/MASS/man/glm.nb.html).
 
 ### Documentation
 
 - Fixed references: replaced incorrect Zhang (2008) citation, added
-  URLs, added Beresewicz & Pawlukiewicz (2020).
+  URLs, added Beręsewicz & Pawlukiewicz (2020).
 
 - OLS `log(m+1)` fitted-value scale limitation documented.
 
@@ -577,9 +865,9 @@
   has been renamed to `vcov`. It now accepts either a character string
   (`"HC0"` through `"HC5"`) or a **function** that takes the fitted
   object and returns a variance-covariance matrix (e.g.,
-  [`sandwich::vcovHC`](https://sandwich.R-Forge.R-project.org/reference/vcovHC.html)
+  [`sandwich::vcovHC`](https://zeileis.codeberg.page/sandwich/reference/vcovHC.html)
   or a custom wrapper around
-  [`sandwich::vcovCL()`](https://sandwich.R-Forge.R-project.org/reference/vcovCL.html)).
+  [`sandwich::vcovCL()`](https://zeileis.codeberg.page/sandwich/reference/vcovCL.html)).
 
 - The `countries` parameter no longer triggers cluster-robust standard
   errors. It is now used **only** for grouping in
@@ -595,17 +883,17 @@
   [`estimate_hidden_pop()`](https://ncn-foreigners.github.io/uncounted/reference/estimate_hidden_pop.md)
   accepts a one-sided formula (e.g., `~ country_code`) to request
   cluster-robust variance estimation via
-  [`sandwich::vcovCL()`](https://sandwich.R-Forge.R-project.org/reference/vcovCL.html).
+  [`sandwich::vcovCL()`](https://zeileis.codeberg.page/sandwich/reference/vcovCL.html).
 
 - Full compatibility with the **sandwich** package through new S3
   methods: `bread()`, `estfun()`,
   [`hatvalues()`](https://rdrr.io/r/stats/influence.measures.html), and
   [`model.matrix()`](https://rdrr.io/r/stats/model.matrix.html). This
   allows direct use of
-  [`sandwich::vcovHC()`](https://sandwich.R-Forge.R-project.org/reference/vcovHC.html),
-  [`sandwich::vcovCL()`](https://sandwich.R-Forge.R-project.org/reference/vcovCL.html),
+  [`sandwich::vcovHC()`](https://zeileis.codeberg.page/sandwich/reference/vcovHC.html),
+  [`sandwich::vcovCL()`](https://zeileis.codeberg.page/sandwich/reference/vcovCL.html),
   and
-  [`sandwich::sandwich()`](https://sandwich.R-Forge.R-project.org/reference/sandwich.html)
+  [`sandwich::sandwich()`](https://zeileis.codeberg.page/sandwich/reference/sandwich.html)
   on `uncounted` objects.
 
 - New `type = "working"` option in
@@ -631,6 +919,7 @@
   estimators:
 
   ``` r
+
   # Cluster-robust via function
   fit <- estimate_hidden_pop(...,
     vcov = function(x) sandwich::vcovCL(x, cluster = data$country))
@@ -652,9 +941,9 @@
   types for both observation-level and cluster-robust cases.
 
 - Fixed a bug in the cluster-robust meat matrix computation where an
-  extra $\sqrt{\mu_{i}}$ factor was incorrectly included in the Poisson
+  extra $`\sqrt{\mu_i}`$ factor was incorrectly included in the Poisson
   and NB score contributions. This is now resolved by using
-  [`sandwich::vcovCL()`](https://sandwich.R-Forge.R-project.org/reference/vcovCL.html).
+  [`sandwich::vcovCL()`](https://zeileis.codeberg.page/sandwich/reference/vcovCL.html).
 
 ### Internal
 
@@ -691,9 +980,9 @@
   `by = ~ year`, `by = ~ year + sex`). Previously, stratification was
   only available through covariate-varying alpha.
 
-- New pseudo $R^{2}$ measures in
+- New pseudo $`R^2`$ measures in
   [`compare_models()`](https://ncn-foreigners.github.io/uncounted/reference/compare_models.md):
-  explained deviance ($R_{D}^{2}$) and Cameron-Windmeijer ($R_{CW}^{2}$)
+  explained deviance ($`R^2_D`$) and Cameron-Windmeijer ($`R^2_{CW}`$)
   for Poisson and Negative Binomial models.
 
 - Interactive **Shiny application** via
@@ -770,7 +1059,7 @@
   for comparing LOO influence across models.
 
 - Constrained estimation (`constrained = TRUE`): logit link for
-  $\alpha \in (0,1)$ and log link for $\beta > 0$.
+  $`\alpha \in (0, 1)`$ and log link for $`\beta > 0`$.
 
 - Fractional weighted bootstrap via
   [`bootstrap_popsize()`](https://ncn-foreigners.github.io/uncounted/reference/bootstrap_popsize.md)
@@ -800,10 +1089,10 @@
 
 - [`estimate_hidden_pop()`](https://ncn-foreigners.github.io/uncounted/reference/estimate_hidden_pop.md)
   for fitting the power-law model
-  $E\left( m_{i} \right) = N_{i}^{\alpha_{i}}\left( \gamma + n_{i}/N_{i} \right)^{\beta_{i}}$
-  using OLS, NLS, Poisson PML, or Negative Binomial MLE.
+  $`E(m_i) = N_i^{\alpha_i} (\gamma + n_i/N_i)^{\beta_i}`$ using OLS,
+  NLS, Poisson PML, or Negative Binomial MLE.
 
-- Covariate-varying $\alpha$ and $\beta$ via formula interface
+- Covariate-varying $`\alpha`$ and $`\beta`$ via formula interface
   (`cov_alpha`, `cov_beta`).
 
 - Gamma parameter: estimated, fixed, or excluded.

@@ -34,9 +34,13 @@ profile_alpha(
 
 - reoptimize:
 
-  Logical. If `TRUE`, optimize all other parameters at each grid point
-  (true profile likelihood). If `FALSE` (default), hold everything else
-  at the MLE (concentrated profile, faster).
+  Logical. If `TRUE`, optimize all other parameters at each grid point,
+  including an estimated gamma and the NB theta (true profile
+  likelihood). If `FALSE` (default), hold everything else at the MLE
+  (concentrated profile, faster). The criterion is the one the method
+  optimises: the count likelihood for Poisson/NB and a weighted Gaussian
+  on the log scale for OLS and on the raw scale for NLS. Not available
+  for `method = "iols"`.
 
 - plot:
 

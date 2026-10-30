@@ -92,6 +92,7 @@ df$m <- rpois(50, lambda = df$N^0.5 * (df$n / df$N)^0.8)
 
 fit <- estimate_hidden_pop(data = df, observed = ~m, auxiliary = ~n,
                            reference_pop = ~N, method = "poisson")
+#> Estimated gamma is at its lower bound (1e-10); the optimum may lie outside gamma_bounds = c(1e-10, 0.5).
 
 # Hanging rootogram (default)
 rootogram(fit)

@@ -122,37 +122,35 @@ fit_po <- estimate_hidden_pop(
   reference_pop = ~N, method = "poisson",
   countries = ~country
 )
-#> Warning: Some alpha values < 0 (min = -0.467). Consider using constrained = TRUE.
+#> Warning: Some alpha values < 0 (min = -0.046). Consider using constrained = TRUE.
+#> Estimated gamma is at its lower bound (1e-10); the optimum may lie outside gamma_bounds = c(1e-10, 0.5).
 fit_nb <- estimate_hidden_pop(
   data = sim_data, observed = ~m, auxiliary = ~n,
   reference_pop = ~N, method = "nb",
   countries = ~country
 )
-#> Warning: Some alpha values < 0 (min = -1.872). Consider using constrained = TRUE.
+#> Warning: Some alpha values < 0 (min = -0.046). Consider using constrained = TRUE.
+#> Estimated gamma is at its lower bound (1e-10); the optimum may lie outside gamma_bounds = c(1e-10, 0.5).
 
 loo_po <- loo(fit_po, by = "country")
-#> Warning: Some alpha values < 0 (min = -3.217). Consider using constrained = TRUE.
-#> Warning: Some alpha values < 0 (min = -7.674). Consider using constrained = TRUE.
-#> Warning: Some alpha values > 1 (max = 4.281). Population size estimates may be unreliable. Consider using constrained = TRUE or simplifying cov_alpha.
-#> Warning: Some alpha values > 1 (max = 2.877). Population size estimates may be unreliable. Consider using constrained = TRUE or simplifying cov_alpha.
+#> Warning: Some alpha values < 0 (min = -0.171). Consider using constrained = TRUE.
+#> Warning: Some alpha values < 0 (min = -0.406). Consider using constrained = TRUE.
 loo_nb <- loo(fit_nb, by = "country")
-#> Warning: Some alpha values < 0 (min = -3.217). Consider using constrained = TRUE.
-#> Warning: Some alpha values < 0 (min = -7.674). Consider using constrained = TRUE.
-#> Warning: Some alpha values > 1 (max = 4.281). Population size estimates may be unreliable. Consider using constrained = TRUE or simplifying cov_alpha.
-#> Warning: Some alpha values > 1 (max = 2.877). Population size estimates may be unreliable. Consider using constrained = TRUE or simplifying cov_alpha.
+#> Warning: Some alpha values < 0 (min = -0.171). Consider using constrained = TRUE.
+#> Warning: Some alpha values < 0 (min = -0.406). Consider using constrained = TRUE.
 comp <- compare_loo(loo_po, loo_nb, labels = c("Poisson", "NB"))
 print(comp)
 #> LOO comparison: Poisson vs NB 
 #> Dropped by: country 
-#> Full xi -- Poisson : 0 | NB : 0 
+#> Full xi -- Poisson : 8 | NB : 8 
 #> 
 #> Top 15 most influential (by max |%change|):
-#>  label dxi_Poisson   pct_Poisson   dxi_NB       pct_NB        max_abs_pct 
-#>  C4     3.012532e+25  9.234739e+28 3.012437e+25  9.425311e+36 9.425311e+36
-#>  C5     2.996660e+17  9.186084e+20 2.996660e+17  9.375947e+28 9.375947e+28
-#>  C2     3.874090e+03  1.187578e+07 3.874120e+03  1.212134e+15 1.212134e+15
-#>  C3    -3.000000e-02 -1.000000e+02 0.000000e+00 -1.000000e+02 1.000000e+02
-#>  C1    -3.000000e-02 -1.000000e+02 0.000000e+00 -1.000000e+02 1.000000e+02
+#>  label dxi_Poisson pct_Poisson dxi_NB pct_NB  max_abs_pct
+#>  C5    144.05      1752.38     144.05 1752.38 1752.38    
+#>  C2     73.87       898.60      73.87  898.60  898.60    
+#>  C4     14.52       176.66      14.52  176.66  176.66    
+#>  C3     -8.15       -99.11      -8.15  -99.11   99.11    
+#>  C1     -6.64       -80.74      -6.64  -80.74   80.74    
 plot(comp, type = "scatter")
 
 plot(comp, type = "bar")

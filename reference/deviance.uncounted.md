@@ -41,6 +41,7 @@ the residual sum of squares on the log scale.
 
 McCullagh, P. and Nelder, J. A. (1989). *Generalized Linear Models*, 2nd
 ed. Chapman & Hall.
+[doi:10.1007/978-1-4899-3242-6](https://doi.org/10.1007/978-1-4899-3242-6)
 
 ## Examples
 
@@ -54,7 +55,8 @@ df$m <- rpois(30, lambda = df$N^0.5 * (df$n / df$N)^0.8)
 
 fit_po <- estimate_hidden_pop(data = df, observed = ~m, auxiliary = ~n,
                               reference_pop = ~N, method = "poisson")
-#> Warning: Some alpha values > 1 (max = 3.271). Population size estimates may be unreliable. Consider using constrained = TRUE or simplifying cov_alpha.
+#> Warning: Some alpha values > 1 (max = 3.258). Population size estimates may be unreliable. Consider using constrained = TRUE or simplifying cov_alpha.
+#> Estimated gamma is at its upper bound (0.5); the optimum may lie outside gamma_bounds = c(1e-10, 0.5).
 deviance(fit_po)
-#> [1] 17.61431
+#> [1] 17.60936
 ```

@@ -145,9 +145,9 @@ dependence_bounds(fit, Gamma = c(1, 1.1, 1.25))
 #> Interpretation: bounds reflect identification sensitivity, not sampling uncertainty.
 #> 
 #>  Gamma estimate    lower    upper pct_change_lower pct_change_upper
-#>   1.00 4.269743 4.269743 4.269743         0.000000                0
-#>   1.10 4.269743 3.881585 4.696718        -9.090909               10
-#>   1.25 4.269743 3.415795 5.337179       -20.000000               25
+#>   1.00 4.269788 4.269788 4.269788         0.000000                0
+#>   1.10 4.269788 3.881625 4.696767        -9.090909               10
+#>   1.25 4.269788 3.415830 5.337235       -20.000000               25
 dependence_bounds(
   fit,
   Gamma = c(1, 1.1, 1.25),
@@ -159,9 +159,9 @@ dependence_bounds(
 #> Interpretation: bounds reflect identification sensitivity, not sampling uncertainty.
 #> 
 #>  Gamma estimate    lower    upper pct_change_lower pct_change_upper
-#>   1.00 4.269743 4.269743 4.269743         0.000000                0
-#>   1.10 4.269743 3.881585 4.696718        -9.090909               10
-#>   1.25 4.269743 3.415795 5.337179       -20.000000               25
+#>   1.00 4.269788 4.269788 4.269788         0.000000                0
+#>   1.10 4.269788 3.881625 4.696767        -9.090909               10
+#>   1.25 4.269788 3.415830 5.337235       -20.000000               25
 #> 
 #> Threshold (lower bound): 900
 #> gamma_star: 1

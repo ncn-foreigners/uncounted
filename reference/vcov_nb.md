@@ -45,12 +45,12 @@ data(irregular_migration)
 d <- irregular_migration[irregular_migration$year == "2019", ]
 fit <- estimate_hidden_pop(d, ~m, ~n, ~N, method = "nb", gamma = 0.005)
 vcov_nb(fit)  # includes theta row/column
-#>              alpha        beta            
-#> alpha 0.0008780469 0.001285950 0.001801256
-#> beta  0.0012859499 0.002185531 0.002006601
-#>       0.0018012560 0.002006601 0.044811875
+#>              alpha        beta       theta
+#> alpha 0.0008780468 0.001285949 0.001801268
+#> beta  0.0012859489 0.002185528 0.002006617
+#> theta 0.0018012683 0.002006617 0.044811932
 vcov(fit)     # alpha/beta only (same as vcov_nb submatrix)
 #>              alpha        beta
-#> alpha 0.0008780469 0.001285950
-#> beta  0.0012859499 0.002185531
+#> alpha 0.0008780468 0.001285949
+#> beta  0.0012859489 0.002185528
 ```

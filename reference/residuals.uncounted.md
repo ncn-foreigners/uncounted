@@ -81,6 +81,7 @@ Four residual types are supported:
 
 McCullagh, P. and Nelder, J. A. (1989). *Generalized Linear Models*, 2nd
 ed. Chapman & Hall.
+[doi:10.1007/978-1-4899-3242-6](https://doi.org/10.1007/978-1-4899-3242-6)
 
 Hilbe, J. M. (2011). *Negative Binomial Regression*, 2nd ed. Cambridge
 University Press.
@@ -101,19 +102,20 @@ df$m <- rpois(30, lambda = df$N^0.5 * (df$n / df$N)^0.8)
 
 fit <- estimate_hidden_pop(data = df, observed = ~m, auxiliary = ~n,
                            reference_pop = ~N, method = "poisson")
-#> Warning: Some alpha values > 1 (max = 3.271). Population size estimates may be unreliable. Consider using constrained = TRUE or simplifying cov_alpha.
+#> Warning: Some alpha values > 1 (max = 3.258). Population size estimates may be unreliable. Consider using constrained = TRUE or simplifying cov_alpha.
+#> Estimated gamma is at its upper bound (0.5); the optimum may lie outside gamma_bounds = c(1e-10, 0.5).
 
 # Response residuals (default)
 head(residuals(fit))
-#> [1] -1.9426446 -1.2439567 -0.1250438 -0.5329768 -1.4553729 -1.0807200
+#> [1] -1.9390196 -1.2498869 -0.1381474 -0.5235144 -1.4998266 -1.0709919
 
 # Pearson residuals
 head(residuals(fit, type = "pearson"))
-#> [1] -1.3937879 -0.6038371 -0.1178902 -0.3348827 -0.6231062 -0.6157254
+#> [1] -1.3924869 -0.6062923 -0.1294922 -0.3295533 -0.6395383 -0.6111486
 
 # Deviance and Anscombe residuals
 head(residuals(fit, type = "deviance"))
-#> [1] -1.9711137 -0.6376606 -0.1201818 -0.3477951 -0.6544409 -0.6583125
+#> [1] -1.9692738 -0.6403853 -0.1322539 -0.3420634 -0.6725144 -0.6531233
 head(residuals(fit, type = "anscombe"))
-#> [1] -2.0906818 -0.6379992 -0.1201894 -0.3478822 -0.6547205 -0.6588482
+#> [1] -2.0887303 -0.6407280 -0.1322640 -0.3421464 -0.6728165 -0.6536473
 ```

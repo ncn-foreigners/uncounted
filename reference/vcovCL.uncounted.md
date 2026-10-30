@@ -30,7 +30,7 @@ vcovCL(x, cluster = NULL, type = NULL, sandwich = TRUE, fix = FALSE, ...)
 - fix:
 
   Passed to
-  [`sandwich::meatCL()`](https://sandwich.R-Forge.R-project.org/reference/vcovCL.html)
+  [`sandwich::meatCL()`](https://zeileis.codeberg.page/sandwich/reference/vcovCL.html)
 
 - ...:
 

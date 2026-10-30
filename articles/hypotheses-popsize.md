@@ -5,7 +5,7 @@
 The
 [`hypotheses_popsize()`](https://ncn-foreigners.github.io/uncounted/reference/hypotheses_popsize.md)
 function tests statements about estimated population sizes, denoted here
-by $\xi$. It is designed for questions such as:
+by $`\xi`$. It is designed for questions such as:
 
 - Is the estimated population size in 2024 larger than 200,000?
 - Did the estimated population size increase between 2019 and 2024?
@@ -15,6 +15,7 @@ by $\xi$. It is designed for questions such as:
 The function uses an explicit quantity-indexed syntax:
 
 ``` r
+
 xi[year == 2024]
 xi[year == 2024] - xi[year == 2019]
 ```
@@ -23,6 +24,7 @@ This avoids ambiguous bare labels and leaves room for future extensions
 to other quantities, such as `alpha[...]`.
 
 ``` r
+
 library(uncounted)
 data(irregular_migration)
 ```
@@ -33,6 +35,7 @@ For a compact example, fit a Poisson model with a fixed gamma offset and
 then compute population size by year.
 
 ``` r
+
 fit <- estimate_hidden_pop(
   data = irregular_migration,
   observed = ~ m,
@@ -47,11 +50,11 @@ ps_year <- popsize(fit, by = ~ year)
 ps_year
 #>   group observed estimate estimate_bc    lower     upper share_pct
 #> 1  2019     6604 40906.90    40897.65 19160.12  87296.86  11.89222
-#> 2  2020     3398 44720.59    44710.31 20803.07  96092.18  13.00091
-#> 3  2021     3105 52686.31    52673.92 24277.41 114284.94  15.31666
+#> 2  2020     3398 44720.59    44710.31 20803.07  96092.17  13.00091
+#> 3  2021     3105 52686.30    52673.92 24277.41 114284.93  15.31666
 #> 4  2022     2949 65068.18    65051.86 29171.43 145064.68  18.91625
-#> 5  2023     4362 69246.09    69229.04 31266.13 153285.99  20.13083
-#> 6  2024     6687 71352.31    71335.30 32617.45 156012.32  20.74313
+#> 5  2023     4362 69246.09    69229.04 31266.13 153285.98  20.13083
+#> 6  2024     6687 71352.31    71335.29 32617.45 156012.32  20.74313
 ```
 
 The examples below use the bias-corrected estimate explicitly. The
@@ -61,7 +64,11 @@ chosen silently.
 By default, directional character hypotheses are interpreted as the
 alternative hypothesis. For example, `"xi[year == 2024] > 200000"` tests
 
-$$H_{0}:\xi_{2024} \leq 200000\quad\text{against}\quad H_{1}:\xi_{2024} > 200000.$$
+``` math
+H_0: \xi_{2024} \le 200000
+\quad\text{against}\quad
+H_1: \xi_{2024} > 200000.
+```
 
 The returned table includes explicit `null_hypothesis` and
 `alternative_hypothesis` columns. If you want the character expression
@@ -72,6 +79,7 @@ to be the null hypothesis instead, use `hypothesis_side = "null"`.
 To test whether the 2024 population size is larger than 200,000:
 
 ``` r
+
 hypotheses_popsize(
   ps_year,
   "xi[year == 2024] > 200000",
@@ -81,21 +89,24 @@ hypotheses_popsize(
 #>                 hypothesis            null_hypothesis    alternative_hypothesis
 #>  xi[year == 2024] > 200000 xi[year == 2024] <= 200000 xi[year == 2024] > 200000
 #>  estimate null.value  contrast std.error statistic   p.value      s.value
-#>   71335.3      2e+05 -128664.7  28481.64 -4.517461 0.9999969 4.514601e-06
+#>  71335.29      2e+05 -128664.7  28481.64 -4.517461 0.9999969 4.514597e-06
 #>   conf.low conf.high alternative                 method estimate_type n_draws
-#>  -184487.7 -72841.71     greater Delta method Wald test   estimate_bc      NA
+#>  -184487.7 -72841.72     greater Delta method Wald test   estimate_bc      NA
 ```
 
 This is a one-sided Wald test. The contrast is
 
-$${\widehat{\xi}}_{2024} - 200000.$$
+``` math
+\hat\xi_{2024} - 200000.
+```
 
-A positive statistic supports the alternative that $\xi_{2024}$ is
+A positive statistic supports the alternative that $`\xi_{2024}`$ is
 larger than the threshold.
 
 To treat the same directional statement as the null hypothesis, write:
 
 ``` r
+
 hypotheses_popsize(
   ps_year,
   "xi[year == 2024] > 200000",
@@ -106,17 +117,18 @@ hypotheses_popsize(
 #>                 hypothesis            null_hypothesis    alternative_hypothesis
 #>  xi[year == 2024] > 200000 xi[year == 2024] >= 200000 xi[year == 2024] < 200000
 #>  estimate null.value  contrast std.error statistic      p.value  s.value
-#>   71335.3      2e+05 -128664.7  28481.64 -4.517461 3.129278e-06 18.28574
+#>  71335.29      2e+05 -128664.7  28481.64 -4.517461 3.129275e-06 18.28574
 #>   conf.low conf.high alternative                 method estimate_type n_draws
-#>  -184487.7 -72841.71        less Delta method Wald test   estimate_bc      NA
+#>  -184487.7 -72841.72        less Delta method Wald test   estimate_bc      NA
 ```
 
 This asks whether there is evidence against
-$H_{0}:\xi_{2024} \geq 200000$ in favor of $H_{1}:\xi_{2024} < 200000$.
+$`H_0: \xi_{2024} \ge 200000`$ in favor of $`H_1: \xi_{2024} < 200000`$.
 
 The compact form also works when there is exactly one grouping variable:
 
 ``` r
+
 hypotheses_popsize(
   ps_year,
   "xi[2024] > 200000",
@@ -124,11 +136,11 @@ hypotheses_popsize(
 )
 #> Population-size hypothesis tests
 #>         hypothesis    null_hypothesis alternative_hypothesis estimate
-#>  xi[2024] > 200000 xi[2024] <= 200000      xi[2024] > 200000  71335.3
+#>  xi[2024] > 200000 xi[2024] <= 200000      xi[2024] > 200000 71335.29
 #>  null.value  contrast std.error statistic   p.value      s.value  conf.low
-#>       2e+05 -128664.7  28481.64 -4.517461 0.9999969 4.514601e-06 -184487.7
+#>       2e+05 -128664.7  28481.64 -4.517461 0.9999969 4.514597e-06 -184487.7
 #>  conf.high alternative                 method estimate_type n_draws
-#>  -72841.71     greater Delta method Wald test   estimate_bc      NA
+#>  -72841.72     greater Delta method Wald test   estimate_bc      NA
 ```
 
 ## Change Over Time
@@ -137,6 +149,7 @@ To test whether the estimated population size increased between 2019 and
 2024:
 
 ``` r
+
 hypotheses_popsize(
   ps_year,
   "xi[year == 2024] - xi[year == 2019] > 0",
@@ -162,6 +175,7 @@ fitted model parameters and are generally dependent.
 Two-sided equality tests use `=` or `==`:
 
 ``` r
+
 hypotheses_popsize(
   ps_year,
   "xi[year == 2024] = xi[year == 2019]",
@@ -171,7 +185,7 @@ hypotheses_popsize(
 #>                           hypothesis                     null_hypothesis
 #>  xi[year == 2024] = xi[year == 2019] xi[year == 2024] = xi[year == 2019]
 #>                alternative_hypothesis estimate null.value contrast std.error
-#>  xi[year == 2024] != xi[year == 2019]  71335.3   40897.65 30437.64  12659.76
+#>  xi[year == 2024] != xi[year == 2019] 71335.29   40897.65 30437.64  12659.76
 #>  statistic    p.value  s.value conf.low conf.high alternative
 #>   2.404282 0.01620427 5.947482 5624.959  55250.32   two.sided
 #>                  method estimate_type n_draws
@@ -185,6 +199,7 @@ of the matching population-size estimates, with covariance handled
 before testing.
 
 ``` r
+
 ps_year_sex <- popsize(fit, by = ~ year + sex)
 
 hypotheses_popsize(
@@ -210,6 +225,7 @@ code. The function receives a named vector of xi estimates and,
 optionally, the group metadata.
 
 ``` r
+
 hypotheses_popsize(
   ps_year,
   function(x, groups) {
@@ -234,34 +250,58 @@ results,
 [`hypotheses_popsize()`](https://ncn-foreigners.github.io/uncounted/reference/hypotheses_popsize.md)
 uses Wald inference for nonlinear functions of fitted model parameters.
 
-Let $\theta$ denote the fitted alpha coefficients. Under standard
+Let $`\theta`$ denote the fitted alpha coefficients. Under standard
 large-sample regularity conditions,
 
-$$\widehat{\theta} \approx N\left( \theta,{\widehat{V}}_{\theta} \right).$$
+``` math
+\hat\theta \approx N(\theta, \widehat V_\theta).
+```
 
 Population size is a nonlinear function of those parameters:
 
-$$\xi = h(\theta) = \sum\limits_{i}N_{i}^{\alpha_{i}}.$$
+``` math
+\xi = h(\theta) = \sum_i N_i^{\alpha_i}.
+```
 
 The delta method gives the approximate sampling variance:
 
-$$\widehat{Var}\left( \widehat{\xi} \right) = \nabla h\left( \widehat{\theta} \right)\prime{\widehat{V}}_{\theta}\nabla h\left( \widehat{\theta} \right).$$
+``` math
+\widehat{\mathrm{Var}}(\hat\xi)
+  =
+  \nabla h(\hat\theta)'
+  \widehat V_\theta
+  \nabla h(\hat\theta).
+```
 
 For a threshold hypothesis such as
 
-$$H_{0}:\xi_{2024} \leq c\quad\text{against}\quad H_{1}:\xi_{2024} > c,$$
+``` math
+H_0: \xi_{2024} \le c
+\quad\text{against}\quad
+H_1: \xi_{2024} > c,
+```
 
 the reported statistic is
 
-$$z = \frac{{\widehat{\xi}}_{2024} - c}{SE\left( {\widehat{\xi}}_{2024} \right)}.$$
+``` math
+z = \frac{\hat\xi_{2024} - c}{SE(\hat\xi_{2024})}.
+```
 
 For an increase hypothesis,
 
-$$H_{0}:\xi_{2024} - \xi_{2019} \leq 0\quad\text{against}\quad H_{1}:\xi_{2024} - \xi_{2019} > 0,$$
+``` math
+H_0: \xi_{2024} - \xi_{2019} \le 0
+\quad\text{against}\quad
+H_1: \xi_{2024} - \xi_{2019} > 0,
+```
 
 the statistic is
 
-$$z = \frac{{\widehat{\xi}}_{2024} - {\widehat{\xi}}_{2019}}{SE\left( {\widehat{\xi}}_{2024} - {\widehat{\xi}}_{2019} \right)}.$$
+``` math
+z =
+\frac{\hat\xi_{2024} - \hat\xi_{2019}}
+     {SE(\hat\xi_{2024} - \hat\xi_{2019})}.
+```
 
 The default reference distribution is standard normal. If you supply a
 finite `df`, the function uses a t distribution instead.
@@ -273,12 +313,15 @@ For objects returned by
 the same contrast is evaluated inside every fractional weighted
 bootstrap draw. For example, for an increase test:
 
-$$d^{*} = \xi_{2024}^{*} - \xi_{2019}^{*}.$$
+``` math
+d^* = \xi^*_{2024} - \xi^*_{2019}.
+```
 
 The bootstrap standard error is `sd(d*)`, and the function reports a
 Wald statistic using that standard error.
 
 ``` r
+
 boot_year <- bootstrap_popsize(
   fit,
   R = 19,
@@ -299,9 +342,9 @@ hypotheses_popsize(
 #>                           null_hypothesis
 #>  xi[year == 2024] - xi[year == 2019] <= 0
 #>                   alternative_hypothesis estimate null.value contrast std.error
-#>  xi[year == 2024] - xi[year == 2019] > 0 35586.71          0 35586.71  17107.26
-#>  statistic   p.value  s.value conf.low conf.high alternative        method
-#>   2.080211 0.0187531 5.736727 2057.093  69116.33     greater FWB Wald test
+#>  xi[year == 2024] - xi[year == 2019] > 0 30951.42          0 30951.42  8172.471
+#>  statistic      p.value  s.value conf.low conf.high alternative        method
+#>   3.787278 7.615338e-05 13.68073 14933.67  46969.16     greater FWB Wald test
 #>  estimate_type n_draws
 #>    boot_median      19
 ```

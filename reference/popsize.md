@@ -41,7 +41,9 @@ popsize(
   model. When `NULL` (default), groups are defined by the alpha
   covariate pattern from `cov_alpha`. When provided, the same fitted
   alpha values are used but summed over the `by`-groups instead. This is
-  analogous to `singleRcapture::stratifyPopsize()`.
+  analogous to `singleRcapture::stratifyPopsize()`. Rows with `NA` in a
+  `by` variable form their own `"NA"` group, with a message, so the
+  groups always add up to the total.
 
 - level:
 
@@ -55,14 +57,14 @@ popsize(
 
 - total:
 
-  Logical; if `TRUE` and multiple groups exist, compute a delta-method
-  total with SE and CI, stored in `attr(result, "total")`. Default
-  `FALSE`. **Warning**: for panel data where groups are defined by time
+  Logical; if `TRUE` and multiple groups exist, compute an optional
+  delta-method total with SE and CI, stored in `attr(result, "total")`.
+  Default `FALSE`. For panel data where groups are defined by time
   periods (e.g., `by = ~ year`), the total sums population estimates
-  across years. This is generally not meaningful because the same
-  individuals may appear in multiple years. The total is only
-  appropriate when groups represent non-overlapping subpopulations
-  (e.g., `by = ~ sex` within a single year).
+  across years and is generally not meaningful because the same
+  individuals may appear in multiple years. Request totals only for
+  non-overlapping subpopulations (e.g., `by = ~ sex` within a single
+  year).
 
 ## Value
 
@@ -152,7 +154,9 @@ When `bias_correction = TRUE`, the lower and upper bounds are rescaled
 by \\\hat{\xi}^{BC}\_g / \hat{\xi}\_g\\, matching the returned
 bias-corrected point estimate.
 
-**Total across groups.** When multiple groups exist, the total
+**Total across groups.** Totals are not computed or reported by default,
+because summing across panel or time groups is usually not substantively
+meaningful. When `total = TRUE` is requested for non-overlapping groups,
 \\\hat{\xi} = \sum_g \hat{\xi}\_g\\ has its own delta-method CI computed
 via the gradient \\\nabla\_\alpha \xi\\ and a log-normal approximation
 for positivity. This is stored in `attr(result, "total")`.
@@ -176,20 +180,21 @@ fit <- estimate_hidden_pop(
   data = sim_data, observed = ~m, auxiliary = ~n,
   reference_pop = ~N, method = "poisson"
 )
-#> Warning: Some alpha values < 0 (min = -0.467). Consider using constrained = TRUE.
+#> Warning: Some alpha values < 0 (min = -0.046). Consider using constrained = TRUE.
+#> Estimated gamma is at its lower bound (1e-10); the optimum may lie outside gamma_bounds = c(1e-10, 0.5).
 
 # Population size with bias correction and 95% CI
 popsize(fit)
-#>   group observed   estimate estimate_bc lower upper share_pct
-#> 1 (all)      752 0.03262174           0     0     0       100
+#>   group observed estimate  estimate_bc       lower        upper share_pct
+#> 1 (all)      752  8.22019 5.988907e-11 1.32598e-17 0.0002704943       100
 
 # Without bias correction
 popsize(fit, bias_correction = FALSE)
-#>   group observed   estimate estimate_bc         lower         upper share_pct
-#> 1 (all)      752 0.03262174          NA 3.458853e-219 3.076679e+215       100
+#>   group observed estimate estimate_bc    lower    upper share_pct
+#> 1 (all)      752  8.22019          NA 1.82e-06 37127221       100
 
 # 90% confidence interval
 popsize(fit, level = 0.90)
-#>   group observed   estimate estimate_bc lower upper share_pct
-#> 1 (all)      752 0.03262174           0     0     0       100
+#>   group observed estimate  estimate_bc        lower        upper share_pct
+#> 1 (all)      752  8.22019 5.988907e-11 1.557595e-16 2.302717e-05       100
 ```

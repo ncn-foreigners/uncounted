@@ -22,8 +22,11 @@ glance(x, ...)
 
 ## Value
 
-A one-row data frame with columns: `method`, `nobs`, `logLik`, `AIC`,
-`BIC`, `deviance`, `df.residual`, `gamma`, `theta`.
+A one-row data frame with columns: `method`, `estimator`, `link_rho`,
+`nobs`, `logLik`, `AIC`, `BIC`, `deviance`, `df.residual`. Estimated
+`gamma` and `theta` are not reported here; they are parameter estimates
+and appear as rows in
+[`tidy.uncounted`](https://ncn-foreigners.github.io/uncounted/reference/tidy.uncounted.md).
 
 ## Examples
 

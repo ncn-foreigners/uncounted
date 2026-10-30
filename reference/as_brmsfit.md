@@ -1,13 +1,10 @@
 # Extract the brmsfit from a Bayesian uncounted Model
 
-Extract the `brmsfit` stored inside an `"uncounted_bayes"` object.
+Extract the brmsfit from a Bayesian uncounted Model
 
 ## Usage
 
 ``` r
-as_brmsfit(object, ...)
-
-# S3 method for class 'uncounted_bayes'
 as_brmsfit(object, ...)
 ```
 

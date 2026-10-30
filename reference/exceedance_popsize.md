@@ -95,10 +95,10 @@ if (requireNamespace("fwb", quietly = TRUE)) {
 }
 #> Bootstrap exceedance probability
 #> Group: (all) 
-#> P*(xi > 2000) = 0.9796 (48/49 finite draws)
+#> P*(xi > 2000) = 1.0000 (49/49 finite draws)
 #> Bootstrap draws: 49 
 #> Distribution summary:
-#>      mean    median        sd      q025      q975 
-#> 23608.745 13468.667 24755.238  2441.417 84668.828 
+#>       mean     median         sd       q025       q975 
+#>  28016.548  14236.795  39993.259   3635.068 166094.331 
 # }
 ```

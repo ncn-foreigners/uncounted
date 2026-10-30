@@ -13,12 +13,14 @@ assessing model quality.
 The app requires three additional packages:
 
 ``` r
+
 install.packages(c("shiny", "DT", "bslib"))
 ```
 
 ## Launching the App
 
 ``` r
+
 library(uncounted)
 run_app()
 ```
@@ -93,6 +95,7 @@ Select a fitted model and choose a diagnostic:
 ## Example Workflow
 
 ``` r
+
 library(uncounted)
 run_app()
 ```

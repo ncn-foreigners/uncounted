@@ -20,6 +20,7 @@ estimate_hidden_pop(
   gamma = "estimate",
   cov_gamma = NULL,
   gamma_bounds = c(1e-10, 0.5),
+  gamma_start = NULL,
   theta_start = 1,
   link_rho = c("power", "cloglog", "logit", "probit"),
   estimator = c("mle", "gmm", "el"),
@@ -39,7 +40,10 @@ estimate_hidden_pop(
 
 - observed:
 
-  One-sided formula for the observed count (e.g., `~ m`).
+  One-sided formula for the observed count (e.g., `~ m`). Must be whole
+  numbers for `method = "nb"`. `method = "poisson"` also accepts
+  non-integer values (pseudo-maximum likelihood); `$loglik` is then a
+  pseudo-log-likelihood, flagged by `$pseudo_loglik`.
 
 - auxiliary:
 
@@ -88,6 +92,19 @@ estimate_hidden_pop(
   Numeric vector of length 2: lower and upper bounds for the estimated
   gamma parameter. Default `c(1e-10, 0.5)`.
 
+- gamma_start:
+
+  Optional starting value for the estimated gamma (the gamma intercept
+  when `cov_gamma` is used); must lie inside `gamma_bounds`. Default
+  `NULL` screens 25 log-spaced values in `gamma_bounds` and starts from
+  the one with the smallest Poisson profile deviance. Ignored unless
+  `gamma = "estimate"`, and by `method = "ols"`, which profiles gamma
+  over its own grid. Refits inside
+  [`bootstrap_popsize()`](https://ncn-foreigners.github.io/uncounted/reference/bootstrap_popsize.md),
+  [`loo()`](https://ncn-foreigners.github.io/uncounted/reference/loo.md)
+  and the profile functions start from the original estimate. The screen
+  and the optimiser's trace are stored in `$optim_info`.
+
 - theta_start:
 
   Starting value for the NB dispersion parameter (used only when
@@ -114,16 +131,16 @@ estimate_hidden_pop(
   Controls the variance-covariance estimator. Can be:
 
   - A character string specifying the HC type: `"HC0"` through `"HC5"`,
-    or `"HC4m"`. Default `"HC3"`. When `cluster` is also provided, this
-    type is passed to
-    [`sandwich::vcovCL()`](https://sandwich.R-Forge.R-project.org/reference/vcovCL.html).
+    or `"HC4m"`. Default `"HC3"`. When `cluster` is also provided,
+    clustered HC2+ requests are downgraded to `"HC1"` before calling
+    [`sandwich::vcovCL()`](https://zeileis.codeberg.page/sandwich/reference/vcovCL.html).
     For count models fitted with `estimator = "gmm"` or
     `estimator = "el"`, the default robust covariance is `"HC1"` and
     HC2+ requests are downgraded to `"HC1"`.
 
   - A function that takes the fitted `uncounted` object and returns a
     variance-covariance matrix. For example,
-    [`sandwich::vcovHC`](https://sandwich.R-Forge.R-project.org/reference/vcovHC.html)
+    [`sandwich::vcovHC`](https://zeileis.codeberg.page/sandwich/reference/vcovHC.html)
     or `function(x) sandwich::vcovCL(x, cluster = data$country_code)`.
 
 - weights:
@@ -154,12 +171,10 @@ estimate_hidden_pop(
   cluster-robust variance estimation (e.g., `~ country_code`). When
   provided and `vcov` is a character string, the variance is computed
   using
-  [`sandwich::vcovCL()`](https://sandwich.R-Forge.R-project.org/reference/vcovCL.html)
-  with the specified HC type. Note: clustered HC2 and HC3 are only
-  applicable to standard linear and generalized linear models;
-  [`sandwich::vcovCL()`](https://sandwich.R-Forge.R-project.org/reference/vcovCL.html)
-  will emit a warning for non-GLM objects. Use `"HC0"` or `"HC1"` with
-  clustering to avoid this. Ignored when `vcov` is a function.
+  [`sandwich::vcovCL()`](https://zeileis.codeberg.page/sandwich/reference/vcovCL.html)
+  with the requested HC type, except that HC2+ requests are reported in
+  `vcov_requested` and computed as `"HC1"`. Ignored when `vcov` is a
+  function.
 
 ## Value
 
@@ -361,6 +376,7 @@ irregular foreigners in Poland using non-linear count regression models.
 
 Santos Silva, J. M. C. and Tenreyro, S. (2006). The log of gravity. *The
 Review of Economics and Statistics*, 88(4), 641–658.
+[doi:10.1162/rest.88.4.641](https://doi.org/10.1162/rest.88.4.641)
 
 ## Examples
 
@@ -382,19 +398,20 @@ fit_pois <- estimate_hidden_pop(
   data = sim_data, observed = ~ m,
   auxiliary = ~ n, reference_pop = ~ N
 )
+#> Estimated gamma is at its lower bound (1e-10); the optimum may lie outside gamma_bounds = c(1e-10, 0.5).
 summary(fit_pois)
 #> Unauthorized population estimation
 #> Method: POISSON | estimator: MLE | link_rho: power | vcov: HC3 
 #> N obs: 50 
-#> Gamma: 0.337767 (estimated) 
-#> Log-likelihood: -134.08 
-#> AIC: 274.16  BIC: 279.89 
-#> Deviance: 45.82 
+#> Gamma: 0 (estimated) 
+#> Log-likelihood: -133.7 
+#> AIC: 273.39  BIC: 279.13 
+#> Deviance: 45.06 
 #> 
 #> Coefficients:
-#>         Estimate Std. Error z value Pr(>|z|)    
-#> alpha   0.559800   0.066707  8.3919   <2e-16 ***
-#> beta    3.113112 221.225021  0.0141   0.9888    
+#>       Estimate Std. Error z value  Pr(>|z|)    
+#> alpha 0.557109   0.064995  8.5716 < 2.2e-16 ***
+#> beta  0.974512   0.224505  4.3407  1.42e-05 ***
 #> ---
 #> Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
 #> 
@@ -402,7 +419,7 @@ summary(fit_pois)
 #> Population size estimation results:
 #>   (BC = bias-corrected using model-based variance)
 #>       Observed Estimate Estimate (BC) CI lower CI upper
-#> (all)      777   14,853        12,134    3,155   46,669
+#> (all)      777   14,447        11,978    3,224   44,502
 
 # OLS with fixed gamma
 fit_ols <- estimate_hidden_pop(
@@ -436,6 +453,7 @@ fit_constr <- estimate_hidden_pop(
   auxiliary = ~ n, reference_pop = ~ N,
   constrained = TRUE
 )
+#> Estimated gamma is at its lower bound (1e-10); the optimum may lie outside gamma_bounds = c(1e-10, 0.5).
 summary(fit_constr)
 #> Unauthorized population estimation
 #> Method: POISSON | estimator: MLE | link_rho: power | vcov: HC3 
@@ -447,8 +465,8 @@ summary(fit_constr)
 #> 
 #> Coefficients (link scale: logit for alpha, log for beta):
 #>        Estimate Std. Error z value Pr(>|z|)
-#> alpha  0.229427   0.263416  0.8710   0.3838
-#> beta  -0.025829   0.230379 -0.1121   0.9107
+#> alpha  0.229437   0.263417  0.8710   0.3838
+#> beta  -0.025819   0.230378 -0.1121   0.9108
 #> 
 #> Response-scale fitted parameters (alpha_values in (0,1), beta_values > 0):
 #>   Alpha (response scale):
@@ -462,5 +480,5 @@ summary(fit_constr)
 #> Population size estimation results:
 #>   (BC = bias-corrected using model-based variance)
 #>       Observed Estimate Estimate (BC) CI lower CI upper
-#> (all)      777   14,447        11,858    3,192   44,055
+#> (all)      777   14,447        11,858    3,192   44,056
 ```

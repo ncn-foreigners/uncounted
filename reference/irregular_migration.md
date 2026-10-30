@@ -26,7 +26,8 @@ A data frame with 1,382 rows and 8 variables:
 
 - country_code:
 
-  ISO 3166-1 alpha-3 country code (e.g. `"UKR"`).
+  ISO 3166-1 alpha-3 country code (e.g. `"UKR"`), or
+  `"unknown/stateless"` for records without a country of origin.
 
 - country:
 
@@ -35,7 +36,7 @@ A data frame with 1,382 rows and 8 variables:
 - continent:
 
   Continent (`"Africa"`, `"Americas"`, `"Asia"`, `"Europe"`,
-  `"Oceania"`).
+  `"Oceania"`), or `"unknown/stateless"` (12 rows).
 
 - m:
 
@@ -84,7 +85,7 @@ unauthorized foreigners in Norway. *Documents* 2008/11, Statistics
 Norway.
 <https://www.ssb.no/a/english/publikasjoner/pdf/doc_200811_en/doc_200811_en.pdf>
 
-Beresewicz, M. and Pawlukiewicz, K. (2020). Estimation of the number of
+Beręsewicz, M. and Pawlukiewicz, K. (2020). Estimation of the number of
 irregular foreigners in Poland using non-linear count regression models.
 *arXiv preprint* arXiv:2008.09407.
 

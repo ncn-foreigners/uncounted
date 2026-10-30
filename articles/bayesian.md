@@ -7,14 +7,19 @@ samples from the posterior distribution of the model parameters.
 
 For observation `i`,
 
-$$\log\left( \mu_{i} \right) = \alpha_{i}\log\left( N_{i} \right) + \log h\{\beta_{i}\log\left( \gamma_{i} + n_{i}/N_{i} \right)\},$$
+``` math
+\log(\mu_i) = \alpha_i \log(N_i) +
+  \log h\{\beta_i \log(\gamma_i + n_i / N_i)\},
+```
 
 where `m_i` is the observed count, `N_i` is the reference population,
 `n_i` is the auxiliary count, and `h()` is chosen by `link_rho`. The
 posterior draws of `alpha_i` imply posterior draws of the
 hidden-population estimand
 
-$$\xi_{g} = \sum\limits_{i \in g}N_{i}^{\alpha_{i}}.$$
+``` math
+\xi_g = \sum_{i \in g} N_i^{\alpha_i}.
+```
 
 No Wald approximation is needed for `xi`:
 [`popsize()`](https://ncn-foreigners.github.io/uncounted/reference/popsize.md)
@@ -28,6 +33,7 @@ The first release supports Poisson and negative binomial likelihoods
 through `brms`, with `rstan` as the default backend.
 
 ``` r
+
 library(uncounted)
 data(irregular_migration)
 
@@ -57,6 +63,7 @@ set `UNCOUNTED_RUN_STAN_VIGNETTE=true`.
 ## Posterior population size
 
 ``` r
+
 ps_year_country <- popsize(
   fit_bayes,
   by = ~ year + country_code,
@@ -80,6 +87,7 @@ matrix is stored on the object and can be extracted with
 Bayesian hypotheses are posterior propositions. For example:
 
 ``` r
+
 hypotheses_popsize(
   ps_year_country,
   "xi[year == 2024 & country_code == 'UKR'] < 15000"
@@ -106,6 +114,7 @@ If you want the written expression to be the null hypothesis, use
 `hypothesis_side = "null"`:
 
 ``` r
+
 hypotheses_popsize(
   ps_year_country,
   "xi[year == 2024 & country_code == 'UKR'] < 15000",
@@ -121,6 +130,7 @@ standard deviations, and credible intervals rather than a posterior
 point-null probability. For practical equivalence, use a ROPE:
 
 ``` r
+
 hypotheses_popsize(
   ps_year_country,
   "xi[year == 2024 & country_code == 'UKR'] -
@@ -154,6 +164,7 @@ The underlying `brmsfit` is available with
 [`as_brmsfit()`](https://ncn-foreigners.github.io/uncounted/reference/as_brmsfit.md):
 
 ``` r
+
 brms_fit <- as_brmsfit(fit_bayes)
 summary(brms_fit)
 ```

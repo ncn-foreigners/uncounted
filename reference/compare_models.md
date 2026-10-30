@@ -43,7 +43,8 @@ An object of class `"uncounted_comparison"` containing a `data.frame` in
 - `logLik`:
 
   Log-likelihood (true for count models, Gaussian pseudo-log-likelihood
-  for OLS/NLS).
+  for OLS/NLS on the scale each one optimises). See
+  [`logLik.uncounted`](https://ncn-foreigners.github.io/uncounted/reference/logLik.uncounted.md).
 
 - `AIC, BIC`:
 
@@ -82,9 +83,13 @@ An object of class `"uncounted_comparison"` containing a `data.frame` in
   Uses the model-implied variance function \\V(\mu)\\. Only for
   Poisson/NB.
 
-A warning is issued when comparing OLS/NLS pseudo-log-likelihoods with
-true count-model likelihoods, since AIC/BIC values are not comparable
-across these families.
+**Comparability.** `logLik`, `AIC`, `BIC` and `Deviance` are comparable
+only within one likelihood family: OLS (log-scale Gaussian), NLS
+(raw-scale Gaussian), iOLS (Gamma pseudo-likelihood without constants),
+or Poisson/NB (count likelihoods). A table can still mix families, for
+example to line up `RMSE` and `R2_cor`, which are on the response scale
+for every method. In that case a warning is issued and the columns are
+kept, but their values must not be compared across families.
 
 ## Examples
 
@@ -99,9 +104,11 @@ df$m <- rpois(30, lambda = df$N^0.5 * (df$n / df$N)^0.8)
 fit_po <- estimate_hidden_pop(data = df, observed = ~m, auxiliary = ~n,
                               reference_pop = ~N, method = "poisson")
 #> Warning: Some alpha values < 0 (min = -1.28). Consider using constrained = TRUE.
+#> Estimated gamma is at its upper bound (0.5); the optimum may lie outside gamma_bounds = c(1e-10, 0.5).
 fit_nb <- estimate_hidden_pop(data = df, observed = ~m, auxiliary = ~n,
                               reference_pop = ~N, method = "nb")
-#> Warning: Some alpha values < 0 (min = -1.244). Consider using constrained = TRUE.
+#> Warning: Some alpha values < 0 (min = -1.28). Consider using constrained = TRUE.
+#> Estimated gamma is at its upper bound (0.5); the optimum may lie outside gamma_bounds = c(1e-10, 0.5).
 
 comp <- compare_models(Poisson = fit_po, NB = fit_nb, sort_by = "AIC")
 #> Warning: Some alpha values < 0 (min = -1.28). Consider using constrained = TRUE.
@@ -111,8 +118,8 @@ comp
 #> ------------------------------------------------------------ 
 #>    Model  Method Estimator  Link Constrained n_par logLik    AIC    BIC
 #>  Poisson POISSON       MLE power       FALSE     3 -52.51 111.02 115.22
-#>       NB      NB       MLE power       FALSE     4 -52.52 113.05 118.65
-#>  Deviance Pearson_X2 RMSE R2_cor   R2_D  R2_CW
-#>     33.82      26.32 1.43 0.1019  0e+00 0.1208
-#>     33.85      26.35 1.43 0.1018 -8e-04 0.1198
+#>       NB      NB       MLE power       FALSE     4 -52.51 113.02 118.62
+#>  Deviance Pearson_X2 RMSE R2_cor R2_D  R2_CW
+#>     33.82      26.32 1.43 0.1019    0 0.1208
+#>     33.82      26.32 1.43 0.1019    0 0.1208
 ```

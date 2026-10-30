@@ -41,8 +41,12 @@ errors, test statistics, and p-values).
 
 For OLS and NLS fits, inference uses t-statistics with \\n - p\\ degrees
 of freedom. For Poisson and NB fits, z-statistics (normal approximation)
-are used. Standard errors are always HC-robust (type controlled by
-`vcov_type` in the original call).
+are used. Standard errors come from the covariance requested by the
+`vcov` argument of the original
+[`estimate_hidden_pop`](https://ncn-foreigners.github.io/uncounted/reference/estimate_hidden_pop.md)
+call: an HC type (`"HC3"` by default, `"HC1"` for `estimator = "gmm"`
+and `estimator = "el"`), or whatever a user-supplied `vcov` function
+returns. The type in force is shown in the printed header.
 
 ## See also
 

@@ -43,10 +43,10 @@ fit <- estimate_hidden_pop(d, ~ m, ~ n, ~ N, method = "poisson",
                            gamma = 0.005)
 tidy(fit)
 #>    term  estimate  std.error statistic      p.value
-#> 1 alpha 0.8426007 0.05247666 16.056676 5.133340e-58
+#> 1 alpha 0.8426007 0.05247666 16.056676 5.133338e-58
 #> 2  beta 0.7116506 0.12053883  5.903912 3.549823e-09
 tidy(fit, conf.int = TRUE)
 #>    term  estimate  std.error statistic      p.value  conf.low conf.high
-#> 1 alpha 0.8426007 0.05247666 16.056676 5.133340e-58 0.7397483 0.9454531
+#> 1 alpha 0.8426007 0.05247666 16.056676 5.133338e-58 0.7397483 0.9454531
 #> 2  beta 0.7116506 0.12053883  5.903912 3.549823e-09 0.4753988 0.9479024
 ```

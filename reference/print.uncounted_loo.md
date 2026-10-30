@@ -11,7 +11,9 @@ table shows:
 
 - dxi:
 
-  \\\Delta\xi\\: change in total population size estimate.
+  \\\Delta\xi\\: influence on the total population size for a fixed
+  target (see
+  [`loo`](https://ncn-foreigners.github.io/uncounted/reference/loo.md)).
 
 - pct_change:
 

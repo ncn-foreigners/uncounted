@@ -4,15 +4,6 @@
 
 - [`as_brmsfit()`](https://ncn-foreigners.github.io/uncounted/reference/as_brmsfit.md)
   : Extract the brmsfit from a Bayesian uncounted Model
-- [`summary(`*`<uncounted_bayes>`*`)`](https://ncn-foreigners.github.io/uncounted/reference/bayes_methods.md)
-  [`coef(`*`<uncounted_bayes>`*`)`](https://ncn-foreigners.github.io/uncounted/reference/bayes_methods.md)
-  [`fitted(`*`<uncounted_bayes>`*`)`](https://ncn-foreigners.github.io/uncounted/reference/bayes_methods.md)
-  [`predict(`*`<uncounted_bayes>`*`)`](https://ncn-foreigners.github.io/uncounted/reference/bayes_methods.md)
-  [`residuals(`*`<uncounted_bayes>`*`)`](https://ncn-foreigners.github.io/uncounted/reference/bayes_methods.md)
-  [`loo(`*`<uncounted_bayes>`*`)`](https://ncn-foreigners.github.io/uncounted/reference/bayes_methods.md)
-  [`tidy(`*`<uncounted_bayes>`*`)`](https://ncn-foreigners.github.io/uncounted/reference/bayes_methods.md)
-  [`glance(`*`<uncounted_bayes>`*`)`](https://ncn-foreigners.github.io/uncounted/reference/bayes_methods.md)
-  : Methods for Bayesian Hidden-Population Models
 - [`bootstrap_popsize()`](https://ncn-foreigners.github.io/uncounted/reference/bootstrap_popsize.md)
   : Bootstrap Confidence Intervals for Population Size
 - [`bread(`*`<uncounted>`*`)`](https://ncn-foreigners.github.io/uncounted/reference/bread.uncounted.md)
@@ -45,6 +36,21 @@
 - [`exceedance_popsize()`](https://ncn-foreigners.github.io/uncounted/reference/exceedance_popsize.md)
   [`print(`*`<uncounted_popsize_exceedance>`*`)`](https://ncn-foreigners.github.io/uncounted/reference/exceedance_popsize.md)
   : Bootstrap Exceedance Probability for Population Size
+- [`feedback_calibrate()`](https://ncn-foreigners.github.io/uncounted/reference/feedback_calibrate.md)
+  [`print(`*`<uncounted_feedback_calibration>`*`)`](https://ncn-foreigners.github.io/uncounted/reference/feedback_calibrate.md)
+  : Calibrate the Feedback Parameter
+- [`feedback_identified_set()`](https://ncn-foreigners.github.io/uncounted/reference/feedback_identified_set.md)
+  [`print(`*`<uncounted_feedback_set>`*`)`](https://ncn-foreigners.github.io/uncounted/reference/feedback_identified_set.md)
+  : Identified Set for Population Size under Detection Feedback
+- [`feedback_sensitivity()`](https://ncn-foreigners.github.io/uncounted/reference/feedback_sensitivity.md)
+  [`print(`*`<uncounted_feedback>`*`)`](https://ncn-foreigners.github.io/uncounted/reference/feedback_sensitivity.md)
+  [`plot(`*`<uncounted_feedback>`*`)`](https://ncn-foreigners.github.io/uncounted/reference/feedback_sensitivity.md)
+  : Detection-Feedback Sensitivity Analysis for Population Size
+- [`feedback_tipping()`](https://ncn-foreigners.github.io/uncounted/reference/feedback_tipping.md)
+  [`print(`*`<uncounted_feedback_tipping>`*`)`](https://ncn-foreigners.github.io/uncounted/reference/feedback_tipping.md)
+  : Tipping Points under Detection Feedback
+- [`fitted(`*`<uncounted_bayes>`*`)`](https://ncn-foreigners.github.io/uncounted/reference/fitted.uncounted_bayes.md)
+  : Fitted Values from a Bayesian uncounted Model
 - [`frailty_sensitivity()`](https://ncn-foreigners.github.io/uncounted/reference/frailty_sensitivity.md)
   [`print(`*`<uncounted_frailty_sensitivity>`*`)`](https://ncn-foreigners.github.io/uncounted/reference/frailty_sensitivity.md)
   [`plot(`*`<uncounted_frailty_sensitivity>`*`)`](https://ncn-foreigners.github.io/uncounted/reference/frailty_sensitivity.md)
@@ -83,6 +89,8 @@
   : Extract Posterior Population-Size Draws
 - [`predict(`*`<uncounted>`*`)`](https://ncn-foreigners.github.io/uncounted/reference/predict.uncounted.md)
   : Predict from an uncounted model
+- [`predict(`*`<uncounted_bayes>`*`)`](https://ncn-foreigners.github.io/uncounted/reference/predict.uncounted_bayes.md)
+  : Predict from a Bayesian uncounted Model
 - [`print(`*`<uncounted_boot>`*`)`](https://ncn-foreigners.github.io/uncounted/reference/print.uncounted_boot.md)
   : Print Bootstrap Population Size Results
 - [`print(`*`<uncounted_loo>`*`)`](https://ncn-foreigners.github.io/uncounted/reference/print.uncounted_loo.md)
@@ -101,6 +109,8 @@
   : Gamma Profile: Population Size as a Function of Gamma
 - [`residuals(`*`<uncounted>`*`)`](https://ncn-foreigners.github.io/uncounted/reference/residuals.uncounted.md)
   : Residuals for uncounted models
+- [`residuals(`*`<uncounted_bayes>`*`)`](https://ncn-foreigners.github.io/uncounted/reference/residuals.uncounted_bayes.md)
+  : Bayesian Residuals
 - [`robustness_dependence()`](https://ncn-foreigners.github.io/uncounted/reference/robustness_dependence.md)
   [`print(`*`<uncounted_dependence_robustness>`*`)`](https://ncn-foreigners.github.io/uncounted/reference/robustness_dependence.md)
   : Dependence Robustness Value for Population Size
@@ -110,6 +120,8 @@
   : Launch the uncounted Shiny Application
 - [`summary(`*`<uncounted>`*`)`](https://ncn-foreigners.github.io/uncounted/reference/summary.uncounted.md)
   : Summary of an Uncounted Population Model
+- [`summary(`*`<uncounted_bayes>`*`)`](https://ncn-foreigners.github.io/uncounted/reference/summary.uncounted_bayes.md)
+  : Summarize a Bayesian Hidden-Population Model
 - [`summary(`*`<uncounted_boot>`*`)`](https://ncn-foreigners.github.io/uncounted/reference/summary.uncounted_boot.md)
   : Summary of Bootstrap Population Size Results
 - [`summary(`*`<uncounted_loo>`*`)`](https://ncn-foreigners.github.io/uncounted/reference/summary.uncounted_loo.md)

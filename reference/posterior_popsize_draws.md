@@ -1,9 +1,6 @@
 # Extract Posterior Population-Size Draws
 
-Extract posterior draws of grouped population-size estimates from
-Bayesian uncounted fits or Bayesian
-[`popsize`](https://ncn-foreigners.github.io/uncounted/reference/popsize.md)
-results.
+Extract Posterior Population-Size Draws
 
 ## Usage
 

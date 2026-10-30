@@ -91,8 +91,6 @@ A data frame with one row per hypothesis and columns `hypothesis`,
 `null_hypothesis`, `alternative_hypothesis`, `estimate`, `null.value`,
 `contrast`, `std.error`, `statistic`, `p.value`, `s.value`, `conf.low`,
 `conf.high`, `alternative`, `method`, `estimate_type`, and `n_draws`.
-Bayesian results also include `p_greater`, `p_less`, `p_h1`, `p_h0`,
-`posterior_odds`, `evidence_ratio`, and optional ROPE columns.
 
 ## Details
 
@@ -131,9 +129,9 @@ hypotheses_popsize(ps_year, "xi[year == 2024] > 200000",
 #>                 hypothesis            null_hypothesis    alternative_hypothesis
 #>  xi[year == 2024] > 200000 xi[year == 2024] <= 200000 xi[year == 2024] > 200000
 #>  estimate null.value  contrast std.error statistic   p.value    s.value
-#>  64014.08      2e+05 -135985.9  61634.58 -2.206325 0.9863194 0.01987322
+#>  64014.09      2e+05 -135985.9  61634.59 -2.206324 0.9863194 0.01987325
 #>   conf.low conf.high alternative                 method estimate_type n_draws
-#>  -256787.5 -15184.36     greater Delta method Wald test   estimate_bc      NA
+#>  -256787.5 -15184.33     greater Delta method Wald test   estimate_bc      NA
 hypotheses_popsize(ps_year, "xi[year == 2024] - xi[year == 2019] > 0",
                    estimate = "estimate_bc")
 #> Population-size hypothesis tests
@@ -142,9 +140,9 @@ hypotheses_popsize(ps_year, "xi[year == 2024] - xi[year == 2019] > 0",
 #>                           null_hypothesis
 #>  xi[year == 2024] - xi[year == 2019] <= 0
 #>                   alternative_hypothesis estimate null.value contrast std.error
-#>  xi[year == 2024] - xi[year == 2019] > 0 27188.37          0 27188.37  27307.62
+#>  xi[year == 2024] - xi[year == 2019] > 0 27188.38          0 27188.38  27307.63
 #>  statistic   p.value  s.value  conf.low conf.high alternative
-#>  0.9956331 0.1597142 2.646435 -26333.59  80710.33     greater
+#>  0.9956331 0.1597142 2.646435 -26333.59  80710.35     greater
 #>                  method estimate_type n_draws
 #>  Delta method Wald test   estimate_bc      NA
 ```

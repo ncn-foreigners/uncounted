@@ -1,9 +1,11 @@
 # Leave-One-Out Influence on Population Size
 
-Computes the change in the total estimated population size \\\hat\xi =
-\sum_i N_i^{\hat\alpha_i}\\ when each observation (or country) is
-dropped. This is a convenience wrapper around
-[`loo`](https://ncn-foreigners.github.io/uncounted/reference/loo.md).
+Computes the influence of each observation (or country) on the total
+estimated population size \\\hat\xi = \sum_i N_i^{\hat\alpha_i}\\,
+holding the target population fixed. This is a convenience wrapper
+around
+[`loo`](https://ncn-foreigners.github.io/uncounted/reference/loo.md);
+see there for the definition.
 
 ## Usage
 
@@ -31,8 +33,10 @@ dfpopsize(model, by = c("obs", "country"), ...)
 
 ## Value
 
-A named numeric vector. Each element is the change in \\\hat\xi\\ when
-that unit is dropped (\\\hat\xi\_{(-i)} - \hat\xi\\).
+A named numeric vector. Each element is the change in \\\hat\xi\\,
+summed over all rows, when the coefficients are re-estimated without
+that unit (`dxi` in
+[`loo`](https://ncn-foreigners.github.io/uncounted/reference/loo.md)).
 
 ## See also
 
@@ -49,5 +53,5 @@ fit <- estimate_hidden_pop(d, ~ m, ~ n, ~ N, method = "poisson",
 dp <- dfpopsize(fit)
 head(dp)
 #>          1          2          3          4          5          6 
-#> 4006.95264 -157.03916 3460.55759  187.08577  542.66030  -30.66062 
+#> 4156.06841 -120.79823 3560.03090  267.14848 1111.51823  -24.08684 
 ```

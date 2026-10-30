@@ -51,13 +51,20 @@ An object of class `"uncounted_loo"` with components:
 
 - dfbeta:
 
-  Matrix (`n_drops` x `p`): change in coefficients
-  \\\hat{\beta}\_{(-i)} - \hat{\beta}\\.
+  Matrix (`n_drops` x `p`): influence on the coefficients,
+  \\\hat{\beta} - \hat{\beta}\_{(-i)}\\, the same sign as
+  [`stats::dfbeta()`](https://rdrr.io/r/stats/influence.measures.html).
+  Positive means the unit pulls the coefficient up.
 
 - dxi:
 
-  Numeric vector: change in population size \\\hat{\xi}\_{(-i)} -
-  \hat{\xi}\\.
+  Numeric vector: influence on the population size for a fixed target,
+  using the refit's coefficients on all rows (see Details).
+
+- dxi_subset:
+
+  Numeric vector: change in population size when the unit also leaves
+  the target (see Details).
 
 - full_coefs:
 
@@ -99,15 +106,26 @@ overall contribution to \\\hat{\xi}\\ and is more relevant for assessing
 structural sensitivity: would the conclusion change if a country were
 excluded?
 
-**Interpretation of `dxi`.** \\\Delta\xi_i = \hat{\xi}\_{(-i)} -
-\hat{\xi}\\: the change in total estimated population when observation
-(or country) \\i\\ is removed.
+**Interpretation of `dxi`.** `dxi` measures influence on the estimate
+for a fixed target population: \\\Delta\xi_i = \sum_j
+N_j^{\hat\alpha\_{j(-i)}} - \sum_j N_j^{\hat\alpha_j}\\, where both sums
+run over *all* rows and \\\hat\alpha\_{(-i)}\\ comes from the refit
+without unit \\i\\. It therefore reflects only how the coefficients
+move.
 
-- \\\Delta\xi_i \< 0\\: dropping \\i\\ decreases the estimate
-  (observation was pulling the estimate up).
+- \\\Delta\xi_i \< 0\\: without \\i\\ the estimate is lower (the unit
+  was pulling the estimate up).
 
-- \\\Delta\xi_i \> 0\\: dropping \\i\\ increases the estimate
-  (observation was pulling the estimate down).
+- \\\Delta\xi_i \> 0\\: without \\i\\ the estimate is higher (the unit
+  was pulling the estimate down).
+
+`dxi_subset` is the change when the unit also leaves the target: the
+total of
+[`popsize()`](https://ncn-foreigners.github.io/uncounted/reference/popsize.md)
+on the refit, over the remaining rows only, minus \\\hat\xi\\. It is
+mostly negative because it includes the unit's own share of \\\hat\xi\\,
+so it is not an influence measure, but it answers “what would we
+estimate if this unit were not in the data at all?”
 
 ## Examples
 
@@ -128,59 +146,55 @@ fit <- estimate_hidden_pop(
   reference_pop = ~N, method = "poisson",
   countries = ~country
 )
-#> Warning: Some alpha values < 0 (min = -0.467). Consider using constrained = TRUE.
+#> Warning: Some alpha values < 0 (min = -0.046). Consider using constrained = TRUE.
+#> Estimated gamma is at its lower bound (1e-10); the optimum may lie outside gamma_bounds = c(1e-10, 0.5).
 
 # LOO by observation (drops one row at a time)
 loo_obs <- loo(fit, by = "obs")
-#> Warning: Some alpha values < 0 (min = -0.076). Consider using constrained = TRUE.
-#> Warning: Some alpha values < 0 (min = -1.732). Consider using constrained = TRUE.
-#> Warning: Some alpha values < 0 (min = -2.133). Consider using constrained = TRUE.
-#> Warning: Some alpha values > 1 (max = 1.198). Population size estimates may be unreliable. Consider using constrained = TRUE or simplifying cov_alpha.
-#> Warning: Some alpha values < 0 (min = -0.579). Consider using constrained = TRUE.
-#> Warning: Some alpha values < 0 (min = -1.587). Consider using constrained = TRUE.
-#> Warning: Some alpha values < 0 (min = -1.463). Consider using constrained = TRUE.
-#> Warning: Some alpha values < 0 (min = -9.373). Consider using constrained = TRUE.
-#> Warning: Some alpha values > 1 (max = 3.897). Population size estimates may be unreliable. Consider using constrained = TRUE or simplifying cov_alpha.
-#> Warning: Some alpha values < 0 (min = -0.44). Consider using constrained = TRUE.
-#> Warning: Some alpha values < 0 (min = -2.215). Consider using constrained = TRUE.
-#> Warning: Some alpha values > 1 (max = 5.131). Population size estimates may be unreliable. Consider using constrained = TRUE or simplifying cov_alpha.
-#> Warning: Some alpha values < 0 (min = -0.453). Consider using constrained = TRUE.
+#> Warning: Some alpha values < 0 (min = -0.064). Consider using constrained = TRUE.
+#> Warning: Some alpha values < 0 (min = -0.211). Consider using constrained = TRUE.
+#> Warning: Some alpha values < 0 (min = -0.057). Consider using constrained = TRUE.
+#> Warning: Some alpha values < 0 (min = -0.025). Consider using constrained = TRUE.
+#> Warning: Some alpha values < 0 (min = -0.451). Consider using constrained = TRUE.
+#> Warning: Some alpha values < 0 (min = -0.051). Consider using constrained = TRUE.
+#> Warning: Some alpha values < 0 (min = -0.087). Consider using constrained = TRUE.
+#> Warning: Some alpha values < 0 (min = -0.064). Consider using constrained = TRUE.
 print(loo_obs)       # top 10 most influential observations
 #> Leave-one-out sensitivity analysis
 #> Dropped by: obs 
 #> N iterations: 15 
 #> Converged: 15 / 15 
 #> 
-#> Full model xi: 0 
-#> LOO xi range: 0 to 2.444641e+30 
+#> Full model xi: 8.2 
+#> LOO xi range: 0 to 49.6 
 #> 
 #> Most influential (by |delta xi|):
-#>  dropped          dxi    pct_change
-#>       12 2.444641e+30  7.493902e+33
-#>        9 2.260013e+23  6.927935e+26
-#>        4 9.404481e+07  2.882888e+11
-#>       13 4.440181e+06  1.361111e+10
-#>       14 4.374037e+05  1.340835e+09
-#>        1 5.100000e+00  1.566636e+04
-#>        8 0.000000e+00 -1.000000e+02
-#>       11 0.000000e+00 -1.000000e+02
-#>        3 0.000000e+00 -1.000000e+02
-#>        2 0.000000e+00 -1.000000e+02
+#>  dropped  dxi pct_change
+#>       13 41.4     503.14
+#>       12 29.6     360.64
+#>        6 12.9     157.44
+#>        9  9.6     116.51
+#>        4  8.4     102.78
+#>        1  8.2      99.69
+#>        8 -8.2     -99.51
+#>        3 -7.3     -88.56
+#>       14  7.0      84.99
+#>       11 -3.4     -41.85
 summary(loo_obs)     # coefficient and xi stability
 #> Leave-one-out sensitivity analysis
 #> Dropped by: obs 
 #> N iterations: 15 (converged: 15 )
 #> 
 #> === Coefficient stability ===
-#>            full  loo_mean    loo_sd   loo_min   loo_max
-#> alpha -0.467194 -0.538235  3.227945  -9.37336  5.131033
-#> beta  -7.287481 -7.963749 30.733370 -92.08695 46.003884
+#>            full  loo_mean   loo_sd   loo_min   loo_max
+#> alpha -0.045833 -0.052940 0.131550 -0.450711  0.091103
+#> beta  -0.726555 -0.741571 0.278221 -1.583679 -0.435062
 #> 
 #> === Xi stability ===
-#> Full xi: 0 
-#> LOO mean: 1.629761e+29 
-#> LOO range: 0 to 2.444641e+30 
-#> Max |%change|: 7.493902e+33 %
+#> Full xi: 8.2 
+#> LOO mean: 14.6 
+#> LOO range: 0 to 49.6 
+#> Max |%change|: 503.14 %
 plot(loo_obs)        # bar plot of dxi
 
 plot(loo_obs, type = "coef")  # DFBETA plots per coefficient
@@ -188,24 +202,22 @@ plot(loo_obs, type = "coef")  # DFBETA plots per coefficient
 
 # LOO by country (drops all rows for one country)
 loo_ctry <- loo(fit, by = "country")
-#> Warning: Some alpha values < 0 (min = -3.217). Consider using constrained = TRUE.
-#> Warning: Some alpha values < 0 (min = -7.674). Consider using constrained = TRUE.
-#> Warning: Some alpha values > 1 (max = 4.281). Population size estimates may be unreliable. Consider using constrained = TRUE or simplifying cov_alpha.
-#> Warning: Some alpha values > 1 (max = 2.877). Population size estimates may be unreliable. Consider using constrained = TRUE or simplifying cov_alpha.
+#> Warning: Some alpha values < 0 (min = -0.171). Consider using constrained = TRUE.
+#> Warning: Some alpha values < 0 (min = -0.406). Consider using constrained = TRUE.
 print(loo_ctry)
 #> Leave-one-out sensitivity analysis
 #> Dropped by: country 
 #> N iterations: 5 
 #> Converged: 5 / 5 
 #> 
-#> Full model xi: 0 
-#> LOO xi range: 0 to 3.012532e+25 
+#> Full model xi: 8.2 
+#> LOO xi range: 0.1 to 152.3 
 #> 
 #> Most influential (by |delta xi|):
-#>  dropped          dxi    pct_change
-#>       C4 3.012532e+25  9.234739e+28
-#>       C5 2.996660e+17  9.186084e+20
-#>       C2 3.874100e+03  1.187578e+07
-#>       C3 0.000000e+00 -1.000000e+02
-#>       C1 0.000000e+00 -1.000000e+02
+#>  dropped   dxi pct_change
+#>       C5 144.0    1752.38
+#>       C2  73.9     898.60
+#>       C4  14.5     176.66
+#>       C3  -8.1     -99.11
+#>       C1  -6.6     -80.74
 ```
