@@ -43,6 +43,10 @@
   theta scale, matching the GMM/EL path, and `tidy(conf.int = TRUE)` gives a
   log-scale interval for theta instead of NA.
 
+* **`tidy()` understated the OLS gamma standard error** (about 29x on the test
+  fixture). The OLS Jacobian used the raw gamma scale while `tidy()` assumes
+  log gamma, as for Poisson and NB. Coefficient standard errors are unaffected.
+
 ## New features
 
 * `estimate_hidden_pop()` gains `gamma_start` to set the starting value, and

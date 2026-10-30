@@ -94,7 +94,9 @@
   resid_log <- y - log_mu
 
   beta_lin <- as.numeric(X_beta %*% beta_coefs)
-  J_gamma <- beta_lin / (gamma_hat + ratio)
+  ## d log(mu) / d log(gamma), so vcov_full["gamma", "gamma"] is Var(log gamma)
+  ## as for Poisson and NB (tidy() relies on this)
+  J_gamma <- beta_lin * gamma_hat / (gamma_hat + ratio)
   J_full <- cbind(Z, gamma = J_gamma)
 
 
