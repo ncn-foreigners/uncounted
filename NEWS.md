@@ -79,6 +79,10 @@
   all rows, which is the influence on the estimate for a fixed target. The old
   quantity is kept as `dxi_subset`. **Values of `dxi` and `dfpopsize()` change.**
 
+* **`run_app()` could not fit uploaded data with few distinct values.** Columns
+  with 20 or fewer distinct values became factors at upload, including m, n and
+  N, so realistic small panels failed with "must be numeric, not factor".
+
 ## New features
 
 * `estimate_hidden_pop()` gains `gamma_start` to set the starting value, and

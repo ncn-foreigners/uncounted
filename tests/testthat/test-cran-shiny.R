@@ -133,3 +133,39 @@ test_that("Shiny server loads uploaded data and renders a summary", {
     expect_match(output$data_summary, "Zeros in m:")
   })
 })
+
+test_that("uploaded m, n and N stay numeric with few distinct values", {
+  skip_if_not_installed("shiny")
+  skip_if_not_installed("bslib")
+  skip_if_not_installed("DT")
+
+  ## A country panel where N is constant per country: every column has at most
+  ## 20 distinct values, so auto-factoring at load made the data unfittable
+  d <- expand.grid(country = paste0("C", 1:6), year = 2019:2021)
+  d$N <- rep(c(500, 1000, 2000, 4000, 8000, 16000), times = 3)
+  d$n <- rep(c(3, 5, 8, 12, 20, 30), times = 3)
+  d$m <- rep(c(1, 2, 4, 6, 9, 14), times = 3)
+  csv_path <- tempfile(fileext = ".csv")
+  utils::write.csv(d, csv_path, row.names = FALSE)
+
+  shiny::testServer(uncounted:::.app_server, {
+    session$setInputs(
+      data_source = "upload",
+      file_upload = data.frame(
+        name = basename(csv_path),
+        size = file.info(csv_path)$size,
+        type = "text/csv",
+        datapath = csv_path
+      ),
+      col_m = "m",
+      col_n = "n",
+      col_N = "N",
+      col_country = "country"
+    )
+    dat <- processed_data()
+    expect_true(is.numeric(dat$m) && is.numeric(dat$n) && is.numeric(dat$N))
+    ## Other small-range numeric columns are still treated as factors
+    expect_true(is.factor(dat$year))
+    expect_s3_class(estimate_hidden_pop(dat, ~m, ~n, ~N, gamma = 0.005), "uncounted")
+  })
+})

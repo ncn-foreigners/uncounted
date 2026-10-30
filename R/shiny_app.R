@@ -323,13 +323,15 @@ run_app <- function(...) {
   # ── Data loading ─────────────────────────────────────────────────────────
   shiny::observe({
     if (input$data_source == "builtin") {
-      rv$data <- .auto_factor(irregular_migration)
+      rv$data <- irregular_migration
     } else if (!is.null(input$file_upload)) {
       d <- tryCatch(
         utils::read.csv(input$file_upload$datapath, stringsAsFactors = TRUE),
         error = function(e) { shiny::showNotification(e$message, type = "error"); NULL }
       )
-      rv$data <- if (!is.null(d)) .auto_factor(d) else NULL
+      ## Stored raw: only processed_data() knows which columns are m, n and N,
+      ## and those must stay numeric however few distinct values they have
+      rv$data <- d
     }
   })
 
