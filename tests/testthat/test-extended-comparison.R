@@ -111,3 +111,20 @@ test_that("R^2_D uses null model without covariates", {
   expect_true(comp$table$R2_D[comp$table$Model == "WithCov"] >= -0.01)
   expect_true(abs(comp$table$R2_D[comp$table$Model == "NoCov"]) < 0.01)
 })
+
+test_that("under overdispersion the Wald test holds its level and the LR does not", {
+  skip_on_cran()
+  ## Measured over 500 replications: LR 0.79, Wald 0.08 (nominal 0.05). The bands
+  ## allow for the Monte Carlo error at 150 replications.
+  mu <- testdata$N^0.7 * (0.005 + testdata$n / testdata$N)^0.55
+  set.seed(2026)
+  rej <- replicate(150, {
+    d <- testdata
+    d$m <- rnbinom(nrow(d), mu = mu, size = 2)
+    f0 <- estimate_hidden_pop(d, ~m, ~n, ~N, gamma = 0.005, vcov = "HC0")
+    f1 <- estimate_hidden_pop(d, ~m, ~n, ~N, cov_alpha = ~sex, gamma = 0.005, vcov = "HC0")
+    c(lr = lrtest(f0, f1)$p_value < 0.05, wald = lrtest(f0, f1, test = "Wald")$p_value < 0.05)
+  })
+  expect_gt(mean(rej["lr", ]), 0.6)
+  expect_lt(mean(rej["wald", ]), 0.15)
+})

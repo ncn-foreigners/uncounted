@@ -203,6 +203,83 @@ print.uncounted_comparison <- function(x, ...) {
   x2 / (sum(w) - .count_params(object))
 }
 
+#' Restrictions R b = 0 equivalent to col(X2 b) lying in col(X1)
+#'
+#' Under H0 the part of X2 b outside col(X1) vanishes, so the restrictions are the
+#' row space of the residual of X2 on X1. Works for any nested parameterisation,
+#' not only added dummies.
+#' @noRd
+.nested_restrictions <- function(X1, X2) {
+  norms <- sqrt(colSums(X2^2))
+  norms[norms == 0] <- 1
+  resid <- qr.resid(qr(X1), X2)
+  dec <- svd(sweep(resid, 2, norms, "/"))
+  r <- sum(dec$d > 1e-8 * max(dec$d, 1))
+  sweep(t(dec$v[, seq_len(r), drop = FALSE]), 2, norms, "/")
+}
+
+#' Wald test of the extra alpha and beta coefficients of the larger model
+#' @noRd
+.wald_nested <- function(object1, object2, is_boundary, nested) {
+  if (is_boundary || object1$method != object2$method) {
+    stop("test = 'Wald' compares two models of the same method. For Poisson ",
+         "against NB, use test = 'LR', which handles the boundary.", call. = FALSE)
+  }
+  if (!nested) {
+    stop("test = 'Wald' requires nested models.", call. = FALSE)
+  }
+  if (!identical(isTRUE(object1$constrained), isTRUE(object2$constrained))) {
+    stop("test = 'Wald' requires the same constraint setting in both models.",
+         call. = FALSE)
+  }
+  same_gamma <- if (isTRUE(object1$has_cov_gamma) || isTRUE(object2$has_cov_gamma)) {
+    isTRUE(object1$has_cov_gamma) && isTRUE(object2$has_cov_gamma) &&
+      .is_col_subspace(object1$X_gamma, object2$X_gamma) &&
+      .is_col_subspace(object2$X_gamma, object1$X_gamma)
+  } else if (isTRUE(object1$gamma_estimated) || isTRUE(object2$gamma_estimated)) {
+    isTRUE(object1$gamma_estimated) && isTRUE(object2$gamma_estimated)
+  } else {
+    identical(object1$gamma, object2$gamma)
+  }
+  if (!same_gamma) {
+    stop("test = 'Wald' requires the same gamma specification in both models; ",
+         "it tests alpha and beta covariates only.", call. = FALSE)
+  }
+
+  p_alpha <- object2$p_alpha
+  p_beta <- object2$p_beta
+  R_alpha <- .nested_restrictions(object1$X_alpha, object2$X_alpha)
+  R_beta <- .nested_restrictions(object1$X_beta, object2$X_beta)
+  R <- rbind(cbind(R_alpha, matrix(0, nrow(R_alpha), p_beta)),
+             cbind(matrix(0, nrow(R_beta), p_alpha), R_beta))
+  df <- nrow(R)
+  if (df == 0L) {
+    stop("The models have the same alpha and beta specifications; there is ",
+         "nothing for test = 'Wald' to test.", call. = FALSE)
+  }
+
+  idx <- seq_len(p_alpha + p_beta)
+  Rb <- R %*% coef(object2)[idx]
+  statistic <- as.numeric(crossprod(Rb, solve(R %*% vcov(object2)[idx, idx] %*% t(R), Rb)))
+
+  result <- list(
+    test = "Wald",
+    statistic = statistic,
+    df = df,
+    p_value = pchisq(statistic, df = df, lower.tail = FALSE),
+    boundary = FALSE,
+    dispersion = .pearson_dispersion(object2),
+    vcov_type = object2$vcov_type,
+    model1 = paste(toupper(object1$method),
+                   if (isTRUE(object1$constrained)) "(constrained)" else ""),
+    model2 = paste(toupper(object2$method),
+                   if (isTRUE(object2$constrained)) "(constrained)" else ""),
+    ll1 = object1$loglik, ll2 = object2$loglik
+  )
+  class(result) <- "uncounted_lrtest"
+  result
+}
+
 #' p-value when one parameter is on the boundary and df - 1 are tested at interior
 #' points: 0.5 chi2_{df-1} + 0.5 chi2_df, with chi2_0 a point mass at 0
 #' @noRd
@@ -258,6 +335,14 @@ print.uncounted_comparison <- function(x, ...) {
 #' same applies to \code{weights} that are not frequency weights, since the
 #' weighted log-likelihood is then a pseudo-likelihood.
 #'
+#' \strong{Robust alternative.} \code{test = "Wald"} tests the larger model's extra
+#' alpha and beta coefficients with its stored covariance (the robust sandwich by
+#' default), \eqn{(Rb)'(RVR')^{-1}(Rb) \sim \chi^2_r}, and stays near its nominal
+#' level under overdispersion (about 8\% at a nominal 5\% in the same simulation
+#' with n = 200). It needs two models of the same method, with the same gamma
+#' specification and constraint setting, so it does not cover Poisson against NB or
+#' comparisons of gamma specifications.
+#'
 #' This function is intended for comparing count models only (Poisson and NB).
 #' OLS/NLS models are not supported because they use a pseudo-log-likelihood.
 #' The models must be fitted to the same observations and weights: the same
@@ -266,9 +351,12 @@ print.uncounted_comparison <- function(x, ...) {
 #' @param object1 An \code{"uncounted"} model (Poisson or NB).
 #' @param object2 An \code{"uncounted"} model (Poisson or NB). The function
 #'   automatically identifies the simpler model regardless of argument order.
+#' @param test \code{"LR"} (default) for the likelihood ratio test, or
+#'   \code{"Wald"} for a robust Wald test (see Details).
 #' @return An object of class \code{"uncounted_lrtest"} with components
-#'   \code{statistic}, \code{df}, \code{p_value}, \code{boundary},
-#'   \code{dispersion}, model descriptions, and log-likelihoods.
+#'   \code{test}, \code{statistic}, \code{df}, \code{p_value}, \code{boundary},
+#'   \code{dispersion}, model descriptions, and log-likelihoods. For
+#'   \code{test = "Wald"} also \code{vcov_type}.
 #'
 #' @references
 #' Chernoff, H. (1954). On the distribution of the likelihood ratio.
@@ -303,7 +391,8 @@ print.uncounted_comparison <- function(x, ...) {
 #' lrtest(fit_po, fit_nb)
 #'
 #' @export
-lrtest <- function(object1, object2) {
+lrtest <- function(object1, object2, test = c("LR", "Wald")) {
+  test <- match.arg(test)
   if (!inherits(object1, "uncounted") || !inherits(object2, "uncounted"))
     stop("Both objects must be of class 'uncounted'")
 
@@ -394,6 +483,10 @@ lrtest <- function(object1, object2) {
             "LR test is only valid for nested models.", call. = FALSE)
   }
 
+  if (test == "Wald") {
+    return(.wald_nested(object1, object2, is_boundary, nested))
+  }
+
   ll1 <- object1$loglik
   ll2 <- object2$loglik
   lr_stat <- max(0, 2 * (ll2 - ll1))  # clamp to 0 if simpler model fits better
@@ -410,6 +503,7 @@ lrtest <- function(object1, object2) {
   }
 
   result <- list(
+    test = "LR",
     statistic = lr_stat,
     df = df,
     p_value = p_value,
@@ -427,6 +521,16 @@ lrtest <- function(object1, object2) {
 
 #' @export
 print.uncounted_lrtest <- function(x, ...) {
+  if (identical(x$test, "Wald")) {
+    cat("Wald test of the larger model's extra coefficients (", x$vcov_type,
+        " covariance)\n", sep = "")
+    cat(strrep("-", 40), "\n")
+    cat("Model 1:", x$model1, "\n")
+    cat("Model 2:", x$model2, "\n")
+    cat("Wald statistic:", round(x$statistic, 4), "on", x$df, "df\n")
+    cat("p-value:", format.pval(x$p_value, digits = 4), "\n")
+    return(invisible(x))
+  }
   cat("Likelihood ratio test\n")
   cat(strrep("-", 40), "\n")
   cat("Model 1:", x$model1, " (logLik =", round(x$ll1, 2), ")\n")
@@ -440,7 +544,8 @@ print.uncounted_lrtest <- function(x, ...) {
   if (isTRUE(x$dispersion > 1.5)) {
     cat("Note: Pearson dispersion of the larger model is ", round(x$dispersion, 2),
         ". With overdispersion the LR statistic\n",
-        "is not chi-squared and this test rejects too often; see ?lrtest.\n", sep = "")
+        "is not chi-squared and this test rejects too often. ",
+        "Consider test = \"Wald\"; see ?lrtest.\n", sep = "")
   }
   invisible(x)
 }

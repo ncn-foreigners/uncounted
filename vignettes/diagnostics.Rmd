@@ -105,6 +105,12 @@ lrtest(fit_po, fit_nb)
 A small p-value indicates significant overdispersion, favouring the NB
 model.
 
+Comparing two Poisson models is different. With overdispersion their LR statistic
+is not chi-squared and the test rejects far too often. `lrtest()` reports the
+Pearson dispersion and notes when it is high. In that case use the robust Wald
+test, `lrtest(fit_small, fit_large, test = "Wald")`, which tests the larger model's
+extra coefficients with its sandwich covariance.
+
 ## 3. Residual diagnostics
 
 ### Residual types

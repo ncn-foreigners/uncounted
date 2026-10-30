@@ -119,3 +119,66 @@ test_that("Poisson against NB does not get the dispersion note", {
   expect_true(is.na(r$dispersion))
   expect_false(any(grepl("Pearson", capture.output(print(r)))))
 })
+
+# ---- test = "Wald" ----
+
+test_that("the Wald test of one added dummy is the squared z statistic", {
+  f0 <- estimate_hidden_pop(testdata, ~m, ~n, ~N, gamma = 0.005)
+  f1 <- estimate_hidden_pop(testdata, ~m, ~n, ~N, cov_alpha = ~sex, gamma = 0.005)
+  r <- lrtest(f0, f1, test = "Wald")
+  j <- "alpha:sexM"
+  expect_equal(r$test, "Wald")
+  expect_equal(r$df, 1L)
+  expect_equal(r$statistic, unname(coef(f1)[j]^2 / vcov(f1)[j, j]))
+  expect_equal(r$p_value, pchisq(r$statistic, 1, lower.tail = FALSE))
+  expect_output(print(r), "Wald statistic")
+  expect_equal(lrtest(f1, f0, test = "Wald")$statistic, r$statistic)
+})
+
+test_that("the Wald statistic does not depend on the parameterisation", {
+  f0 <- estimate_hidden_pop(testdata, ~m, ~n, ~N, gamma = 0.005)
+  f1 <- estimate_hidden_pop(testdata, ~m, ~n, ~N, cov_alpha = ~year, cov_beta = ~sex,
+                            gamma = 0.005)
+  r <- lrtest(f0, f1, test = "Wald")
+  n_year <- nlevels(testdata$year)
+  expect_equal(r$df, n_year)
+
+  ## Direct: all contrasts are zero
+  idx <- grep("year|sex", names(coef(f1)))
+  b <- coef(f1)[idx]
+  expect_equal(r$statistic, as.numeric(crossprod(b, solve(vcov(f1)[idx, idx], b))),
+               tolerance = 1e-6)
+
+  ## Nested but not by dropping columns: ~sex within ~sex + year, without intercepts
+  a <- estimate_hidden_pop(testdata, ~m, ~n, ~N, cov_alpha = ~0 + sex, gamma = 0.005)
+  b0 <- estimate_hidden_pop(testdata, ~m, ~n, ~N, cov_alpha = ~sex, gamma = 0.005)
+  c1 <- estimate_hidden_pop(testdata, ~m, ~n, ~N, cov_alpha = ~sex + year, gamma = 0.005)
+  expect_equal(lrtest(a, c1, test = "Wald")$statistic,
+               lrtest(b0, c1, test = "Wald")$statistic, tolerance = 1e-6)
+})
+
+test_that("test = 'Wald' refuses what it cannot test", {
+  po <- estimate_hidden_pop(testdata, ~m, ~n, ~N, gamma = 0.005)
+  nb <- estimate_hidden_pop(testdata, ~m, ~n, ~N, method = "nb", gamma = 0.005)
+  expect_error(lrtest(po, nb, test = "Wald"), "same method")
+
+  sex <- estimate_hidden_pop(testdata, ~m, ~n, ~N, cov_alpha = ~sex, gamma = 0.005)
+  year <- estimate_hidden_pop(testdata, ~m, ~n, ~N, cov_alpha = ~year, gamma = 0.005)
+  expect_warning(expect_error(lrtest(sex, year, test = "Wald"), "nested"), "not be nested")
+
+  est <- estimate_hidden_pop(testdata, ~m, ~n, ~N, cov_alpha = ~sex)
+  expect_error(lrtest(po, est, test = "Wald"), "same gamma")
+  expect_error(lrtest(po, po, test = "Wald"), "nothing")
+})
+
+test_that("the Wald test works for NB and with an estimated gamma", {
+  n0 <- estimate_hidden_pop(testdata, ~m, ~n, ~N, method = "nb", gamma = 0.005)
+  n1 <- estimate_hidden_pop(testdata, ~m, ~n, ~N, method = "nb", cov_alpha = ~sex, gamma = 0.005)
+  j <- "alpha:sexM"
+  expect_equal(lrtest(n0, n1, test = "Wald")$statistic,
+               unname(coef(n1)[j]^2 / vcov(n1)[j, j]))
+  g0 <- estimate_hidden_pop(testdata, ~m, ~n, ~N)
+  g1 <- estimate_hidden_pop(testdata, ~m, ~n, ~N, cov_alpha = ~sex)
+  expect_equal(lrtest(g0, g1, test = "Wald")$statistic,
+               unname(coef(g1)[j]^2 / vcov(g1)[j, j]))
+})

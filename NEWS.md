@@ -150,6 +150,11 @@
   it exceeds 1.5: with overdispersion an LR test between two Poisson models rejects
   far too often (about 79% at a nominal 5% in a simulation with NB size 2).
 
+* `lrtest()` gains `test = "Wald"`, a robust test of the larger model's extra alpha
+  and beta coefficients using its stored sandwich covariance. It stays near its
+  nominal level under overdispersion (about 8% at a nominal 5% in the simulation
+  above, with n = 200).
+
 ## Breaking changes
 
 * `dfbeta()` and `loo()$dfbeta` now return `beta_hat - beta_hat(-i)`, the sign

@@ -4,18 +4,22 @@
 \alias{lrtest}
 \title{Likelihood ratio test for nested uncounted models}
 \usage{
-lrtest(object1, object2)
+lrtest(object1, object2, test = c("LR", "Wald"))
 }
 \arguments{
 \item{object1}{An \code{"uncounted"} model (Poisson or NB).}
 
 \item{object2}{An \code{"uncounted"} model (Poisson or NB). The function
 automatically identifies the simpler model regardless of argument order.}
+
+\item{test}{\code{"LR"} (default) for the likelihood ratio test, or
+\code{"Wald"} for a robust Wald test (see Details).}
 }
 \value{
 An object of class \code{"uncounted_lrtest"} with components
-\code{statistic}, \code{df}, \code{p_value}, \code{boundary},
-\code{dispersion}, model descriptions, and log-likelihoods.
+\code{test}, \code{statistic}, \code{df}, \code{p_value}, \code{boundary},
+\code{dispersion}, model descriptions, and log-likelihoods. For
+\code{test = "Wald"} also \code{vcov_type}.
 }
 \description{
 Performs a likelihood ratio test between two nested \code{uncounted} models
@@ -62,6 +66,14 @@ Pearson dispersion of the larger model (\code{NA} for Poisson against NB, which
 tests overdispersion itself), and printing adds a note when it exceeds 1.5. The
 same applies to \code{weights} that are not frequency weights, since the
 weighted log-likelihood is then a pseudo-likelihood.
+
+\strong{Robust alternative.} \code{test = "Wald"} tests the larger model's extra
+alpha and beta coefficients with its stored covariance (the robust sandwich by
+default), \eqn{(Rb)'(RVR')^{-1}(Rb) \sim \chi^2_r}, and stays near its nominal
+level under overdispersion (about 8\\% at a nominal 5\\% in the same simulation
+with n = 200). It needs two models of the same method, with the same gamma
+specification and constraint setting, so it does not cover Poisson against NB or
+comparisons of gamma specifications.
 
 This function is intended for comparing count models only (Poisson and NB).
 OLS/NLS models are not supported because they use a pseudo-log-likelihood.
