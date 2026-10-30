@@ -122,6 +122,12 @@
   was compared. It now requires the same `observed`, `auxiliary`, `reference_pop`
   and `weights`.
 
+* **`lrtest()` accepted non-nested Poisson and NB pairs.** Models were ordered by
+  parameter count, so NB with no covariates against Poisson with many ran as "NB
+  nested in Poisson". An NB model is never nested in a Poisson model, so such a
+  pair, or a Poisson model whose specification is not contained in the NB model's,
+  is now an error pointing to `compare_models()`.
+
 ## New features
 
 * `estimate_hidden_pop()` gains `gamma_start` to set the starting value, and

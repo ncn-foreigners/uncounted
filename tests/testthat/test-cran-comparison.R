@@ -70,13 +70,13 @@ test_that("lrtest errors with OLS models", {
 
 # ---- Regression: lrtest warns for non-nested models ----
 
-test_that("lrtest warns for non-nested covariate models", {
+test_that("lrtest errors for non-nested Poisson and NB covariate models", {
   skip_on_cran()
   d <- testdata
   # sex-only alpha vs year-only alpha (neither spans the other)
   fit1 <- quick_fit(d, gamma = 0.005, cov_alpha = ~sex)
   fit2 <- quick_fit(d, method = "nb", gamma = 0.005, cov_alpha = ~year)
-  expect_warning(lrtest(fit1, fit2), "not be nested")
+  expect_error(lrtest(fit1, fit2), "not nested")
 })
 
 test_that("lrtest does NOT warn when fixed gamma nested in estimated gamma", {
@@ -110,12 +110,23 @@ test_that("lrtest warns for different methods (not Poisson vs NB)", {
   expect_warning(lrtest(fit1, fit2), "different methods")
 })
 
-test_that("lrtest warns for ~sex vs ~year (non-nested covariates)", {
+test_that("lrtest warns for ~sex vs ~year in the same family", {
+  skip_on_cran()
+  d <- testdata
+  fit1 <- quick_fit(d, gamma = 0.005, cov_alpha = ~sex)
+  fit2 <- quick_fit(d, gamma = 0.005, cov_alpha = ~sex + year)
+  fit3 <- quick_fit(d, gamma = 0.005, cov_alpha = ~year)
+  expect_warning(lrtest(fit1, fit3), "not be nested")
+  expect_no_warning(lrtest(fit1, fit2))
+  expect_no_warning(lrtest(fit3, fit2))
+})
+
+test_that("lrtest errors for ~sex vs ~year across Poisson and NB", {
   skip_on_cran()
   d <- testdata
   fit1 <- quick_fit(d, gamma = 0.005, cov_alpha = ~sex)
   fit2 <- quick_fit(d, method = "nb", gamma = 0.005, cov_alpha = ~year)
-  expect_warning(lrtest(fit1, fit2), "not be nested")
+  expect_error(lrtest(fit1, fit2), "not nested")
 })
 
 test_that("lrtest no warn for ~year nested in ~year + sex", {

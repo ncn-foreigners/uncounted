@@ -220,6 +220,12 @@ print.uncounted_comparison <- function(x, ...) {
 #' which corresponds to a 50:50 mixture of a point mass at zero and a
 #' \eqn{\chi^2_1}.
 #'
+#' \strong{Nesting.} A Poisson model is nested in an NB model only if its alpha,
+#' beta and gamma specifications are contained in the NB model's. An NB model is
+#' never nested in a Poisson model, however many covariates the Poisson model has,
+#' so such pairs are an error: use \code{\link{compare_models}} for them. For two
+#' models of the same family, specifications that are not nested give a warning.
+#'
 #' This function is intended for comparing count models only (Poisson and NB).
 #' OLS/NLS models are not supported because they use a pseudo-log-likelihood.
 #' The models must be fitted to the same observations and weights: the same
@@ -287,25 +293,19 @@ lrtest <- function(object1, object2) {
             call. = FALSE)
   }
 
+  # Boundary case: Poisson is NB with 1/theta = 0, so only Poisson can be the
+  # restricted model of the pair, whatever the parameter counts
+  is_boundary <- setequal(c(object1$method, object2$method), c("poisson", "nb"))
+
   # Ensure object2 is the more complex model (more parameters)
-  p1 <- .count_params(object1)
-  p2 <- .count_params(object2)
-  if (p1 > p2) {
+  swap <- if (is_boundary) {
+    object1$method == "nb"
+  } else {
+    .count_params(object1) > .count_params(object2)
+  }
+  if (swap) {
     tmp <- object1; object1 <- object2; object2 <- tmp
   }
-
-  ll1 <- object1$loglik
-  ll2 <- object2$loglik
-  lr_stat <- max(0, 2 * (ll2 - ll1))  # clamp to 0 if simpler model fits better
-  df <- .count_params(object2) - .count_params(object1)
-
-  if (df == 0) {
-    stop("Models have the same number of parameters -- not nested.")
-  }
-
-  # Boundary correction for Poisson vs NB (Self & Liang, 1987)
-  is_boundary <- (object1$method == "poisson" && object2$method == "nb") ||
-                 (object1$method == "nb" && object2$method == "poisson")
 
   # Warn for different methods (only Poisson vs NB is a valid cross-method LR)
   if (object1$method != object2$method && !is_boundary) {
@@ -340,9 +340,25 @@ lrtest <- function(object1, object2) {
       (is.numeric(object1$gamma) && isTRUE(object2$gamma_estimated)) ||
       (isTRUE(object1$gamma_estimated) && isTRUE(object2$gamma_estimated))
   }
-  if (!(nested_alpha && nested_beta && gamma_ok)) {
+  nested <- nested_alpha && nested_beta && gamma_ok
+  if (is_boundary && !nested) {
+    stop("Poisson and NB models are nested only when the Poisson model is the ",
+         "restricted one, with its alpha, beta and gamma specifications contained ",
+         "in the NB model's. These are not nested; compare them with AIC/BIC ",
+         "instead (see compare_models()).", call. = FALSE)
+  }
+  if (!nested) {
     warning("Models may not be nested: covariate or gamma specifications differ. ",
             "LR test is only valid for nested models.", call. = FALSE)
+  }
+
+  ll1 <- object1$loglik
+  ll2 <- object2$loglik
+  lr_stat <- max(0, 2 * (ll2 - ll1))  # clamp to 0 if simpler model fits better
+  df <- .count_params(object2) - .count_params(object1)
+
+  if (df == 0) {
+    stop("Models have the same number of parameters -- not nested.")
   }
 
   if (is_boundary && df == 1) {
