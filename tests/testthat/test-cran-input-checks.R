@@ -22,3 +22,17 @@ test_that("gamma = 0 with zero auxiliary counts gives a clear error", {
   fit <- estimate_hidden_pop(positive_data(), ~m, ~n, ~N, gamma = 0)
   expect_s3_class(fit, "uncounted")
 })
+
+test_that("NA in a covariate names the variable", {
+  ## Used to fail with "number of rows of matrices must match"
+  d <- testdata
+  d$sex[1:2] <- NA
+  expect_error(estimate_hidden_pop(d, ~m, ~n, ~N, cov_alpha = ~sex, gamma = 0.005),
+               "sex \\(2\\)")
+  expect_error(estimate_hidden_pop(d, ~m, ~n, ~N, cov_beta = ~sex, gamma = 0.005),
+               "sex \\(2\\)")
+  expect_error(estimate_hidden_pop(d, ~m, ~n, ~N, cov_gamma = ~sex),
+               "sex \\(2\\)")
+  ## NA in an unused column is fine
+  expect_s3_class(estimate_hidden_pop(d, ~m, ~n, ~N, gamma = 0.005), "uncounted")
+})

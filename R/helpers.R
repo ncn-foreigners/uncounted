@@ -179,6 +179,16 @@
     return(matrix(1, nrow = nrow(data), ncol = 1,
                   dimnames = list(NULL, "(Intercept)")))
   }
+  ## model.matrix() drops NA rows silently, which then breaks every n x p
+  ## computation downstream with a dimension error
+  vars <- intersect(all.vars(cov_formula), names(data))
+  has_na <- vapply(data[vars], anyNA, logical(1))
+  if (any(has_na)) {
+    n_na <- vapply(data[vars[has_na]], function(x) sum(is.na(x)), integer(1))
+    stop("Covariate(s) in ", deparse(cov_formula), " contain missing values: ",
+         paste0(vars[has_na], " (", n_na, ")", collapse = ", "),
+         ". Remove or impute them before fitting.", call. = FALSE)
+  }
   X <- model.matrix(cov_formula, data = data)
   if (ncol(X) == 0) {
     # ~0 or ~-1 produces empty matrix; treat as intercept-only

@@ -93,6 +93,9 @@
 * `gamma = 0` with zero auxiliary counts now gives a clear error instead of
   `NA/NaN/Inf in 'x'`.
 
+* `NA` in a covariate now gives an error naming the variable instead of
+  `number of rows of matrices must match`.
+
 ## New features
 
 * `estimate_hidden_pop()` gains `gamma_start` to set the starting value, and
