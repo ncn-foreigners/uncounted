@@ -439,13 +439,26 @@ profile_gamma <- function(object, gamma_grid = seq(1e-4, 0.5, length.out = 20),
 # ---- NLL helper for profiling ----
 
 #' Build a negative log-likelihood closure from a fitted uncounted object.
+#'
+#' The criterion is the one the method optimises: the count likelihoods for
+#' Poisson/NB, and a weighted Gaussian on the log scale for OLS and on the raw
+#' scale for NLS. \code{nll} takes (alpha, beta) with gamma and theta held at the
+#' fit; \code{nll_full} also takes the nuisance parameters, appended as
+#' (log theta, gamma coefficients on the log scale) in \code{par_full}, with
+#' their bounds in \code{lower} and \code{upper}.
 #' @param object An uncounted object.
-#' @return A list with nll (function), par0 (MLE vector), compute_xi (function).
+#' @return A list with nll, par0, compute_xi, nll_full, par_full, lower, upper.
 #' @noRd
 .build_nll_from_object <- function(object) {
   if (!identical(object$estimator, "mle")) {
     stop("Profile likelihood is only available for models fitted with ",
          "estimator = 'mle'.", call. = FALSE)
+  }
+  method <- object$method
+  if (method == "iols") {
+    stop("Profile likelihood is not available for method = 'iols', which ",
+         "solves estimating equations rather than maximising a likelihood.",
+         call. = FALSE)
   }
   m <- object$m
   N <- object$N
@@ -457,9 +470,9 @@ profile_gamma <- function(object, gamma_grid = seq(1e-4, 0.5, length.out = 20),
   X_beta <- object$X_beta
   p_alpha <- object$p_alpha
   p_beta <- object$p_beta
+  p_ab <- p_alpha + p_beta
   weights <- if (!is.null(object$obs_weights)) object$obs_weights else rep(1, n_obs)
   is_constr <- isTRUE(object$constrained)
-  method <- object$method
   link_rho <- object$link_rho
   theta_mle <- object$theta
 
@@ -468,11 +481,11 @@ profile_gamma <- function(object, gamma_grid = seq(1e-4, 0.5, length.out = 20),
 
   # Use fitted gamma (scalar or vector)
   if (!is.null(object$gamma_values) && isTRUE(object$has_cov_gamma)) {
-    rate <- object$gamma_values + ratio
+    rate_fit <- object$gamma_values + ratio
   } else if (!is.null(object$gamma)) {
-    rate <- object$gamma + ratio
+    rate_fit <- object$gamma + ratio
   } else {
-    rate <- ratio
+    rate_fit <- ratio
   }
 
   par0 <- c(object$alpha_coefs, object$beta_coefs)
@@ -482,7 +495,7 @@ profile_gamma <- function(object, gamma_grid = seq(1e-4, 0.5, length.out = 20),
   offset <- object$dependence_offset
   if (is.null(offset)) offset <- 0
 
-  nll_fn <- function(par) {
+  nll_at <- function(par, rate, theta) {
     a <- par[seq_len(p_alpha)]
     b <- par[p_alpha + seq_len(p_beta)]
     alpha_lin <- .alpha_fn(as.numeric(X_alpha %*% a))
@@ -492,19 +505,61 @@ profile_gamma <- function(object, gamma_grid = seq(1e-4, 0.5, length.out = 20),
                                    dependence_offset = offset), 20)
     mu <- pmax(exp(log_mu), 1e-300)
 
-    if (method == "nb") {
-      val <- -sum(weights * dnbinom(m, size = theta_mle, mu = mu, log = TRUE))
-    } else if (method == "poisson") {
-      val <- -sum(weights * (m * log(mu) - mu - lgamma(m + 1)))
-    } else {
-      has_zeros <- any(m == 0)
-      log_m <- if (has_zeros) log(m + 1) else log(m)
-      resid_log <- log_m - log_mu
-      sigma2 <- sum(resid_log^2) / n_obs
-      val <- n_obs / 2 * (log(2 * pi * sigma2) + 1)
-    }
+    val <- switch(method,
+      nb = -sum(weights * dnbinom(m, size = theta, mu = mu, log = TRUE)),
+      poisson = -sum(weights * (m * log(mu) - mu - lgamma(m + 1))),
+      {
+        resid <- if (method == "nls") m - mu else .log_m_transform(m) - log_mu
+        sum_w <- sum(weights)
+        sum_w / 2 * (log(2 * pi * sum(weights * resid^2) / sum_w) + 1)
+      }
+    )
     if (!is.finite(val)) return(1e20)
     val
+  }
+
+  nll_fn <- function(par) nll_at(par, rate_fit, theta_mle)
+
+  # Nuisance parameters, on the scales the fitters optimise
+  has_theta <- method == "nb"
+  est_gamma <- isTRUE(object$gamma_estimated)
+  gamma_par <- if (!est_gamma) {
+    NULL
+  } else if (!is.null(object$gamma_coefs)) {
+    object$gamma_coefs
+  } else {
+    c(gamma = log(object$gamma))
+  }
+  p_gamma <- length(gamma_par)
+  X_gamma <- if (p_gamma > 0L && !is.null(object$X_gamma)) {
+    object$X_gamma
+  } else if (p_gamma > 0L) {
+    matrix(1, nrow = n_obs, ncol = 1L)
+  }
+  gamma_bounds <- object$call$gamma_bounds
+  if (is.null(gamma_bounds)) gamma_bounds <- c(1e-10, 0.5)
+  idx_theta <- p_ab + 1L
+  idx_gamma <- p_ab + has_theta + seq_len(p_gamma)
+
+  par_full <- c(par0, if (has_theta) c(theta = log(theta_mle)), gamma_par)
+  lower <- rep(-Inf, length(par_full))
+  upper <- rep(Inf, length(par_full))
+  if (has_theta) {
+    lower[idx_theta] <- log(0.01)
+    upper[idx_theta] <- log(1e6)
+  }
+  if (p_gamma > 0L) {
+    lower[idx_gamma[1]] <- log(gamma_bounds[1])
+    upper[idx_gamma[1]] <- log(gamma_bounds[2])
+  }
+
+  nll_full <- function(par) {
+    rate <- if (p_gamma > 0L) {
+      exp(pmin(as.numeric(X_gamma %*% par[idx_gamma]), 10)) + ratio
+    } else {
+      rate_fit
+    }
+    nll_at(par, rate, if (has_theta) exp(par[idx_theta]) else theta_mle)
   }
 
   xi_fn <- function(par) {
@@ -513,7 +568,8 @@ profile_gamma <- function(object, gamma_grid = seq(1e-4, 0.5, length.out = 20),
     sum(N^alpha_lin)
   }
 
-  list(nll = nll_fn, par0 = par0, compute_xi = xi_fn)
+  list(nll = nll_fn, par0 = par0, compute_xi = xi_fn, nll_full = nll_full,
+       par_full = par_full, lower = lower, upper = upper)
 }
 
 
@@ -569,26 +625,33 @@ profile_gamma <- function(object, gamma_grid = seq(1e-4, 0.5, length.out = 20),
       results$xi[i] <- xi_fn(par_i)
     }
   } else {
-    free_idx <- setdiff(seq_along(par0), full_idx)
+    ## True profile: every other parameter is free, including gamma and theta
+    par_full <- nll_info$par_full
+    nll_full <- nll_info$nll_full
+    free_idx <- setdiff(seq_along(par_full), full_idx)
     for (i in seq_along(grid)) {
       fixed_val <- grid[i]
       obj_reduced <- function(par_free) {
-        par_full <- par0
-        par_full[free_idx] <- par_free
-        par_full[full_idx] <- fixed_val
-        nll(par_full)
+        par_i <- par_full
+        par_i[free_idx] <- par_free
+        par_i[full_idx] <- fixed_val
+        nll_full(par_i)
       }
-      opt_i <- tryCatch(
-        optim(par0[free_idx], obj_reduced, method = "L-BFGS-B",
-              control = list(maxit = 500)),
-        error = function(e) NULL
-      )
+      fit_free <- function(start) {
+        optim(start, obj_reduced, method = "L-BFGS-B",
+              lower = nll_info$lower[free_idx], upper = nll_info$upper[free_idx],
+              control = list(maxit = 500, factr = 1e5, ndeps = rep(1e-5, length(start))))
+      }
+      opt_i <- tryCatch({
+        opt1 <- fit_free(par_full[free_idx])
+        fit_free(opt1$par)  # restart: fresh curvature memory
+      }, error = function(e) NULL)
       if (!is.null(opt_i)) {
-        par_full <- par0
-        par_full[free_idx] <- opt_i$par
-        par_full[full_idx] <- fixed_val
-        results$loglik[i] <- -nll(par_full)
-        results$xi[i] <- xi_fn(par_full)
+        par_i <- par_full
+        par_i[free_idx] <- opt_i$par
+        par_i[full_idx] <- fixed_val
+        results$loglik[i] <- -nll_full(par_i)
+        results$xi[i] <- xi_fn(par_i)
       }
     }
   }
@@ -628,8 +691,12 @@ profile_gamma <- function(object, gamma_grid = seq(1e-4, 0.5, length.out = 20),
 #' @param grid Numeric vector of values to evaluate. If \code{NULL} (default),
 #'   auto-generates 30 points spanning \eqn{\pm 3} SE around the MLE.
 #' @param reoptimize Logical. If \code{TRUE}, optimize all other parameters at
-#'   each grid point (true profile likelihood). If \code{FALSE} (default), hold
-#'   everything else at the MLE (concentrated profile, faster).
+#'   each grid point, including an estimated gamma and the NB theta (true
+#'   profile likelihood). If \code{FALSE} (default), hold everything else at the
+#'   MLE (concentrated profile, faster). The criterion is the one the method
+#'   optimises: the count likelihood for Poisson/NB and a weighted Gaussian on
+#'   the log scale for OLS and on the raw scale for NLS. Not available for
+#'   \code{method = "iols"}.
 #' @param plot Logical; produce the plot? Default \code{TRUE}.
 #' @param ... Additional arguments passed to \code{plot()}.
 #'

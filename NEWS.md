@@ -67,6 +67,12 @@
   OLS, NLS and iOLS, and its documentation states that likelihood columns are
   comparable only within one family.
 
+* **`profile_alpha()` and `profile_beta()` used the wrong objective for NLS and
+  weighted OLS**, so the profile did not peak at the estimate. They now use the
+  criterion each method optimises. `reoptimize = TRUE` now also re-optimises an
+  estimated gamma and the NB theta, so it is a true profile likelihood; before,
+  the curve was too narrow. Profiling iOLS now gives a clear error.
+
 ## New features
 
 * `estimate_hidden_pop()` gains `gamma_start` to set the starting value, and
