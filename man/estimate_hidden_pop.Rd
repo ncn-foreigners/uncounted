@@ -69,7 +69,8 @@ the estimated gamma parameter. Default \code{c(1e-10, 0.5)}.}
 gamma intercept when \code{cov_gamma} is used); must lie inside
 \code{gamma_bounds}. Default \code{NULL} screens 25 log-spaced values in
 \code{gamma_bounds} and starts from the one with the smallest Poisson
-profile deviance. Ignored unless \code{gamma = "estimate"}. Refits
+profile deviance. Ignored unless \code{gamma = "estimate"}, and by
+\code{method = "ols"}, which profiles gamma over its own grid. Refits
 inside \code{bootstrap_popsize()}, \code{loo()} and the profile functions
 start from the original estimate. The screen and the optimiser's trace
 are stored in \code{$optim_info}.}

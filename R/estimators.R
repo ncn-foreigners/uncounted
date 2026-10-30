@@ -61,18 +61,19 @@
     sum(weights * fit$residuals^2)
   }
 
-  # Multi-start grid search to avoid local minima
-  gamma_grid <- c(seq(1e-6, 0.01, length.out = 10),
-                  seq(0.01, 0.1, length.out = 5),
-                  seq(0.1, gamma_bounds[2], length.out = 5))
+  # Multi-start grid search to avoid local minima, inside the bounds
+  gamma_grid <- exp(seq(log(max(gamma_bounds[1], 1e-10)), log(gamma_bounds[2]),
+                        length.out = 25L))
   grid_rss <- sapply(gamma_grid, obj_fn)
   best_idx <- which.min(grid_rss)
 
-  # Narrow interval around best grid point
-  lower_g <- if (best_idx > 1) gamma_grid[best_idx - 1] else gamma_bounds[1]
-  upper_g <- if (best_idx < length(gamma_grid)) gamma_grid[best_idx + 1] else gamma_bounds[2]
-  opt <- optimize(obj_fn, interval = c(lower_g, upper_g))
-  gamma_hat <- opt$minimum
+  # Narrow interval around best grid point, on the log scale because gamma
+  # spans several orders of magnitude
+  lower_g <- gamma_grid[max(best_idx - 1L, 1L)]
+  upper_g <- gamma_grid[min(best_idx + 1L, length(gamma_grid))]
+  opt <- optimize(function(lg) obj_fn(exp(lg)), interval = log(c(lower_g, upper_g)),
+                  tol = 1e-8)
+  gamma_hat <- exp(opt$minimum)
 
   if (gamma_hat > 0.5) {
     warning("Estimated gamma is large (> 0.5), suggesting possible identification issues.")

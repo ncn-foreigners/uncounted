@@ -47,6 +47,10 @@
   fixture). The OLS Jacobian used the raw gamma scale while `tidy()` assumes
   log gamma, as for Poisson and NB. Coefficient standard errors are unaffected.
 
+* **OLS with `gamma = "estimate"` ignored `gamma_bounds`.** The search grid was
+  hard-coded. It is now log-spaced inside the bounds, and the final search runs
+  on the log scale, so small gamma values are located accurately.
+
 ## New features
 
 * `estimate_hidden_pop()` gains `gamma_start` to set the starting value, and

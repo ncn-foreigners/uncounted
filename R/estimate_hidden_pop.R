@@ -37,7 +37,8 @@
 #'   gamma intercept when \code{cov_gamma} is used); must lie inside
 #'   \code{gamma_bounds}. Default \code{NULL} screens 25 log-spaced values in
 #'   \code{gamma_bounds} and starts from the one with the smallest Poisson
-#'   profile deviance. Ignored unless \code{gamma = "estimate"}. Refits
+#'   profile deviance. Ignored unless \code{gamma = "estimate"}, and by
+#'   \code{method = "ols"}, which profiles gamma over its own grid. Refits
 #'   inside \code{bootstrap_popsize()}, \code{loo()} and the profile functions
 #'   start from the original estimate. The screen and the optimiser's trace
 #'   are stored in \code{$optim_info}.
@@ -532,7 +533,7 @@ estimate_hidden_pop <- function(data,
 
   # ---- Starting value for an estimated gamma ----
   gamma_screen <- NULL
-  if (estimate_gamma) {
+  if (estimate_gamma && method != "ols") {
     if (is.null(gamma_start)) {
       gamma_screen <- .screen_gamma_start(m, log_N, ratio, X_alpha, X_beta,
                                           gamma_bounds, weights)
@@ -698,6 +699,7 @@ estimate_hidden_pop <- function(data,
     optim_info <- c(
       list(gamma_start = if (estimate_gamma) gamma_start else NULL,
            gamma_start_source = if (!estimate_gamma) NULL
+                                else if (method == "ols") "ols_grid"
                                 else if (is.null(gamma_screen)) "user"
                                 else "screen",
            gamma_screen = gamma_screen),
@@ -718,8 +720,8 @@ estimate_hidden_pop <- function(data,
       result$gamma_estimated
     }
     if (!is.null(gamma_level) && is.finite(gamma_level)) {
-      at_bound <- c(lower = abs(log(gamma_level) - log(gamma_bounds[1])) < 1e-6,
-                    upper = abs(log(gamma_level) - log(gamma_bounds[2])) < 1e-6)
+      at_bound <- c(lower = abs(log(gamma_level) - log(gamma_bounds[1])) < 1e-4,
+                    upper = abs(log(gamma_level) - log(gamma_bounds[2])) < 1e-4)
       if (any(at_bound)) {
         message("Estimated gamma ", if (has_cov_gamma) "(intercept) ",
                 "is at its ", names(at_bound)[at_bound], " bound (",

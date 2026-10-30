@@ -32,3 +32,34 @@ test_that("coefficient vcov for OLS is not affected by the gamma scale", {
   expect_equal(vcov(fit), fit$vcov_full[1:2, 1:2], ignore_attr = TRUE)
   expect_true(all(is.finite(vcov(fit))))
 })
+
+# The grid used to be hard-coded, so gamma_bounds had no effect.
+test_that("OLS respects gamma_bounds", {
+  d <- positive_data()
+  for (b in list(c(0.02, 0.05), c(1e-10, 0.001), c(0.2, 0.4))) {
+    fit <- suppressMessages(estimate_hidden_pop(d, ~m, ~n, ~N, method = "ols",
+                                                gamma_bounds = b))
+    expect_gte(fit$gamma, b[1])
+    expect_lte(fit$gamma, b[2])
+  }
+})
+
+test_that("OLS gamma minimises the RSS, also when it is small", {
+  d <- positive_data()
+  fit <- estimate_hidden_pop(d, ~m, ~n, ~N, method = "ols")
+  rss <- function(g) {
+    sum(lm.fit(cbind(log(d$N), log(g + d$n / d$N)), log(d$m))$residuals^2)
+  }
+  ref <- optimize(function(lg) rss(exp(lg)), log(c(1e-6, 0.5)), tol = 1e-10)
+  expect_equal(fit$gamma, exp(ref$minimum), tolerance = 1e-3)
+  expect_identical(fit$optim_info$gamma_start_source, "ols_grid")
+})
+
+test_that("OLS gamma on a bound gives the message", {
+  d <- positive_data()
+  expect_message(
+    fit <- estimate_hidden_pop(d, ~m, ~n, ~N, method = "ols", gamma_bounds = c(1e-10, 0.001)),
+    "upper bound"
+  )
+  expect_identical(fit$optim_info$gamma_at_bound, "upper")
+})
