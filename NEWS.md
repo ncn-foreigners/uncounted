@@ -98,6 +98,11 @@
 
 * `lrtest()`'s nesting check no longer depends on the scale of the covariates.
 
+* **`hypotheses_popsize()` could count the total twice.** With
+  `include_total = TRUE`, a filter such as `xi[TRUE]` summed the Total row with
+  its components. Such a filter is now an error, and `xi["Total"]` selects the
+  total also when groups come from a `by` variable.
+
 ## New features
 
 * `estimate_hidden_pop()` gains `gamma_start` to set the starting value, and

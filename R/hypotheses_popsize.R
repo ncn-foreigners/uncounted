@@ -821,6 +821,13 @@ print.uncounted_popsize_hypotheses <- function(x, ...) {
   }
   mask[is.na(mask)] <- FALSE
   idx <- which(mask)
+  ## The Total row is the sum of the others, so summing it with them double counts
+  is_total <- groups$.group == "Total"
+  if (any(mask & is_total) && any(mask & !is_total)) {
+    stop("xi[...] filter '", filter, "' selects \"Total\" together with other ",
+         "groups, which would count them twice. Use xi[\"Total\"] for the total ",
+         "or a filter that excludes it.", call. = FALSE)
+  }
   if (length(idx) == 0L) {
     stop("xi[...] filter matched no groups. Available groups: ",
          paste(groups$.group, collapse = ", "), call. = FALSE)
@@ -835,7 +842,8 @@ print.uncounted_popsize_hypotheses <- function(x, ...) {
 .pop_hyp_match_key <- function(groups, key) {
   vars <- .pop_hyp_group_vars(groups)
   if (length(vars) == 1L) {
-    .pop_hyp_equal(groups[[vars]], key)
+    ## The by-variable is NA on the Total row, which only .group can select
+    .pop_hyp_equal(groups[[vars]], key) | groups$.group == "Total" & groups$.group == key
   } else {
     .pop_hyp_equal(groups$.group, key)
   }
