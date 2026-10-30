@@ -143,3 +143,17 @@ test_that(".is_col_subspace does not depend on the scale of the columns", {
   expect_false(.is_col_subspace(cbind(1, x * 1e12), cbind(1, z)))
   expect_true(.is_col_subspace(cbind(1, 0 * x), cbind(1, x)))
 })
+
+test_that("the pseudo-R2 null model keeps the fit's specification", {
+  w <- rep(c(1, 3), length.out = nrow(testdata))
+  ## A weighted model without covariates is its own null model. It used to be
+  ## compared with an unweighted refit.
+  fit <- estimate_hidden_pop(testdata, ~m, ~n, ~N, gamma = 0.005, weights = w)
+  expect_equal(.pseudo_r2_deviance(fit), 0, tolerance = 1e-6)
+  fit_b <- estimate_hidden_pop(testdata, ~m, ~n, ~N, gamma_bounds = c(1e-6, 0.1))
+  expect_equal(.pseudo_r2_deviance(fit_b), 0, tolerance = 1e-6)
+
+  with_cov <- estimate_hidden_pop(testdata, ~m, ~n, ~N, cov_alpha = ~sex, gamma = 0.005,
+                                  weights = w)
+  expect_gt(.pseudo_r2_deviance(with_cov), 0)
+})

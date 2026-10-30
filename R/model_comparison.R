@@ -379,23 +379,17 @@ print.uncounted_lrtest <- function(x, ...) {
 .pseudo_r2_deviance <- function(object) {
   if (!object$method %in% c("poisson", "nb")) return(NA_real_)
 
-  # Fit null model (no covariates) on the same data
-  null_fit <- tryCatch({
-    estimate_hidden_pop(
-      data = object$data,
-      observed = object$call_args$observed,
-      auxiliary = object$call_args$auxiliary,
-      reference_pop = object$call_args$reference_pop,
-      method = object$method,
-      estimator = object$estimator,
-      link_rho = object$link_rho,
-      gamma = if (object$gamma_estimated) "estimate" else object$gamma,
-      cov_gamma = if (!is.null(object$call$cov_gamma)) eval(object$call$cov_gamma) else NULL,
-      theta_start = if (!is.null(object$theta)) object$theta else 1,
-      vcov = "HC0",
-      constrained = isTRUE(object$constrained)
-    )
-  }, error = function(e) NULL)
+  # Fit null model (no covariates): otherwise the same model, including its
+  # weights, countries and gamma bounds
+  null_args <- .refit_args_from_object(object)
+  null_args$cov_alpha <- NULL
+  null_args$cov_beta <- NULL
+  null_args$vcov <- "HC0"
+  null_args$cluster <- NULL
+  null_fit <- tryCatch(
+    suppressMessages(do.call(estimate_hidden_pop, null_args)),
+    error = function(e) NULL
+  )
 
   if (is.null(null_fit)) return(NA_real_)
 

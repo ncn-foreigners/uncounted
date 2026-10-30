@@ -103,6 +103,9 @@
   its components. Such a filter is now an error, and `xi["Total"]` selects the
   total also when groups come from a `by` variable.
 
+* The null model of the pseudo-R2 in `compare_models()` now keeps the fit's
+  weights, countries and gamma bounds.
+
 ## New features
 
 * `estimate_hidden_pop()` gains `gamma_start` to set the starting value, and
