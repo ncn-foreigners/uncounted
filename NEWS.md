@@ -73,6 +73,12 @@
   estimated gamma and the NB theta, so it is a true profile likelihood; before,
   the curve was too narrow. Profiling iOLS now gives a clear error.
 
+* **`loo()$dxi` and `dfpopsize()` mostly measured a unit's own share of xi.** The
+  refit's total covered only the remaining rows, so most values were negative
+  whatever the unit's influence. `dxi` now applies the refit's coefficients to
+  all rows, which is the influence on the estimate for a fixed target. The old
+  quantity is kept as `dxi_subset`. **Values of `dxi` and `dfpopsize()` change.**
+
 ## New features
 
 * `estimate_hidden_pop()` gains `gamma_start` to set the starting value, and

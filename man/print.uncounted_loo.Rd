@@ -18,7 +18,8 @@ most influential observations/countries ranked by \eqn{|\Delta\xi|}.
 The table shows:
 \describe{
 \item{dropped}{The observation index or country label that was removed.}
-\item{dxi}{\eqn{\Delta\xi}: change in total population size estimate.}
+\item{dxi}{\eqn{\Delta\xi}: influence on the total population size for a
+fixed target (see \code{\link{loo}}).}
 \item{pct_change}{Percentage change relative to full-model \eqn{\hat{\xi}}.}
 }
 }

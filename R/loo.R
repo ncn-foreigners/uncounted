@@ -19,15 +19,23 @@
 #' relevant for assessing structural sensitivity: would the conclusion
 #' change if a country were excluded?
 #'
-#' **Interpretation of \code{dxi}.** \eqn{\Delta\xi_i = \hat{\xi}_{(-i)} -
-#' \hat{\xi}}: the change in total estimated population when observation
-#' (or country) \eqn{i} is removed.
+#' **Interpretation of \code{dxi}.** \code{dxi} measures influence on the
+#' estimate for a fixed target population:
+#' \eqn{\Delta\xi_i = \sum_j N_j^{\hat\alpha_{j(-i)}} - \sum_j N_j^{\hat\alpha_j}},
+#' where both sums run over \emph{all} rows and \eqn{\hat\alpha_{(-i)}} comes
+#' from the refit without unit \eqn{i}. It therefore reflects only how the
+#' coefficients move.
 #' \itemize{
-#'   \item \eqn{\Delta\xi_i < 0}: dropping \eqn{i} decreases the estimate
-#'     (observation was pulling the estimate up).
-#'   \item \eqn{\Delta\xi_i > 0}: dropping \eqn{i} increases the estimate
-#'     (observation was pulling the estimate down).
+#'   \item \eqn{\Delta\xi_i < 0}: without \eqn{i} the estimate is lower
+#'     (the unit was pulling the estimate up).
+#'   \item \eqn{\Delta\xi_i > 0}: without \eqn{i} the estimate is higher
+#'     (the unit was pulling the estimate down).
 #' }
+#' \code{dxi_subset} is the change when the unit also leaves the target:
+#' the total of \code{popsize()} on the refit, over the remaining rows only,
+#' minus \eqn{\hat\xi}. It is mostly negative because it includes the unit's
+#' own share of \eqn{\hat\xi}, so it is not an influence measure, but it answers
+#' \dQuote{what would we estimate if this unit were not in the data at all?}
 #'
 #' @param object An `"uncounted"` object (fitted model).
 #' @param by What to leave out: `"obs"` drops one row at a time,
@@ -44,8 +52,10 @@
 #'   \item{dropped}{Character vector: label of dropped observation or country.}
 #'   \item{dfbeta}{Matrix (\code{n_drops} x \code{p}): change in coefficients
 #'     \eqn{\hat{\beta}_{(-i)} - \hat{\beta}}.}
-#'   \item{dxi}{Numeric vector: change in population size
-#'     \eqn{\hat{\xi}_{(-i)} - \hat{\xi}}.}
+#'   \item{dxi}{Numeric vector: influence on the population size for a fixed
+#'     target, using the refit's coefficients on all rows (see Details).}
+#'   \item{dxi_subset}{Numeric vector: change in population size when the unit
+#'     also leaves the target (see Details).}
 #'   \item{full_coefs}{Full-model coefficients.}
 #'   \item{full_ps}{Full-model population size data frame.}
 #'   \item{full_ps_total}{Full-model total \eqn{\hat{\xi}}.}
@@ -120,6 +130,7 @@ loo.uncounted <- function(object, by = c("obs", "country"),
   coef_mat <- matrix(NA_real_, nrow = n_drops, ncol = p,
                      dimnames = list(drop_labels, names(full_coefs)))
   ps_list <- vector("list", n_drops)
+  xi_fixed <- rep(NA_real_, n_drops)
   converged <- logical(n_drops)
 
   # Refit arguments: same model as the original fit, including its weights
@@ -183,6 +194,10 @@ loo.uncounted <- function(object, by = c("obs", "country"),
     if (!is.null(fit_i) && isTRUE(fit_i$convergence == 0)) {
       coef_mat[i, ] <- fit_i$coefficients
       ps_list[[i]] <- tryCatch(popsize(fit_i), error = function(e) NULL)
+      ## Same target as the full fit: the refit's coefficients on every row
+      alpha_i <- as.numeric(object$X_alpha %*% fit_i$alpha_coefs)
+      if (isTRUE(object$constrained)) alpha_i <- .inv_logit(alpha_i)
+      xi_fixed[i] <- sum(object$N^alpha_i)
       converged[i] <- TRUE
     } else {
       converged[i] <- FALSE
@@ -201,7 +216,8 @@ loo.uncounted <- function(object, by = c("obs", "country"),
 
   # Population size differences (summed across groups if multiple)
   full_ps_total <- sum(full_ps$estimate)
-  dxi <- sapply(ps_list, function(x) {
+  dxi <- xi_fixed - full_ps_total
+  dxi_subset <- sapply(ps_list, function(x) {
     if (!is.null(x)) sum(x$estimate) - full_ps_total else NA_real_
   })
 
@@ -211,6 +227,7 @@ loo.uncounted <- function(object, by = c("obs", "country"),
     dropped = drop_labels,
     dfbeta = dfbeta,
     dxi = dxi,
+    dxi_subset = dxi_subset,
     full_coefs = full_coefs,
     full_ps = full_ps,
     full_ps_total = full_ps_total,
@@ -234,7 +251,8 @@ loo.uncounted <- function(object, by = c("obs", "country"),
 #' The table shows:
 #' \describe{
 #'   \item{dropped}{The observation index or country label that was removed.}
-#'   \item{dxi}{\eqn{\Delta\xi}: change in total population size estimate.}
+#'   \item{dxi}{\eqn{\Delta\xi}: influence on the total population size for a
+#'     fixed target (see \code{\link{loo}}).}
 #'   \item{pct_change}{Percentage change relative to full-model \eqn{\hat{\xi}}.}
 #' }
 #'

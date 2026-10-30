@@ -17,13 +17,15 @@ dfpopsize(model, ...)
 \item{by}{Character: \code{"obs"} (default) or \code{"country"}.}
 }
 \value{
-A named numeric vector. Each element is the change in \eqn{\hat\xi}
-when that unit is dropped (\eqn{\hat\xi_{(-i)} - \hat\xi}).
+A named numeric vector. Each element is the change in \eqn{\hat\xi},
+summed over all rows, when the coefficients are re-estimated without that
+unit (\code{dxi} in \code{\link{loo}}).
 }
 \description{
-Computes the change in the total estimated population size
-\eqn{\hat\xi = \sum_i N_i^{\hat\alpha_i}} when each observation (or country)
-is dropped. This is a convenience wrapper around \code{\link{loo}}.
+Computes the influence of each observation (or country) on the total
+estimated population size \eqn{\hat\xi = \sum_i N_i^{\hat\alpha_i}}, holding
+the target population fixed. This is a convenience wrapper around
+\code{\link{loo}}; see there for the definition.
 }
 \examples{
 data(irregular_migration)

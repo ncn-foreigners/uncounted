@@ -410,6 +410,11 @@ print(loo_pois)
 # #>   ...
 ```
 
+`dxi` holds the target fixed: it applies the refit's coefficients to all rows,
+so it measures how much the estimate moves because of that country. The
+`dxi_subset` component also removes the country from the total, so it includes
+the country's own share of $\hat\xi$.
+
 ```{r loo-plot, eval = TRUE}
 plot(loo_pois)
 ```

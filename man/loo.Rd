@@ -29,8 +29,10 @@ each refit.}
 \item{dropped}{Character vector: label of dropped observation or country.}
 \item{dfbeta}{Matrix (\code{n_drops} x \code{p}): change in coefficients
 \eqn{\hat{\beta}_{(-i)} - \hat{\beta}}.}
-\item{dxi}{Numeric vector: change in population size
-\eqn{\hat{\xi}_{(-i)} - \hat{\xi}}.}
+\item{dxi}{Numeric vector: influence on the population size for a fixed
+target, using the refit's coefficients on all rows (see Details).}
+\item{dxi_subset}{Numeric vector: change in population size when the unit
+also leaves the target (see Details).}
 \item{full_coefs}{Full-model coefficients.}
 \item{full_ps}{Full-model population size data frame.}
 \item{full_ps_total}{Full-model total \eqn{\hat{\xi}}.}
@@ -59,15 +61,23 @@ each country's overall contribution to \eqn{\hat{\xi}} and is more
 relevant for assessing structural sensitivity: would the conclusion
 change if a country were excluded?
 
-\strong{Interpretation of \code{dxi}.} \eqn{\Delta\xi_i = \hat{\xi}_{(-i)} -
-\hat{\xi}}: the change in total estimated population when observation
-(or country) \eqn{i} is removed.
+\strong{Interpretation of \code{dxi}.} \code{dxi} measures influence on the
+estimate for a fixed target population:
+\eqn{\Delta\xi_i = \sum_j N_j^{\hat\alpha_{j(-i)}} - \sum_j N_j^{\hat\alpha_j}},
+where both sums run over \emph{all} rows and \eqn{\hat\alpha_{(-i)}} comes
+from the refit without unit \eqn{i}. It therefore reflects only how the
+coefficients move.
 \itemize{
-\item \eqn{\Delta\xi_i < 0}: dropping \eqn{i} decreases the estimate
-(observation was pulling the estimate up).
-\item \eqn{\Delta\xi_i > 0}: dropping \eqn{i} increases the estimate
-(observation was pulling the estimate down).
+\item \eqn{\Delta\xi_i < 0}: without \eqn{i} the estimate is lower
+(the unit was pulling the estimate up).
+\item \eqn{\Delta\xi_i > 0}: without \eqn{i} the estimate is higher
+(the unit was pulling the estimate down).
 }
+\code{dxi_subset} is the change when the unit also leaves the target:
+the total of \code{popsize()} on the refit, over the remaining rows only,
+minus \eqn{\hat\xi}. It is mostly negative because it includes the unit's
+own share of \eqn{\hat\xi}, so it is not an influence measure, but it answers
+\dQuote{what would we estimate if this unit were not in the data at all?}
 }
 \examples{
 # Simulate synthetic data
