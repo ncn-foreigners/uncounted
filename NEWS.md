@@ -17,6 +17,11 @@
   (xi about 14x too small) with `convergence = 0`. Only the intercept is
   transformed now; contrasts start at 0.
 
+* **`bootstrap_popsize()` ignored the fit's weights.** Replicates used the FWB
+  weights alone, so intervals for a weighted fit belonged to the unweighted
+  model. FWB weights now multiply the user's weights, and refits go through the
+  shared refit builder.
+
 ## New features
 
 * `estimate_hidden_pop()` gains `gamma_start` to set the starting value, and
@@ -24,6 +29,11 @@
   the final projected gradient, and `gamma_at_bound`. A message is shown when
   an estimated gamma ends on a bound, and a warning when the optimiser stops
   with a non-negligible gradient.
+
+* `bootstrap_popsize()` gains `ci_type = "cheap"` (Lam, 2022), a valid interval
+  from very few replications, computed on the log scale. Requires
+  `fwb (>= 1.0.0)`, whose bootstrap weights depend only on the seed, so numbers
+  under a fixed seed differ from `fwb` < 1.0.0.
 
 # uncounted 2.1.0
 

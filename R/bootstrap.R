@@ -49,6 +49,12 @@
 #' Applications of the fractional-random-weight bootstrap.
 #' \emph{The American Statistician}, 74(4), 345--358. \doi{10.1080/00031305.2020.1731599}
 #'
+#' Greifer, N. (2026). fwb: An R package for the fractional weighted bootstrap.
+#' \emph{Journal of Open Source Software}, 11(124), 8880. \doi{10.21105/joss.08880}
+#'
+#' Lam, H. (2022). A cheap bootstrap method for fast inference.
+#' \emph{arXiv preprint}. \doi{10.48550/arXiv.2202.00090}
+#'
 #' @param object An `"uncounted"` object (fitted model).
 #' @param R Number of bootstrap replications (default 199).
 #' @param cluster One-sided formula for cluster variable (e.g., `~ country_code`).
@@ -56,10 +62,17 @@
 #'   (all observations in a cluster get the same weight).
 #'   When `NULL`, observation-level FWB is used.
 #' @param level Confidence level (default 0.95).
-#' @param ci_type Type of bootstrap CI: `"perc"` (percentile) or `"bc"`
-#'   (bias-corrected percentile). Default `"perc"`.
+#' @param ci_type Type of bootstrap CI: `"perc"` (percentile), `"bc"`
+#'   (bias-corrected percentile), or `"cheap"` (Lam, 2022), which keeps nominal
+#'   coverage with very few replications because it needs only their spread
+#'   around the plug-in estimate: \eqn{\exp\{\log\hat\xi \pm t_{R, 1-a/2} S\}}
+#'   with \eqn{S^2 = R^{-1}\sum_r (\log\hat\xi^*_r - \log\hat\xi)^2}, computed
+#'   on the log scale so the interval stays positive. Useful when refits are
+#'   slow; `R` can be as small as 1, and `"perc"`/`"bc"` need at least 10
+#'   converged replications. Default `"perc"`.
 #' @param point_estimate Which point estimate to report:
-#'   `"median"` (default, recommended) -- bootstrap median, robust to skewness;
+#'   `"median"` (default, recommended, except with `ci_type = "cheap"` where
+#'   the default is `"plugin"`) -- bootstrap median, robust to skewness;
 #'   `"plugin"` -- plug-in \eqn{\hat{\xi} = \sum N^{\hat{\alpha}}};
 #'   `"mean"` -- bootstrap mean.
 #' @param seed Random seed for reproducibility.
@@ -90,7 +103,7 @@
 #'     \code{median}, \code{mean}, \code{lower}, \code{upper}), or \code{NULL}
 #'     if only one group.}
 #'   \item{R}{Number of replications requested.}
-#'   \item{ci_type}{CI type used (\code{"perc"} or \code{"bc"}).}
+#'   \item{ci_type}{CI type used (\code{"perc"}, \code{"bc"} or \code{"cheap"}).}
 #'   \item{point_estimate}{Point estimate type used.}
 #'   \item{level}{Confidence level.}
 #'   \item{n_converged}{Number of bootstrap replications where the model converged.}
@@ -128,7 +141,7 @@
 #'
 #' @export
 bootstrap_popsize <- function(object, R = 199, cluster = NULL,
-                              level = 0.95, ci_type = c("perc", "bc"),
+                              level = 0.95, ci_type = c("perc", "bc", "cheap"),
                               point_estimate = c("median", "plugin", "mean"),
                               seed = NULL, verbose = TRUE, by = NULL,
                               total = FALSE) {
@@ -142,32 +155,18 @@ bootstrap_popsize <- function(object, R = 199, cluster = NULL,
   }
 
   ci_type <- match.arg(ci_type)
+  ## The cheap interval is centred on the plug-in; a median of very few
+  ## replicates would be a poor point estimate to report next to it.
+  if (ci_type == "cheap" && missing(point_estimate)) point_estimate <- "plugin"
   point_estimate <- match.arg(point_estimate)
 
-  # Extract call arguments for refitting
-  # Use fit object fields where available; eval formulas from call (formulas are safe)
-  # Avoid eval on non-formula args (symbols like use_gamma fail in remote envs)
-  cl <- object$call
+  # Refit arguments: same model as the original fit. FWB weights multiply any
+  # user weights, so each replicate targets the same weighted estimator.
   data <- object$data
-  observed <- eval(cl$observed)
-  auxiliary <- eval(cl$auxiliary)
-  reference_pop <- eval(cl$reference_pop)
-  method <- object$method
-  cov_alpha <- if (!is.null(cl$cov_alpha)) eval(cl$cov_alpha) else NULL
-  cov_beta <- if (!is.null(cl$cov_beta)) eval(cl$cov_beta) else NULL
-  cov_gamma <- if (!is.null(cl$cov_gamma)) eval(cl$cov_gamma) else NULL
-  gamma_arg <- if (object$gamma_estimated) "estimate"
-               else if (!is.null(object$gamma)) object$gamma
-               else NULL
-  gamma_bounds <- tryCatch(
-    if (!is.null(cl$gamma_bounds)) eval(cl$gamma_bounds) else c(1e-10, 0.5),
-    error = function(e) c(1e-10, 0.5)
-  )
-  theta_start <- if (!is.null(object$theta)) object$theta else 1
-  constrained_arg <- isTRUE(object$constrained)
-  countries <- if (!is.null(cl$countries)) eval(cl$countries) else NULL
-  estimator_arg <- object$estimator
-  link_rho_arg <- object$link_rho
+  refit_args <- .refit_args_from_object(object)
+  refit_args$vcov <- "HC0"
+  refit_args$cluster <- NULL
+  base_weights <- object$obs_weights
 
   # Point estimates from original fit (using by if provided)
   ps0 <- popsize(object, by = by, bias_correction = TRUE, total = total)
@@ -179,6 +178,9 @@ bootstrap_popsize <- function(object, R = 199, cluster = NULL,
   cluster_var <- NULL
   if (!is.null(cluster)) {
     cluster_var <- eval(cluster[[2]], data)
+    if (length(unique(cluster_var)) < 2L) {
+      stop("Cluster bootstrap requires at least 2 clusters.", call. = FALSE)
+    }
   }
 
   # Pre-allocate storage for per-replicate parameters
@@ -196,26 +198,11 @@ bootstrap_popsize <- function(object, R = 199, cluster = NULL,
 
   # Statistic function for fwb
   stat_fn <- function(data, w) {
+    args <- refit_args
+    args$data <- data
+    args$weights <- if (is.null(base_weights)) w else base_weights * w
     fit_w <- tryCatch(
-      uncounted::estimate_hidden_pop(
-        data = data,
-        observed = observed,
-        auxiliary = auxiliary,
-        reference_pop = reference_pop,
-        method = method,
-        cov_alpha = cov_alpha,
-        cov_beta = cov_beta,
-        gamma = gamma_arg,
-        cov_gamma = cov_gamma,
-        gamma_bounds = gamma_bounds,
-        theta_start = theta_start,
-        link_rho = link_rho_arg,
-        estimator = estimator_arg,
-        vcov = "HC0",
-        weights = w,
-        constrained = constrained_arg,
-        countries = countries
-      ),
+      do.call(uncounted::estimate_hidden_pop, args),
       error = function(e) NULL
     )
 
@@ -258,9 +245,9 @@ bootstrap_popsize <- function(object, R = 199, cluster = NULL,
   }
 
   # Compute per-group statistics
-  alpha_ci <- 1 - level
   n_groups <- length(t0)
 
+  min_reps <- if (ci_type == "cheap") 1L else 10L
   ci_lower <- numeric(n_groups)
   ci_upper <- numeric(n_groups)
   boot_median <- numeric(n_groups)
@@ -270,26 +257,16 @@ bootstrap_popsize <- function(object, R = 199, cluster = NULL,
     boot_j <- boot_t[, j]
     boot_j <- boot_j[is.finite(boot_j)]
 
-    if (length(boot_j) < 10) {
+    if (length(boot_j) < min_reps) {
       ci_lower[j] <- ci_upper[j] <- boot_median[j] <- boot_mean[j] <- NA_real_
       next
     }
 
     boot_median[j] <- median(boot_j)
     boot_mean[j] <- mean(boot_j)
-
-    if (ci_type == "perc") {
-      ci_lower[j] <- quantile(boot_j, alpha_ci / 2)
-      ci_upper[j] <- quantile(boot_j, 1 - alpha_ci / 2)
-    } else {
-      # Bias-corrected percentile (BC)
-      z0 <- qnorm(mean(boot_j < t0[j]))
-      za <- qnorm(alpha_ci / 2)
-      p_lower <- pnorm(2 * z0 + za)
-      p_upper <- pnorm(2 * z0 - za)
-      ci_lower[j] <- quantile(boot_j, p_lower)
-      ci_upper[j] <- quantile(boot_j, p_upper)
-    }
+    ci_j <- .bootstrap_ci(boot_j, t0[j], level, ci_type)
+    ci_lower[j] <- ci_j[1]
+    ci_upper[j] <- ci_j[2]
   }
 
   # Select point estimate
@@ -325,18 +302,10 @@ bootstrap_popsize <- function(object, R = 199, cluster = NULL,
   if (total && n_groups > 1) {
     boot_total <- rowSums(boot_t)
     boot_total <- boot_total[is.finite(boot_total)]
-    if (length(boot_total) >= 10) {
+    if (length(boot_total) >= min_reps) {
       total_median <- median(boot_total)
       total_mean <- mean(boot_total)
-      if (ci_type == "perc") {
-        total_lower <- quantile(boot_total, alpha_ci / 2)
-        total_upper <- quantile(boot_total, 1 - alpha_ci / 2)
-      } else {
-        z0 <- qnorm(mean(boot_total < sum(t0)))
-        za <- qnorm(alpha_ci / 2)
-        total_lower <- quantile(boot_total, pnorm(2 * z0 + za))
-        total_upper <- quantile(boot_total, pnorm(2 * z0 - za))
-      }
+      total_ci <- .bootstrap_ci(boot_total, sum(t0), level, ci_type)
       # Use correct full-gradient BC total from popsize(total=TRUE)
       total_bc <- if (!is.null(attr(ps0, "total"))) {
         attr(ps0, "total")$estimate_bc
@@ -346,8 +315,8 @@ bootstrap_popsize <- function(object, R = 199, cluster = NULL,
       total_boot <- list(
         plugin = sum(t0), plugin_bc = total_bc,
         median = total_median, mean = total_mean,
-        lower = as.numeric(total_lower),
-        upper = as.numeric(total_upper)
+        lower = total_ci[1],
+        upper = total_ci[2]
       )
     }
   }
@@ -395,6 +364,29 @@ bootstrap_popsize <- function(object, R = 199, cluster = NULL,
 
   class(out) <- "uncounted_boot"
   out
+}
+
+
+#' Bootstrap CI from replicates of one estimate
+#'
+#' The cheap interval is computed here rather than by fwb::fwb.ci(), which only
+#' supports the identity transformation and would not keep it positive.
+#' @noRd
+.bootstrap_ci <- function(x, t0, level, ci_type) {
+  alpha_ci <- 1 - level
+  out <- switch(ci_type,
+    perc = quantile(x, c(alpha_ci / 2, 1 - alpha_ci / 2)),
+    bc = {
+      z0 <- qnorm(mean(x < t0))
+      za <- qnorm(alpha_ci / 2)
+      quantile(x, pnorm(c(2 * z0 + za, 2 * z0 - za)))
+    },
+    cheap = {
+      s <- sqrt(mean((log(x) - log(t0))^2))
+      exp(log(t0) + c(-1, 1) * qt(1 - alpha_ci / 2, df = length(x)) * s)
+    }
+  )
+  as.numeric(out)
 }
 
 
@@ -667,7 +659,11 @@ summary.uncounted_boot <- function(object, ...) {
     ))
   }
 
-  ci_label <- if (ci_type == "bc") "bias-corrected percentile" else "percentile"
+  ci_label <- switch(ci_type,
+    bc = "bias-corrected percentile",
+    cheap = "cheap (Lam, 2022)",
+    "percentile"
+  )
   pe_label <- switch(point_estimate,
     median = "bootstrap median (recommended)",
     plugin = "plug-in",

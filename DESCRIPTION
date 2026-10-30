@@ -33,7 +33,7 @@ Imports:
 LazyData: true
 Suggests:
     testthat (>= 3.0.0),
-    fwb,
+    fwb (>= 1.0.0),
     broom,
     modelsummary,
     knitr,

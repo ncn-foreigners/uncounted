@@ -567,7 +567,8 @@ the CI bounds, evaluated at their respective $\alpha$ values.
 
 For finite-sample inference and as a robustness check on the analytical
 CIs, the package provides the fractional weighted bootstrap (FWB) of
-Xu et al. (2020) via `bootstrap_popsize()`.
+Xu et al. (2020) via `bootstrap_popsize()`, implemented with the `fwb` package
+(Greifer, 2026).
 
 Instead of resampling rows, FWB generates random non-negative weights
 $w_1, \ldots, w_n$ from a $\mathrm{Dirichlet}(1, \ldots, 1)$
@@ -682,6 +683,12 @@ documented in `?frailty_sensitivity`.
 ## References
 
 - Beręsewicz, M., & Pawlukiewicz, K. (2020). Estimation of the number of irregular foreigners in Poland using non-linear count regression models. arXiv preprint arXiv:2008.09407. https://arxiv.org/abs/2008.09407
+
+- Greifer, N. (2026). fwb: An R package for the fractional weighted bootstrap.
+  *Journal of Open Source Software*, 11(124), 8880. https://doi.org/10.21105/joss.08880
+
+- Lam, H. (2022). A cheap bootstrap method for fast inference. arXiv preprint.
+  https://doi.org/10.48550/arXiv.2202.00090
 
 - Santos Silva, J. M. C. and Tenreyro, S. (2006). The log of gravity.
   *The Review of Economics and Statistics*, 88(4), 641--658. https://doi.org/10.1162/rest.88.4.641
