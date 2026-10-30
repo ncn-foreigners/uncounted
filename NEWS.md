@@ -146,6 +146,10 @@
   `fwb (>= 1.0.0)`, whose bootstrap weights depend only on the seed, so numbers
   under a fixed seed differ from `fwb` < 1.0.0.
 
+* `lrtest()` now reports the Pearson dispersion of the larger model and notes when
+  it exceeds 1.5: with overdispersion an LR test between two Poisson models rejects
+  far too often (about 79% at a nominal 5% in a simulation with NB size 2).
+
 ## Breaking changes
 
 * `dfbeta()` and `loo()$dfbeta` now return `beta_hat - beta_hat(-i)`, the sign

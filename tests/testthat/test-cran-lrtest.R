@@ -88,3 +88,34 @@ test_that("a same-family comparison keeps the plain chi-squared", {
   expect_equal(r$p_value, pchisq(r$statistic, 1, lower.tail = FALSE))
   expect_false(any(grepl("Boundary", capture.output(print(r)))))
 })
+
+test_that("lrtest() reports overdispersion for same-family comparisons", {
+  mu <- testdata$N^0.7 * (0.005 + testdata$n / testdata$N)^0.55
+  set.seed(1)
+  d <- testdata
+  d$m <- rnbinom(nrow(d), mu = mu, size = 2)
+  f0 <- estimate_hidden_pop(d, ~m, ~n, ~N, gamma = 0.005)
+  f1 <- estimate_hidden_pop(d, ~m, ~n, ~N, cov_alpha = ~sex, gamma = 0.005)
+  r <- lrtest(f0, f1)
+  p <- .count_params(f1)
+  expect_equal(r$dispersion,
+               sum((d$m - fitted(f1))^2 / fitted(f1)) / (nrow(d) - p))
+  expect_gt(r$dispersion, 1.5)
+  expect_output(print(r), "Pearson dispersion")
+
+  set.seed(1)
+  d$m <- rpois(nrow(d), mu)
+  f0 <- estimate_hidden_pop(d, ~m, ~n, ~N, gamma = 0.005)
+  f1 <- estimate_hidden_pop(d, ~m, ~n, ~N, cov_alpha = ~sex, gamma = 0.005)
+  r <- lrtest(f0, f1)
+  expect_lt(r$dispersion, 1.5)
+  expect_false(any(grepl("Pearson", capture.output(print(r)))))
+})
+
+test_that("Poisson against NB does not get the dispersion note", {
+  po <- estimate_hidden_pop(testdata, ~m, ~n, ~N, gamma = 0.005)
+  nb <- estimate_hidden_pop(testdata, ~m, ~n, ~N, method = "nb", gamma = 0.005)
+  r <- lrtest(po, nb)
+  expect_true(is.na(r$dispersion))
+  expect_false(any(grepl("Pearson", capture.output(print(r)))))
+})

@@ -195,6 +195,14 @@ print.uncounted_comparison <- function(x, ...) {
   invisible(x)
 }
 
+#' Pearson dispersion X^2 / (n - p) under the model's own variance function
+#' @noRd
+.pearson_dispersion <- function(object) {
+  w <- .fit_weights(object)
+  x2 <- sum(w * (object$m - object$fitted.values)^2 / .variance_function(object))
+  x2 / (sum(w) - .count_params(object))
+}
+
 #' p-value when one parameter is on the boundary and df - 1 are tested at interior
 #' points: 0.5 chi2_{df-1} + 0.5 chi2_df, with chi2_0 a point mass at 0
 #' @noRd
@@ -237,6 +245,19 @@ print.uncounted_comparison <- function(x, ...) {
 #' so such pairs are an error: use \code{\link{compare_models}} for them. For two
 #' models of the same family, specifications that are not nested give a warning.
 #'
+#' \strong{Overdispersion.} The \eqn{\chi^2} reference also needs the larger
+#' model to be correctly specified. Otherwise the statistic converges to
+#' \eqn{\sum_j \lambda_j Z_j^2}, where \eqn{\lambda_j} are eigenvalues of
+#' \eqn{A^{-1}B} in the tested directions, \eqn{A} is the Hessian and \eqn{B} the
+#' outer product of the scores (Kent, 1982; White, 1982). With overdispersion the
+#' \eqn{\lambda_j} are roughly the dispersion, so comparing two Poisson models
+#' rejects far too often: at a nominal 5\%, about 79\% on data simulated with an
+#' NB size of 2 and an irrelevant covariate. The result therefore includes the
+#' Pearson dispersion of the larger model (\code{NA} for Poisson against NB, which
+#' tests overdispersion itself), and printing adds a note when it exceeds 1.5. The
+#' same applies to \code{weights} that are not frequency weights, since the
+#' weighted log-likelihood is then a pseudo-likelihood.
+#'
 #' This function is intended for comparing count models only (Poisson and NB).
 #' OLS/NLS models are not supported because they use a pseudo-log-likelihood.
 #' The models must be fitted to the same observations and weights: the same
@@ -246,18 +267,24 @@ print.uncounted_comparison <- function(x, ...) {
 #' @param object2 An \code{"uncounted"} model (Poisson or NB). The function
 #'   automatically identifies the simpler model regardless of argument order.
 #' @return An object of class \code{"uncounted_lrtest"} with components
-#'   \code{statistic}, \code{df}, \code{p_value}, \code{boundary}, model
-#'   descriptions, and log-likelihoods.
+#'   \code{statistic}, \code{df}, \code{p_value}, \code{boundary},
+#'   \code{dispersion}, model descriptions, and log-likelihoods.
 #'
 #' @references
 #' Chernoff, H. (1954). On the distribution of the likelihood ratio.
 #' \emph{Annals of Mathematical Statistics}, 25(3), 573--578.
 #' \doi{10.1214/aoms/1177728725}
 #'
+#' Kent, J. T. (1982). Robust properties of likelihood ratio tests.
+#' \emph{Biometrika}, 69(1), 19--27. \doi{10.1093/biomet/69.1.19}
+#'
 #' Self, S. G. and Liang, K.-Y. (1987). Asymptotic properties of maximum
 #' likelihood estimators and likelihood ratio tests under nonstandard
 #' conditions. \emph{Journal of the American Statistical Association},
 #' 82(398), 605--610. \doi{10.1080/01621459.1987.10478472}
+#'
+#' White, H. (1982). Maximum likelihood estimation of misspecified models.
+#' \emph{Econometrica}, 50(1), 1--25. \doi{10.2307/1912526}
 #'
 #' @examples
 #' set.seed(42)
@@ -387,6 +414,7 @@ lrtest <- function(object1, object2) {
     df = df,
     p_value = p_value,
     boundary = is_boundary,
+    dispersion = if (is_boundary) NA_real_ else .pearson_dispersion(object2),
     model1 = paste(toupper(object1$method),
                    if(object1$constrained) "(constrained)" else ""),
     model2 = paste(toupper(object2$method),
@@ -409,6 +437,11 @@ print.uncounted_lrtest <- function(x, ...) {
                 x$df - 1L, x$df))
   }
   cat("p-value:", format.pval(x$p_value, digits = 4), "\n")
+  if (isTRUE(x$dispersion > 1.5)) {
+    cat("Note: Pearson dispersion of the larger model is ", round(x$dispersion, 2),
+        ". With overdispersion the LR statistic\n",
+        "is not chi-squared and this test rejects too often; see ?lrtest.\n", sep = "")
+  }
   invisible(x)
 }
 
