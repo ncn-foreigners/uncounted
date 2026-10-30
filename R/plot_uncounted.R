@@ -256,6 +256,10 @@ rootogram.uncounted <- function(object, style = c("hanging", "standing", "suspen
   if (!object$method %in% c("poisson", "nb")) {
     stop("Rootogram is only available for Poisson and NB models.")
   }
+  if (isTRUE(object$pseudo_loglik)) {
+    stop("Rootogram needs whole-number counts; 'observed' has non-integer values.",
+         call. = FALSE)
+  }
 
   m <- object$m
   mu <- object$fitted.values
@@ -491,7 +495,7 @@ profile_gamma <- function(object, gamma_grid = seq(1e-4, 0.5, length.out = 20),
     if (method == "nb") {
       val <- -sum(weights * dnbinom(m, size = theta_mle, mu = mu, log = TRUE))
     } else if (method == "poisson") {
-      val <- -sum(weights * dpois(m, mu, log = TRUE))
+      val <- -sum(weights * (m * log(mu) - mu - lgamma(m + 1)))
     } else {
       has_zeros <- any(m == 0)
       log_m <- if (has_zeros) log(m + 1) else log(m)

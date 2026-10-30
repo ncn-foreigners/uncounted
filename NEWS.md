@@ -26,6 +26,12 @@
   now use the shared refit builder with the weights of the remaining rows, and
   a refit that does not converge is reported as such.
 
+* **Poisson and NB with non-integer `observed` returned the start values.**
+  The objective was a constant, so the fit reported `convergence = 0` with
+  `loglik = -1e20`. `method = "poisson"` now handles non-integer values as
+  pseudo-maximum likelihood (flagged by `$pseudo_loglik`, with warnings in
+  `compare_models()` and `lrtest()`), and `method = "nb"` gives a clear error.
+
 ## New features
 
 * `estimate_hidden_pop()` gains `gamma_start` to set the starting value, and

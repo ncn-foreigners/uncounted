@@ -84,6 +84,11 @@ compare_models <- function(..., sort_by = c("AIC", "BIC", "loglik")) {
     warning("Comparing pseudo-loglik (OLS/NLS/iOLS) with count likelihood ",
             "(Poisson/NB) is not meaningful for AIC/BIC.", call. = FALSE)
   }
+  if (any(vapply(models, function(x) isTRUE(x$pseudo_loglik), logical(1)))) {
+    warning("Some Poisson fits have non-integer 'observed' values, so their ",
+            "log-likelihood is a pseudo-likelihood; AIC/BIC are not formally ",
+            "valid for them.", call. = FALSE)
+  }
   count_estimators <- unique(vapply(models, function(x) {
     if (x$method %in% c("poisson", "nb")) x$estimator else NA_character_
   }, character(1)))
@@ -244,6 +249,11 @@ lrtest <- function(object1, object2) {
 
   if (object1$n_obs != object2$n_obs)
     stop("Models must be fitted to the same data (different n_obs)")
+  if (isTRUE(object1$pseudo_loglik) || isTRUE(object2$pseudo_loglik)) {
+    warning("Non-integer 'observed' values: the log-likelihood is a ",
+            "pseudo-likelihood, so the chi-squared reference is not valid.",
+            call. = FALSE)
+  }
 
   # Ensure object2 is the more complex model (more parameters)
   p1 <- .count_params(object1)

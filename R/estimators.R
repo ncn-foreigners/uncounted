@@ -274,7 +274,9 @@
     log_mu <- pmin(.compute_log_mu(alpha_lin, log_N, beta_lin, rate,
                                    link_rho = link_rho), 20)
     mu <- pmax(exp(log_mu), 1e-300)
-    val <- -sum(weights * dpois(m, mu, log = TRUE))
+    ## Poisson kernel rather than dpois(): identical for counts and also defined
+    ## for non-integer m (pseudo-ML), where dpois() returns -Inf
+    val <- -sum(weights * (m * log(mu) - mu - lgamma(m + 1)))
     if (!is.finite(val)) return(1e20)
     val
   }

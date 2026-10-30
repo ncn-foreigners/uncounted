@@ -7,6 +7,9 @@
 #'
 #' @param data A data frame containing all variables.
 #' @param observed One-sided formula for the observed count (e.g., \code{~ m}).
+#'   Must be whole numbers for \code{method = "nb"}. \code{method = "poisson"}
+#'   also accepts non-integer values (pseudo-maximum likelihood); \code{$loglik}
+#'   is then a pseudo-log-likelihood, flagged by \code{$pseudo_loglik}.
 #' @param auxiliary One-sided formula for the auxiliary count (e.g., \code{~ n}).
 #' @param reference_pop One-sided formula for the reference population (e.g., \code{~ N}).
 #' @param method Estimation method: \code{"poisson"} (default), \code{"nb"},
@@ -435,6 +438,14 @@ estimate_hidden_pop <- function(data,
     }
   }
 
+  non_integer_m <- any(abs(m - round(m)) > sqrt(.Machine$double.eps))
+  if (identical(method, "nb") && non_integer_m) {
+    stop("method = 'nb' requires whole-number counts in 'observed'; the negative ",
+         "binomial likelihood is not defined for non-integer values. ",
+         "method = 'poisson' accepts them (pseudo-maximum likelihood).",
+         call. = FALSE)
+  }
+
   if (identical(method, "nb")) {
     if (!is.numeric(theta_start) || length(theta_start) != 1L ||
         !is.finite(theta_start) || theta_start <= 0) {
@@ -787,6 +798,7 @@ estimate_hidden_pop <- function(data,
     backend_vcov_model_full = result$backend_vcov_model_full,
     moment_backend = result$moment_backend,
     optim_info = optim_info,
+    pseudo_loglik = non_integer_m && method == "poisson",
     call_args = list(
       observed = observed, auxiliary = auxiliary, reference_pop = reference_pop
     )

@@ -29,7 +29,10 @@ estimate_hidden_pop(
 \arguments{
 \item{data}{A data frame containing all variables.}
 
-\item{observed}{One-sided formula for the observed count (e.g., \code{~ m}).}
+\item{observed}{One-sided formula for the observed count (e.g., \code{~ m}).
+Must be whole numbers for \code{method = "nb"}. \code{method = "poisson"}
+also accepts non-integer values (pseudo-maximum likelihood); \code{$loglik}
+is then a pseudo-log-likelihood, flagged by \code{$pseudo_loglik}.}
 
 \item{auxiliary}{One-sided formula for the auxiliary count (e.g., \code{~ n}).}
 
