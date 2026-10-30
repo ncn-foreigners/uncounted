@@ -713,7 +713,7 @@ estimate_hidden_pop <- function(data,
   }
   if (estimate_gamma) {
     gamma_level <- if (has_cov_gamma && !is.null(result$gamma_coefs)) {
-      exp(result$gamma_coefs[1])
+      exp(unname(result$gamma_coefs[1]))
     } else {
       result$gamma_estimated
     }
@@ -841,9 +841,12 @@ estimate_hidden_pop <- function(data,
       vcov_type   = actual_vcov_type,
       cluster     = cluster_vec
     )
-    vv <- .extract_vcov(V_nb_full)
-    out$vcov <- vv$vcov
-    out$vcov_full <- vv$vcov_full
+    ## V_nb_full is ordered (alpha, beta, log-theta, gamma...): the reported
+    ## coefficients skip theta, unlike the other methods' vcov_full.
+    coef_idx <- c(seq_len(p_ab), if (has_cov_gamma) p_ab + 1L + seq_len(p_gamma))
+    out$vcov <- V_nb_full[coef_idx, coef_idx, drop = FALSE]
+    dimnames(out$vcov) <- list(names(all_coefs), names(all_coefs))
+    out$vcov_full <- V_nb_full
     out$theta_se <- sqrt(max(0, V_nb_full[p_ab + 1, p_ab + 1]))
     out$score_full <- result$score_full
     out$hessian_nll <- result$hessian_nll

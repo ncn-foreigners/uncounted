@@ -367,6 +367,11 @@
                                   vcov_type = "HC0", cluster = NULL) {
   H_inv <- .solve_safe(hessian_nll)
   p <- ncol(score_full)
+  sandwich <- function(meat) {
+    V <- H_inv %*% meat %*% H_inv
+    dimnames(V) <- list(colnames(score_full), colnames(score_full))
+    V
+  }
 
   if (!is.null(cluster)) {
     cl <- as.factor(cluster)
@@ -383,7 +388,7 @@
     } else {
       (G / (G - 1)) * ((n_obs - 1) / (n_obs - p))
     }
-    return(H_inv %*% (correction * meat) %*% H_inv)
+    return(sandwich(correction * meat))
   }
 
   meat <- crossprod(score_full)
@@ -393,7 +398,7 @@
   if (vcov_type == "HC1") {
     meat <- meat * n_obs / (n_obs - p)
   }
-  H_inv %*% meat %*% H_inv
+  sandwich(meat)
 }
 
 #' Compute hat values for weighted least squares

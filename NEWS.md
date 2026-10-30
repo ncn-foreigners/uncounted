@@ -32,6 +32,12 @@
   pseudo-maximum likelihood (flagged by `$pseudo_loglik`, with warnings in
   `compare_models()` and `lrtest()`), and `method = "nb"` gives a clear error.
 
+* **NB with `cov_gamma` reported the wrong standard errors.** `vcov()` and
+  `summary()` took the first rows of a matrix ordered (alpha, beta, log-theta,
+  gamma), so the log-theta variance was shown for `gamma:(Intercept)` and the
+  last gamma coefficient was dropped. The NB `$vcov_full` now has names, which
+  also fixes the NA gamma standard errors in `tidy()` and `print()`.
+
 ## New features
 
 * `estimate_hidden_pop()` gains `gamma_start` to set the starting value, and
