@@ -327,8 +327,12 @@
   start_par <- lm.fit(Z_start, y_start)$coefficients
   # Transform starting values to link scale
   if (constrained) {
-    start_par[seq_len(p_alpha)] <- .logit(pmin(pmax(start_par[seq_len(p_alpha)], 0.01), 0.99))
-    start_par[p_alpha + seq_len(p_beta)] <- log(pmax(start_par[p_alpha + seq_len(p_beta)], 0.01))
+    start_par[seq_len(p_alpha)] <- .constrained_start(
+      start_par[seq_len(p_alpha)], X_alpha,
+      function(a) .logit(pmin(pmax(a, 0.01), 0.99)))
+    start_par[p_alpha + seq_len(p_beta)] <- .constrained_start(
+      start_par[p_alpha + seq_len(p_beta)], X_beta,
+      function(b) log(pmax(b, 0.01)))
   }
 
   if (estimate_gamma) {
@@ -545,8 +549,12 @@
       c(fit_uc$alpha_coefs, fit_uc$beta_coefs)
     }, error = function(e) start_ab)
 
-    start_ab[seq_len(p_alpha)] <- .logit(pmin(pmax(start_ab_uc[seq_len(p_alpha)], 0.05), 0.95))
-    start_ab[p_alpha + seq_len(p_beta)] <- log(pmax(start_ab_uc[p_alpha + seq_len(p_beta)], 0.01))
+    start_ab[seq_len(p_alpha)] <- .constrained_start(
+      start_ab_uc[seq_len(p_alpha)], X_alpha,
+      function(a) .logit(pmin(pmax(a, 0.05), 0.95)))
+    start_ab[p_alpha + seq_len(p_beta)] <- .constrained_start(
+      start_ab_uc[p_alpha + seq_len(p_beta)], X_beta,
+      function(b) log(pmax(b, 0.01)))
   }
 
   start_par <- c(start_ab, log(theta_start))

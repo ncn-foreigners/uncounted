@@ -577,3 +577,17 @@
   opt$at_upper <- at_upper
   opt
 }
+
+#' Map unconstrained start values to the constrained link scale
+#'
+#' Under treatment coding only the intercept is on the response scale, so only
+#' it goes through \code{transform}; contrasts start at 0 (no difference). Without
+#' an intercept every column is its own level and is transformed.
+#' @noRd
+.constrained_start <- function(coefs, X, transform) {
+  int <- grep("(Intercept)", colnames(X), fixed = TRUE)
+  if (length(int) != 1L) return(transform(coefs))
+  out <- numeric(length(coefs))
+  out[int] <- transform(coefs[int])
+  out
+}

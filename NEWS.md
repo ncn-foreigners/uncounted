@@ -11,6 +11,12 @@
   estimates can change slightly (typically below 0.2% of xi) even where the
   old fit was in the right basin.
 
+* **`constrained = TRUE` with covariates stopped far from the optimum.** Start
+  values were transformed to the link scale for every coefficient, contrasts
+  included, so Poisson/NB fits with factor covariates converged to a poor point
+  (xi about 14x too small) with `convergence = 0`. Only the intercept is
+  transformed now; contrasts start at 0.
+
 ## New features
 
 * `estimate_hidden_pop()` gains `gamma_start` to set the starting value, and
