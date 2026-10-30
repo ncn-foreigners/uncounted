@@ -96,6 +96,8 @@
 * `NA` in a covariate now gives an error naming the variable instead of
   `number of rows of matrices must match`.
 
+* `lrtest()`'s nesting check no longer depends on the scale of the covariates.
+
 ## New features
 
 * `estimate_hidden_pop()` gains `gamma_start` to set the starting value, and

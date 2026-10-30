@@ -132,3 +132,14 @@ test_that("lrtest warns for different fixed gamma values", {
   fit2 <- quick_fit(d, gamma = 0.01, cov_alpha = ~sex)
   expect_warning(lrtest(fit1, fit2), "not be nested")
 })
+
+test_that(".is_col_subspace does not depend on the scale of the columns", {
+  set.seed(1)
+  x <- rnorm(50)
+  z <- rnorm(50)
+  expect_true(.is_col_subspace(cbind(1, x * 1e12), cbind(1, x * 1e12, z)))
+  expect_true(.is_col_subspace(cbind(1, x * 1e-10), cbind(1, x, z)))
+  expect_false(.is_col_subspace(cbind(1, x * 1e-10), cbind(1, z)))
+  expect_false(.is_col_subspace(cbind(1, x * 1e12), cbind(1, z)))
+  expect_true(.is_col_subspace(cbind(1, 0 * x), cbind(1, x)))
+})

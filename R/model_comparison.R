@@ -2,8 +2,16 @@
 #' @noRd
 .is_col_subspace <- function(A, B) {
   if (ncol(A) > ncol(B)) return(FALSE)
+  # Column spaces do not depend on column scale, so normalise: otherwise the
+  # QR rank decision and the tolerance would depend on the covariates' units
+  unit_cols <- function(X) {
+    norms <- sqrt(colSums(X^2))
+    norms[norms == 0] <- 1
+    sweep(X, 2, norms, "/")
+  }
+  A <- unit_cols(A)
   # Project each column of A onto column space of B
-  Q <- qr(B)
+  Q <- qr(unit_cols(B))
   proj <- qr.fitted(Q, A)
   max(abs(A - proj)) < 1e-8
 }
