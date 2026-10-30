@@ -4,13 +4,19 @@
 #'
 #' For Poisson and Negative Binomial models, the true log-likelihood is returned
 #' as computed during maximum-likelihood estimation. For OLS and NLS models,
-#' a Gaussian pseudo-log-likelihood is returned, computed on the log scale as
+#' a Gaussian pseudo-log-likelihood is returned, on the scale each method
+#' optimises:
 #'
 #' \deqn{\ell = -\frac{n}{2}\bigl(\log(2\pi\hat\sigma^2) + 1\bigr)}
 #'
-#' where \eqn{\hat\sigma^2 = n^{-1}\sum(\log m_i - \log\hat\mu_i)^2}. This
-#' pseudo-log-likelihood enables AIC/BIC comparison among OLS/NLS variants but
-#' is not comparable to the true likelihood of count models.
+#' where \eqn{\hat\sigma^2 = n^{-1}\sum(\log m_i - \log\hat\mu_i)^2} for OLS
+#' and \eqn{\hat\sigma^2 = n^{-1}\sum(m_i - \hat\mu_i)^2} for NLS. iOLS
+#' reports a Gamma pseudo-log-likelihood without normalising constants.
+#'
+#' These values, and AIC/BIC based on them, are comparable only among models of
+#' the same family: OLS with OLS, NLS with NLS, iOLS with iOLS, and Poisson with
+#' NB. They live on different scales across families. See
+#' \code{\link{compare_models}}.
 #'
 #' @param object An object of class \code{"uncounted"}.
 #' @param ... Additional arguments (ignored).
@@ -44,11 +50,9 @@ logLik.uncounted <- function(object, ...) {
   } else if (object$method == "iols") {
     ll <- object$loglik
   } else {
-    # Gaussian pseudo-loglik on log scale (match transformation used in fitting)
+    # Gaussian pseudo-loglik on the scale the method optimises
     n <- object$n_obs
-    log_m <- .log_m_transform(object$m)
-    resid_log <- log_m - object$log_mu
-    sigma2 <- sum(resid_log^2) / n
+    sigma2 <- sum(.fit_scale_residuals(object)^2) / n
     ll <- -n/2 * (log(2 * pi * sigma2) + 1)
   }
 
@@ -123,10 +127,8 @@ deviance.uncounted <- function(object, ...) {
       sum(d)
     },
     {
-      # OLS/NLS: RSS on log scale (match transformation used in fitting)
-      log_m <- .log_m_transform(m)
-      resid_log <- log_m - object$log_mu
-      sum(resid_log^2)
+      # OLS/NLS: RSS on the scale the method optimises
+      sum(.fit_scale_residuals(object)^2)
     }
   )
 }
@@ -240,10 +242,9 @@ residuals.uncounted <- function(object, type = c("response", "pearson", "devianc
           sign(m - mu) * sqrt(pmax(d, 0))
         },
         {
-          # OLS/NLS: standardized log residuals
-          log_m <- .log_m_transform(m)
-          resid_log <- log_m - object$log_mu
-          resid_log / sd(resid_log)
+          # OLS/NLS: standardized residuals on the fitting scale
+          resid_fit <- .fit_scale_residuals(object)
+          resid_fit / sd(resid_fit)
         }
       )
     },
@@ -259,10 +260,9 @@ residuals.uncounted <- function(object, type = c("response", "pearson", "devianc
           3 * (m^(2/3) - mu^(2/3)) / (2 * mu^(1/6) * (1 + mu/theta)^(1/6))
         },
         {
-          # OLS/NLS: standardized log residuals
-          log_m <- .log_m_transform(m)
-          resid_log <- log_m - object$log_mu
-          resid_log / sd(resid_log)
+          # OLS/NLS: standardized residuals on the fitting scale
+          resid_fit <- .fit_scale_residuals(object)
+          resid_fit / sd(resid_fit)
         }
       )
     }
@@ -276,8 +276,11 @@ residuals.uncounted <- function(object, type = c("response", "pearson", "devianc
   switch(object$method,
     "poisson" = mu,
     "nb" = mu + mu^2 / object$theta,
+    "nls" = rep(sum(.fit_scale_residuals(object)^2) /
+                  (object$n_obs - length(object$coefficients) - object$gamma_estimated),
+                object$n_obs),
     {
-      # OLS/NLS on log scale: V(m) ~ mu^2 * sigma2 via delta method
+      # OLS on log scale: V(m) ~ mu^2 * sigma2 via delta method
       n <- object$n_obs
       p <- length(object$coefficients) + object$gamma_estimated
       log_m <- .log_m_transform(object$m)
@@ -286,6 +289,16 @@ residuals.uncounted <- function(object, type = c("response", "pearson", "devianc
       mu^2 * sigma2
     }
   )
+}
+
+#' Residuals on the scale the Gaussian methods optimise: raw for NLS, which
+#' minimises sum((m - mu)^2), and log for OLS and iOLS
+#' @noRd
+.fit_scale_residuals <- function(object) {
+  if (identical(object$method, "nls")) {
+    return(object$m - object$fitted.values)
+  }
+  .log_m_transform(object$m) - object$log_mu
 }
 
 #' Log-transform m consistently: log(m) if all positive, log(m+1) if zeros exist

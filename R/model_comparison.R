@@ -20,7 +20,8 @@
 #'     constraints.}
 #'   \item{\code{n_par}}{Number of estimated parameters.}
 #'   \item{\code{logLik}}{Log-likelihood (true for count models, Gaussian
-#'     pseudo-log-likelihood for OLS/NLS).}
+#'     pseudo-log-likelihood for OLS/NLS on the scale each one optimises). See
+#'     \code{\link{logLik.uncounted}}.}
 #'   \item{\code{AIC, BIC}}{Akaike and Bayesian information criteria.}
 #'   \item{\code{Deviance}}{Model deviance (see
 #'     \code{\link{deviance.uncounted}}).}
@@ -40,9 +41,14 @@
 #'     Only for Poisson/NB.}
 #' }
 #'
-#' A warning is issued when comparing OLS/NLS pseudo-log-likelihoods with true
-#' count-model likelihoods, since AIC/BIC values are not comparable across
-#' these families.
+#' \strong{Comparability.} \code{logLik}, \code{AIC}, \code{BIC} and
+#' \code{Deviance} are comparable only within one likelihood family: OLS
+#' (log-scale Gaussian), NLS (raw-scale Gaussian), iOLS (Gamma
+#' pseudo-likelihood without constants), or Poisson/NB (count likelihoods). A
+#' table can still mix families, for example to line up \code{RMSE} and
+#' \code{R2_cor}, which are on the response scale for every method. In that
+#' case a warning is issued and the columns are kept, but their values must not
+#' be compared across families.
 #'
 #' @param ... Two or more objects of class \code{"uncounted"}. Named arguments
 #'   are used as model labels.
@@ -83,6 +89,12 @@ compare_models <- function(..., sort_by = c("AIC", "BIC", "loglik")) {
   if (has_pseudo && has_ml) {
     warning("Comparing pseudo-loglik (OLS/NLS/iOLS) with count likelihood ",
             "(Poisson/NB) is not meaningful for AIC/BIC.", call. = FALSE)
+  }
+  pseudo_used <- unique(methods[methods %in% c("ols", "nls", "iols")])
+  if (length(pseudo_used) > 1L) {
+    warning("Models come from different pseudo-likelihoods (",
+            paste(toupper(pseudo_used), collapse = ", "), "); logLik, AIC, BIC ",
+            "and Deviance are not comparable across them.", call. = FALSE)
   }
   if (any(vapply(models, function(x) isTRUE(x$pseudo_loglik), logical(1)))) {
     warning("Some Poisson fits have non-integer 'observed' values, so their ",

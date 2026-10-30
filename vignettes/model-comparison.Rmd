@@ -46,6 +46,11 @@ fit_io <- estimate_hidden_pop(d, ~ m, ~ n, ~ N,
   gamma = fit_po$gamma, countries = ~ country_code)
 ```
 
+`logLik`, `AIC`, `BIC` and `Deviance` from `compare_models()` are comparable
+only within one likelihood family: OLS, NLS, iOLS, or Poisson/NB. A table can
+mix families to line up response-scale metrics such as `RMSE`, but it warns, and
+those likelihood columns must not be compared across families.
+
 ## Coefficient tables with modelsummary
 
 The package provides `tidy()` and `glance()` methods compatible with

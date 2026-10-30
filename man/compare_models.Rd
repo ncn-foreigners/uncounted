@@ -29,7 +29,8 @@ model:
 constraints.}
 \item{\code{n_par}}{Number of estimated parameters.}
 \item{\code{logLik}}{Log-likelihood (true for count models, Gaussian
-pseudo-log-likelihood for OLS/NLS).}
+pseudo-log-likelihood for OLS/NLS on the scale each one optimises). See
+\code{\link{logLik.uncounted}}.}
 \item{\code{AIC, BIC}}{Akaike and Bayesian information criteria.}
 \item{\code{Deviance}}{Model deviance (see
 \code{\link{deviance.uncounted}}).}
@@ -49,9 +50,14 @@ Uses the model-implied variance function \eqn{V(\mu)}.
 Only for Poisson/NB.}
 }
 
-A warning is issued when comparing OLS/NLS pseudo-log-likelihoods with true
-count-model likelihoods, since AIC/BIC values are not comparable across
-these families.
+\strong{Comparability.} \code{logLik}, \code{AIC}, \code{BIC} and
+\code{Deviance} are comparable only within one likelihood family: OLS
+(log-scale Gaussian), NLS (raw-scale Gaussian), iOLS (Gamma
+pseudo-likelihood without constants), or Poisson/NB (count likelihoods). A
+table can still mix families, for example to line up \code{RMSE} and
+\code{R2_cor}, which are on the response scale for every method. In that
+case a warning is issued and the columns are kept, but their values must not
+be compared across families.
 }
 \examples{
 set.seed(42)

@@ -60,6 +60,13 @@
   used every row. They now form an `"NA"` group, with a message, so the groups
   always add up to the ungrouped total.
 
+* **NLS fit statistics used the OLS criterion.** `logLik()`, `AIC()`, `BIC()`,
+  `deviance()` and the Pearson and deviance residuals of NLS fits were on the
+  log scale that OLS optimises, so OLS always won `compare_models()`. They are
+  now on the raw scale NLS optimises. `compare_models()` also warns when mixing
+  OLS, NLS and iOLS, and its documentation states that likelihood columns are
+  comparable only within one family.
+
 ## New features
 
 * `estimate_hidden_pop()` gains `gamma_start` to set the starting value, and
