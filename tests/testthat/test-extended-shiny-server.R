@@ -110,3 +110,42 @@ test_that("Shiny diagnostics branches run for fitted models", {
     expect_no_error(output$diag_plot)
   })
 })
+
+test_that("Shiny popsize result follows its model and plots a single group", {
+  skip_if_not_installed("shiny")
+  skip_if_not_installed("bslib")
+  skip_if_not_installed("DT")
+
+  shiny::testServer(uncounted:::.app_server, {
+    rv$data <- small_data()
+    session$setInputs(data_source = "upload")
+    session$setInputs(
+      col_m = "m", col_n = "n", col_N = "N",
+      col_country = "country", col_country_fit = "country",
+      model_name = "A", method = "poisson", link_rho = "power", estimator = "mle",
+      cov_alpha = "~ 1", cov_beta = "~ 1", gamma_opt = "fixed", gamma_val = 0.005,
+      vcov_type = "HC3", constrained = FALSE, use_cluster = FALSE,
+      output_detail = "summary", fit_btn = 1
+    )
+    expect_true("A" %in% names(rv$models))
+
+    ## No by and no cov_alpha: one group, which used to draw nothing
+    session$setInputs(ps_model = "A", ps_by = "", ps_bias_corr = TRUE,
+                      ps_total = FALSE, ps_compute = 1)
+    expect_equal(nrow(rv$ps_result), 1L)
+    expect_no_error(output$ps_plot)
+
+    ## Removing another model keeps the result; removing its own clears it
+    session$setInputs(model_name = "B", fit_btn = 2)
+    session$setInputs(selected_model = "B", remove_btn = 1)
+    expect_false(is.null(rv$ps_result))
+    session$setInputs(selected_model = "A", remove_btn = 2)
+    expect_null(rv$ps_result)
+  })
+})
+
+test_that(".ps_plot_heights uses the bias-corrected estimate when available", {
+  expect_equal(.ps_plot_heights(data.frame(estimate = 2, estimate_bc = 1)), 1)
+  expect_equal(.ps_plot_heights(data.frame(estimate = 2, estimate_bc = NA_real_)), 2)
+  expect_equal(.ps_plot_heights(data.frame(estimate = 2)), 2)
+})

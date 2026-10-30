@@ -47,6 +47,12 @@ run_app <- function(...) {
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
+## Bar heights for the popsize plot, matching where its interval is centred.
+.ps_plot_heights <- function(ps) {
+  bc <- ps$estimate_bc
+  if (is.null(bc) || !all(is.finite(bc))) ps$estimate else bc
+}
+
 ## Auto-convert integer/numeric columns with <= 20 unique values to factor.
 ## This prevents year (2019-2024) from being treated as continuous.
 .auto_factor <- function(d, exclude = NULL) {
@@ -317,7 +323,8 @@ run_app <- function(...) {
     data = NULL,
     models = list(),
     selected_model = NULL,
-    ps_result = NULL
+    ps_result = NULL,
+    ps_result_model = NULL
   )
 
   # ── Data loading ─────────────────────────────────────────────────────────
@@ -515,6 +522,8 @@ run_app <- function(...) {
       nm <- input$model_name
       if (nm %in% names(rv$models)) nm <- paste0(nm, " (", length(rv$models) + 1, ")")
       rv$models[[nm]] <- fit
+      ## A refit under the same name makes an earlier result stale
+      if (identical(rv$ps_result_model, nm)) rv$ps_result <- NULL
       rv$selected_model <- nm
       shiny::showNotification(paste("Model", nm, "fitted successfully"), type = "message")
     }
@@ -530,6 +539,7 @@ run_app <- function(...) {
 
   shiny::observeEvent(input$remove_btn, {
     shiny::req(input$selected_model)
+    if (identical(rv$ps_result_model, input$selected_model)) rv$ps_result <- NULL
     rv$models[[input$selected_model]] <- NULL
     if (length(rv$models) > 0) rv$selected_model <- names(rv$models)[1]
   })
@@ -560,6 +570,7 @@ run_app <- function(...) {
       })
     } else NULL
 
+    rv$ps_result_model <- input$ps_model
     rv$ps_result <- tryCatch(
       popsize(rv$models[[input$ps_model]], by = by_arg,
               bias_correction = input$ps_bias_corr, total = input$ps_total),
@@ -577,14 +588,15 @@ run_app <- function(...) {
   output$ps_plot <- shiny::renderPlot({
     shiny::req(rv$ps_result)
     ps <- rv$ps_result
-    if (nrow(ps) > 1) {
-      par(mar = c(7, 4, 3, 1))
-      bp <- barplot(ps$estimate, names.arg = ps$group, las = 2,
-                    ylab = expression(hat(xi)), main = "Population Size Estimates",
-                    col = "steelblue", border = NA)
-      if (!is.null(ps$lower) && !is.null(ps$upper)) {
-        arrows(bp, ps$lower, bp, ps$upper, angle = 90, code = 3, length = 0.05)
-      }
+    ## The interval is centred on the bias-corrected estimate when there is one
+    heights <- .ps_plot_heights(ps)
+    par(mar = c(7, 4, 3, 1))
+    bp <- barplot(heights, names.arg = ps$group, las = 2,
+                  ylim = c(0, max(heights, ps$upper, na.rm = TRUE)),
+                  ylab = expression(hat(xi)), main = "Population Size Estimates",
+                  col = "steelblue", border = NA)
+    if (!is.null(ps$lower) && !is.null(ps$upper)) {
+      arrows(bp, ps$lower, bp, ps$upper, angle = 90, code = 3, length = 0.05)
     }
   })
 

@@ -114,6 +114,10 @@
 * The running mean in `plot.uncounted()` now covers all points. It could skip the
   largest fitted values and gave `NA` windows below 10 observations.
 
+* The Shiny population-size plot now draws a single group, centres the bars on
+  the bias-corrected estimate like the interval, and its result is cleared when
+  its model is removed or refitted under the same name.
+
 ## New features
 
 * `estimate_hidden_pop()` gains `gamma_start` to set the starting value, and
