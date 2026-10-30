@@ -150,6 +150,8 @@ popsize <- function(object, ...) {
 #'   covariate pattern from \code{cov_alpha}. When provided, the same fitted
 #'   alpha values are used but summed over the \code{by}-groups instead.
 #'   This is analogous to \code{singleRcapture::stratifyPopsize()}.
+#'   Rows with \code{NA} in a \code{by} variable form their own \code{"NA"}
+#'   group, with a message, so the groups always add up to the total.
 #'
 #' @export
 popsize.uncounted <- function(object, by = NULL, level = 0.95,
@@ -562,7 +564,22 @@ xi <- function(object, ...) {
       stop("Variables not found in data: ", paste(missing, collapse = ", "))
     }
     by_data <- object$data[, by_vars, drop = FALSE]
-    group_factor <- interaction(by_data, drop = TRUE, sep = ", ")
+    ## Rows with an NA by-value form their own "NA" group, so the groups always
+    ## partition the data and add up to the ungrouped total
+    has_na <- vapply(by_data, anyNA, logical(1))
+    by_keys <- by_data
+    if (any(has_na)) {
+      message("'by' variable(s) ", paste(by_vars[has_na], collapse = ", "),
+              " contain NA in ", sum(rowSums(is.na(by_data)) > 0),
+              " row(s); these are reported as group \"NA\".")
+      by_keys[has_na] <- lapply(by_data[has_na], function(x) {
+        f <- as.factor(x)
+        ch <- as.character(f)
+        ch[is.na(ch)] <- "NA"
+        factor(ch, levels = unique(c(levels(f), "NA")))
+      })
+    }
+    group_factor <- interaction(by_keys, drop = TRUE, sep = ", ")
     group_labels <- levels(group_factor)
     out <- lapply(group_labels, function(lev) which(group_factor == lev))
     names(out) <- group_labels

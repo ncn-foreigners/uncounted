@@ -223,7 +223,10 @@ bootstrap_popsize <- function(object, R = 199, cluster = NULL,
       bp_env$mat[bp_env$idx, ] <- row_i
     }
 
-    ps_w <- uncounted::popsize(fit_w, by = by, bias_correction = FALSE)
+    ## The original popsize() call above has already reported any NA by-groups
+    ps_w <- suppressMessages(
+      uncounted::popsize(fit_w, by = by, bias_correction = FALSE)
+    )
     ps_w$estimate
   }
 

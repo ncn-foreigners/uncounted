@@ -28,7 +28,9 @@ population size estimation (e.g., \code{~ year}, \code{~ country},
 the model. When \code{NULL} (default), groups are defined by the alpha
 covariate pattern from \code{cov_alpha}. When provided, the same fitted
 alpha values are used but summed over the \code{by}-groups instead.
-This is analogous to \code{singleRcapture::stratifyPopsize()}.}
+This is analogous to \code{singleRcapture::stratifyPopsize()}.
+Rows with \code{NA} in a \code{by} variable form their own \code{"NA"}
+group, with a message, so the groups always add up to the total.}
 
 \item{level}{Confidence level for intervals (default 0.95).}
 

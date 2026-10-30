@@ -55,6 +55,11 @@
   `auxiliary`.** Formulas such as `~ I(N / 2)` read the raw variable instead of
   evaluating the expression, so predictions did not match `fitted()`.
 
+* **`popsize(by =)` silently dropped rows with `NA` in the `by` variable.** They
+  vanished from the table and the total, while the total's standard error still
+  used every row. They now form an `"NA"` group, with a message, so the groups
+  always add up to the ungrouped total.
+
 ## New features
 
 * `estimate_hidden_pop()` gains `gamma_start` to set the starting value, and
