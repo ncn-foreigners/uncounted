@@ -38,6 +38,11 @@
   last gamma coefficient was dropped. The NB `$vcov_full` now has names, which
   also fixes the NA gamma standard errors in `tidy()` and `print()`.
 
+* **NB `theta_se` was on the log scale.** The MLE path reported SE(log theta)
+  while `tidy()` labelled it SE(theta) (0.73 vs about 290). It is now on the
+  theta scale, matching the GMM/EL path, and `tidy(conf.int = TRUE)` gives a
+  log-scale interval for theta instead of NA.
+
 ## New features
 
 * `estimate_hidden_pop()` gains `gamma_start` to set the starting value, and

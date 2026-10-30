@@ -847,7 +847,8 @@ estimate_hidden_pop <- function(data,
     out$vcov <- V_nb_full[coef_idx, coef_idx, drop = FALSE]
     dimnames(out$vcov) <- list(names(all_coefs), names(all_coefs))
     out$vcov_full <- V_nb_full
-    out$theta_se <- sqrt(max(0, V_nb_full[p_ab + 1, p_ab + 1]))
+    ## The optimiser works on log(theta): delta method to the theta scale
+    out$theta_se <- as.numeric(out$theta) * sqrt(max(0, V_nb_full[p_ab + 1, p_ab + 1]))
     out$score_full <- result$score_full
     out$hessian_nll <- result$hessian_nll
     # Store both requested and actual vcov types.

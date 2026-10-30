@@ -108,8 +108,11 @@ tidy.uncounted <- function(x, conf.int = FALSE, conf.level = 0.95, ...) {
       stringsAsFactors = FALSE
     )
     if (conf.int) {
-      theta_row$conf.low <- NA_real_
-      theta_row$conf.high <- NA_real_
+      # theta_se is the delta-method SE, so se / theta recovers SE(log theta);
+      # the interval is built on the log scale and stays positive
+      se_log <- theta_row$std.error / x$theta
+      theta_row$conf.low <- x$theta * exp(-crit * se_log)
+      theta_row$conf.high <- x$theta * exp(crit * se_log)
     }
     result <- rbind(result, theta_row)
   }

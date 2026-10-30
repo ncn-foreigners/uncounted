@@ -47,3 +47,23 @@ test_that("vcov_nb() is named", {
   fit <- estimate_hidden_pop(testdata, ~m, ~n, ~N, method = "nb", cov_gamma = ~sex)
   expect_true("theta" %in% colnames(vcov_nb(fit)))
 })
+
+# theta_se used to be SE(log theta) while tidy() labels it SE(theta).
+test_that("theta_se is on the theta scale", {
+  fit <- estimate_hidden_pop(testdata, ~m, ~n, ~N, method = "nb", gamma = 0.005)
+  gmm <- estimate_hidden_pop(testdata, ~m, ~n, ~N, method = "nb", gamma = 0.005,
+                             estimator = "gmm")
+  ref <- MASS::glm.nb(m ~ log(N) + log(0.005 + n / N) - 1, data = testdata)
+  ## Sandwich vs model-based SE, so close rather than equal
+  expect_equal(fit$theta_se, ref$SE.theta, tolerance = 0.1)
+  expect_equal(fit$theta_se, unname(gmm$theta_se), tolerance = 0.1)
+})
+
+test_that("tidy() gives a positive log-scale CI for theta", {
+  fit <- estimate_hidden_pop(testdata, ~m, ~n, ~N, method = "nb", gamma = 0.005)
+  row <- subset(tidy(fit, conf.int = TRUE), term == "theta")
+  expect_gt(row$conf.low, 0)
+  expect_equal(sqrt(row$conf.low * row$conf.high), row$estimate)
+  expect_equal(log(row$conf.high / row$estimate) / qnorm(0.975),
+               row$std.error / row$estimate)
+})
