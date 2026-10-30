@@ -413,7 +413,7 @@ profile_gamma <- function(object, gamma_grid = seq(1e-4, 0.5, length.out = 20),
     # loglik vs gamma
     plot(results$gamma, results$loglik, type = "b", pch = 19, cex = 0.6,
          xlab = expression(gamma), ylab = "Log-likelihood",
-         main = expression("Log-likelihood" ~ ell(gamma)),
+         main = expression("Log-likelihood" ~ italic(l)(gamma)),
          ...)
     if (object$gamma_estimated && !is.null(object$gamma)) {
       abline(v = object$gamma, lty = 2, col = "red")
