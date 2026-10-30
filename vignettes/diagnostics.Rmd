@@ -355,6 +355,9 @@ separate:
 - `robustness_dependence()`: smallest dependence strength needed to cross a target.
 - `exceedance_popsize()`: empirical bootstrap tail area for threshold questions.
 
+Section 8.6 adds a separate assumption-based analysis, `feedback_sensitivity()`, for
+detection that depends on the size of the unauthorized population.
+
 ### 8.1 Fixed-center identification bounds
 
 Under the bounded sensitivity model,
@@ -467,15 +470,115 @@ The output reports a grouped sensitivity surface for \(\Xi_t\) together
 with robustness values for threshold or percentage-change questions. The
 full derivation is documented in `?frailty_sensitivity`.
 
+### 8.6 Detection feedback
+
+The main model assumes that detection does not depend on the size of the
+unauthorized population. `feedback_sensitivity()` indexes departures from this by
+\(\delta\), the elasticity of detection with respect to that size:
+\[
+E(p_i \mid M_i, N_i, n_i) = \rho_i (M_i / K_i)^\delta, \qquad \delta > -1.
+\]
+Holding the fitted \(\hat\mu_i\) and \(\hat\rho_i\) fixed, the population size
+consistent with \(\delta\) is
+\[
+\xi_i(\delta) = K_i (\xi_{0i} / K_i)^{1 / (1 + \delta)}, \qquad
+\xi_{0i} = N_i^{\hat\alpha_i}.
+\]
+Nothing is refitted. Fitted values and likelihood are the same for every
+\(\delta\), so the data cannot choose among its values (compare Link, 2003;
+Barker et al., 2018): only the split of \(\hat\mu_i\) into size and detection
+changes. The `delta` of `profile_dependence()` is a different quantity, a constant
+shift of the mean.
+
+`feedback_calibrate()` helps to choose the range. If inspections are spread over the
+whole foreign population, the mechanical congestion elasticity is the negative of
+the unauthorized share.
+
+```{r feedback-fit, eval = requireNamespace("fwb", quietly = TRUE)}
+d_fb <- irregular_migration
+d_fb$year <- factor(d_fb$year)
+d_fb$ukr <- as.integer(d_fb$country_code == "UKR")
+fit_fb <- estimate_hidden_pop(
+  d_fb, ~ m, ~ n, ~ N,
+  method = "poisson", cov_alpha = ~ year * ukr + sex, cov_beta = ~ year,
+  countries = ~ country_code
+)
+feedback_calibrate(fit_fb)
+boot_fb <- suppressWarnings(bootstrap_popsize(
+  fit_fb, R = 49, cluster = ~ country_code, seed = 123, verbose = FALSE,
+  by = ~ year, total = TRUE
+))
+```
+
+`anchor` has no default, because it is as strong an assumption as \(\delta\). \(K_i\)
+is the size at which the main model's detection function is assumed correct, and it
+acts as a pivot: for \(\delta > 0\), cells above it shrink and cells below it grow.
+Under `"geomean"`, large means large in absolute terms, so the big Ukrainian cells lie
+far above \(K\) and the total falls with \(\delta\). Under `"share"`, large means large
+relative to \(N\). Those cells have a below-typical \(\xi_{0i} / N_i\), so they lie below
+\(K_i\) and the total rises. Report more than one anchor.
+
+```{r feedback-profile, eval = requireNamespace("fwb", quietly = TRUE)}
+fb_geo <- suppressWarnings(feedback_sensitivity(
+  fit_fb, anchor = "geomean", by = ~ year, total = TRUE, boot = boot_fb
+))
+fb_geo
+fb_share <- suppressWarnings(feedback_sensitivity(
+  fit_fb, anchor = "share", by = ~ year, total = TRUE, boot = boot_fb
+))
+fb_share
+```
+
+These warnings are suppressed here but matter in practice: under the power link one
+cell (Papua New Guinea, 2023, N = 1) has fitted detection slightly above 1 already at
+\(\delta = 0\), so it is left out of the admissibility check and listed in
+`$a2_excluded`. The lower end of the `"geomean"` range is also set by a very small cell,
+as `$diagnostics` shows, although such cells barely contribute to the total.
+
+```{r feedback-plot, eval = requireNamespace("fwb", quietly = TRUE), fig.width = 6, fig.height = 4}
+plot(fb_geo)
+```
+
+`feedback_identified_set()` bounds the population size over the admissible range, with
+an interval for the true value (Imbens and Manski, 2004; see Stoye, 2009, for the
+conditions) or for the whole set.
+
+```{r feedback-set, eval = requireNamespace("fwb", quietly = TRUE)}
+feedback_identified_set(fb_geo)
+```
+
+`feedback_tipping()` asks how much feedback overturns a statement. Here the point
+estimate of the change between 2019 and 2024 is very small compared with its sampling
+uncertainty, so the bootstrap test does not support either direction even at
+\(\delta = 0\) and there is no significant result to overturn. The sign of the point
+estimate can change at a small \(\delta\), and where it does depends on the anchor.
+
+```{r feedback-tipping, eval = requireNamespace("fwb", quietly = TRUE)}
+feedback_tipping(fb_geo, hypothesis = "xi[year == 2024] - xi[year == 2019] > 0")
+feedback_tipping(fb_share, hypothesis = "xi[year == 2024] - xi[year == 2019] > 0")
+```
+
 ## References
 
+- Barker, R. J., Schofield, M. R., Link, W. A., and Sauer, J. R. (2018). On the
+  reliability of N-mixture models for count data. *Biometrics*, 74(1), 369--377.
+  https://doi.org/10.1111/biom.12734
+
 - Beręsewicz, M., & Pawlukiewicz, K. (2020). Estimation of the number of irregular foreigners in Poland using non-linear count regression models. arXiv preprint arXiv:2008.09407. https://arxiv.org/abs/2008.09407
+- Imbens, G. W. and Manski, C. F. (2004). Confidence intervals for partially identified
+  parameters. *Econometrica*, 72(6), 1845--1857.
+  https://doi.org/10.1111/j.1468-0262.2004.00555.x
 - Kleiber, C. and Zeileis, A. (2016). Visualizing Count Data
   Regressions Using Rootograms. *The American Statistician*, 70(3),
   296--303. https://doi.org/10.1080/00031305.2016.1173590
+- Link, W. A. (2003). Nonidentifiability of population size from capture-recapture data
+  with heterogeneous detection probabilities. *Biometrics*, 59(4), 1123--1130.
+  https://doi.org/10.1111/j.0006-341X.2003.00129.x
 - McCullagh, P. and Nelder, J. A. (1989). *Generalized Linear Models*,
   2nd ed. Chapman & Hall. https://doi.org/10.1007/978-1-4899-3242-6
 - Self, S. G. and Liang, K.-Y. (1987). Asymptotic properties of maximum
   likelihood estimators and likelihood ratio tests under nonstandard
   conditions. *JASA*, 82(398), 605--610. https://doi.org/10.1080/01621459.1987.10478472
+- Stoye, J. (2009). More on confidence intervals for partially identified parameters.
+  *Econometrica*, 77(4), 1299--1315. https://doi.org/10.3982/ECTA7347
 - Zhang, L.-C. (2008). *Developing methods for determining the number of unauthorized foreigners in Norway* (Documents 2008/11). Statistics Norway. https://www.ssb.no/a/english/publikasjoner/pdf/doc_200811_en/doc_200811_en.pdf
