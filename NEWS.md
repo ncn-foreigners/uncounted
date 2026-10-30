@@ -22,6 +22,10 @@
   model. FWB weights now multiply the user's weights, and refits go through the
   shared refit builder.
 
+* **`loo()`, `dfbeta()` and `dfpopsize()` ignored the fit's weights.** Refits
+  now use the shared refit builder with the weights of the remaining rows, and
+  a refit that does not converge is reported as such.
+
 ## New features
 
 * `estimate_hidden_pop()` gains `gamma_start` to set the starting value, and

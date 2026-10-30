@@ -122,30 +122,13 @@ loo.uncounted <- function(object, by = c("obs", "country"),
   ps_list <- vector("list", n_drops)
   converged <- logical(n_drops)
 
-  # Extract call arguments for refitting
-  # Formulas from call (safe to eval); non-formula args from fit object
+  # Refit arguments: same model as the original fit, including its weights
   cl <- object$call
-  method <- object$method
-  vcov_type <- object$vcov_type
-  cluster_formula <- if (!is.null(cl$cluster)) eval(cl$cluster) else NULL
-  observed <- eval(cl$observed)
-  auxiliary <- eval(cl$auxiliary)
-  reference_pop <- eval(cl$reference_pop)
+  refit_args <- .refit_args_from_object(object)
+  obs_weights <- object$obs_weights
   cov_alpha <- if (!is.null(cl$cov_alpha)) eval(cl$cov_alpha) else NULL
   cov_beta <- if (!is.null(cl$cov_beta)) eval(cl$cov_beta) else NULL
   cov_gamma <- if (!is.null(cl$cov_gamma)) eval(cl$cov_gamma) else NULL
-  gamma_arg <- if (object$gamma_estimated) "estimate"
-               else if (!is.null(object$gamma)) object$gamma
-               else NULL
-  gamma_bounds <- tryCatch(
-    if (!is.null(cl$gamma_bounds)) eval(cl$gamma_bounds) else c(1e-10, 0.5),
-    error = function(e) c(1e-10, 0.5)
-  )
-  theta_start <- if (!is.null(object$theta)) object$theta else 1
-  countries <- if (!is.null(cl$countries)) eval(cl$countries) else NULL
-  constrained_arg <- isTRUE(object$constrained)
-  estimator_arg <- object$estimator
-  link_rho_arg <- object$link_rho
 
   warned_rank <- FALSE
   for (i in seq_len(n_drops)) {
@@ -189,30 +172,15 @@ loo.uncounted <- function(object, by = c("obs", "country"),
     }
 
     # Refit
+    args <- refit_args
+    args$data <- data_i
+    if (!is.null(obs_weights)) args$weights <- obs_weights[-drop_idx]
     fit_i <- tryCatch(
-      estimate_hidden_pop(
-        data = data_i,
-        observed = observed,
-        auxiliary = auxiliary,
-        reference_pop = reference_pop,
-        method = method,
-        cov_alpha = cov_alpha,
-        cov_beta = cov_beta,
-        gamma = gamma_arg,
-        cov_gamma = cov_gamma,
-        gamma_bounds = gamma_bounds,
-        theta_start = theta_start,
-        link_rho = link_rho_arg,
-        estimator = estimator_arg,
-        vcov = vcov_type,
-        constrained = constrained_arg,
-        countries = countries,
-        cluster = cluster_formula
-      ),
+      do.call(estimate_hidden_pop, args),
       error = function(e) NULL
     )
 
-    if (!is.null(fit_i)) {
+    if (!is.null(fit_i) && isTRUE(fit_i$convergence == 0)) {
       coef_mat[i, ] <- fit_i$coefficients
       ps_list[[i]] <- tryCatch(popsize(fit_i), error = function(e) NULL)
       converged[i] <- TRUE
