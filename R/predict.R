@@ -81,13 +81,13 @@ predict.uncounted <- function(object, newdata = NULL,
     return(object$log_mu)
   }
 
-  # Extract variable names from the original call
+  # Evaluate the formulas the way the fit did, so expressions such as
+  # ~ I(N / 2) give the same values as on the training data
   call_args <- object$call_args
-  refpop_var <- all.vars(call_args$reference_pop)
-  auxiliary_var <- all.vars(call_args$auxiliary)
-
-  N_new <- newdata[[refpop_var]]
-  n_new <- newdata[[auxiliary_var]]
+  N_new <- eval(call_args$reference_pop[[2]], newdata,
+                environment(call_args$reference_pop))
+  n_new <- eval(call_args$auxiliary[[2]], newdata,
+                environment(call_args$auxiliary))
   ratio_new <- n_new / N_new
 
   # Compute gamma for new data

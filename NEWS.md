@@ -51,6 +51,10 @@
   hard-coded. It is now log-spaced inside the bounds, and the final search runs
   on the log scale, so small gamma values are located accurately.
 
+* **`predict(newdata =)` ignored expressions in `reference_pop` and
+  `auxiliary`.** Formulas such as `~ I(N / 2)` read the raw variable instead of
+  evaluating the expression, so predictions did not match `fitted()`.
+
 ## New features
 
 * `estimate_hidden_pop()` gains `gamma_start` to set the starting value, and

@@ -150,3 +150,14 @@ test_that("predict() reproduces fitted() under a dependence offset", {
   expect_silent(p <- predict(fit_legacy, newdata = d))
   expect_length(p, nrow(d))
 })
+
+test_that("predict(newdata) evaluates expressions in reference_pop and auxiliary", {
+  d <- testdata
+  d$N2 <- d$N / 2
+  d$n2 <- d$n / 2
+  fit <- estimate_hidden_pop(d, ~m, ~I(n2 * 2), ~I(N2 * 2), gamma = 0.005)
+  expect_equal(unname(predict(fit, newdata = d)), unname(fitted(fit)))
+
+  fit_log <- estimate_hidden_pop(d, ~m, ~n, ~I(2 * N2), gamma = 0.005)
+  expect_equal(unname(predict(fit_log, newdata = d, type = "link")), unname(fit_log$log_mu))
+})
