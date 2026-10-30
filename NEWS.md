@@ -118,6 +118,10 @@
   the bias-corrected estimate like the interval, and its result is cleared when
   its model is removed or refitted under the same name.
 
+* **`lrtest()` accepted fits to different data.** Only the number of observations
+  was compared. It now requires the same `observed`, `auxiliary`, `reference_pop`
+  and `weights`.
+
 ## New features
 
 * `estimate_hidden_pop()` gains `gamma_start` to set the starting value, and

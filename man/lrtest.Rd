@@ -44,7 +44,8 @@ which corresponds to a 50:50 mixture of a point mass at zero and a
 
 This function is intended for comparing count models only (Poisson and NB).
 OLS/NLS models are not supported because they use a pseudo-log-likelihood.
-The models must be fitted to the same data (identical number of observations).
+The models must be fitted to the same observations and weights: the same
+\code{observed}, \code{auxiliary}, \code{reference_pop} and \code{weights}.
 }
 \examples{
 set.seed(42)

@@ -222,7 +222,8 @@ print.uncounted_comparison <- function(x, ...) {
 #'
 #' This function is intended for comparing count models only (Poisson and NB).
 #' OLS/NLS models are not supported because they use a pseudo-log-likelihood.
-#' The models must be fitted to the same data (identical number of observations).
+#' The models must be fitted to the same observations and weights: the same
+#' \code{observed}, \code{auxiliary}, \code{reference_pop} and \code{weights}.
 #'
 #' @param object1 An \code{"uncounted"} model (Poisson or NB).
 #' @param object2 An \code{"uncounted"} model (Poisson or NB). The function
@@ -269,6 +270,17 @@ lrtest <- function(object1, object2) {
 
   if (object1$n_obs != object2$n_obs)
     stop("Models must be fitted to the same data (different n_obs)")
+  ## The statistic compares two likelihoods of the same observations. Different
+  ## data or weights leave a term that does not vanish under H0 and grows with n.
+  same_vals <- function(a, b) isTRUE(all.equal(as.numeric(a), as.numeric(b)))
+  differs <- c(observed = !same_vals(object1$m, object2$m),
+               auxiliary = !same_vals(object1$n_aux, object2$n_aux),
+               reference_pop = !same_vals(object1$N, object2$N),
+               weights = !same_vals(.fit_weights(object1), .fit_weights(object2)))
+  if (any(differs)) {
+    stop("Models must be fitted to the same data and weights; they differ in: ",
+         paste(names(differs)[differs], collapse = ", "), ".", call. = FALSE)
+  }
   if (isTRUE(object1$pseudo_loglik) || isTRUE(object2$pseudo_loglik)) {
     warning("Non-integer 'observed' values: the log-likelihood is a ",
             "pseudo-likelihood, so the chi-squared reference is not valid.",
