@@ -83,6 +83,10 @@
   with 20 or fewer distinct values became factors at upload, including m, n and
   N, so realistic small panels failed with "must be numeric, not factor".
 
+* **`boot_params` was shifted by one row.** Row 1 of `bootstrap_popsize()$boot_params`
+  was the full-sample fit and the last replicate was lost, which also affected
+  the parameter table in `summary()`. Parameters now come back with each replicate.
+
 ## New features
 
 * `estimate_hidden_pop()` gains `gamma_start` to set the starting value, and

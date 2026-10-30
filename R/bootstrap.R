@@ -183,7 +183,8 @@ bootstrap_popsize <- function(object, R = 199, cluster = NULL,
     }
   }
 
-  # Pre-allocate storage for per-replicate parameters
+  # Per-replicate parameters are returned by the statistic alongside xi, so they
+  # stay aligned with the replicates however fwb calls the statistic
   param_names <- names(coef(object))
   if (object$gamma_estimated && !isTRUE(object$has_cov_gamma)) {
     param_names <- c(param_names, "gamma")
@@ -191,10 +192,8 @@ bootstrap_popsize <- function(object, R = 199, cluster = NULL,
   if (!is.null(object$theta)) {
     param_names <- c(param_names, "theta")
   }
-  bp_env <- new.env(parent = emptyenv())
-  bp_env$mat <- matrix(NA_real_, nrow = R, ncol = length(param_names),
-                       dimnames = list(NULL, param_names))
-  bp_env$idx <- 0L
+  n_groups <- length(t0)
+  n_params <- length(param_names)
 
   # Statistic function for fwb
   stat_fn <- function(data, w) {
@@ -206,28 +205,23 @@ bootstrap_popsize <- function(object, R = 199, cluster = NULL,
       error = function(e) NULL
     )
 
-    bp_env$idx <- bp_env$idx + 1L
     if (is.null(fit_w) || !isTRUE(fit_w$convergence == 0)) {
-      return(rep(NA_real_, length(t0)))
+      return(rep(NA_real_, n_groups + n_params))
     }
 
-    # Capture per-replicate parameters (guard against extra fwb calls)
-    if (bp_env$idx <= R) {
-      row_i <- coef(fit_w)
-      if (fit_w$gamma_estimated && !isTRUE(fit_w$has_cov_gamma)) {
-        row_i <- c(row_i, gamma = fit_w$gamma)
-      }
-      if (!is.null(fit_w$theta)) {
-        row_i <- c(row_i, theta = fit_w$theta)
-      }
-      bp_env$mat[bp_env$idx, ] <- row_i
+    row_i <- coef(fit_w)
+    if (fit_w$gamma_estimated && !isTRUE(fit_w$has_cov_gamma)) {
+      row_i <- c(row_i, fit_w$gamma)
+    }
+    if (!is.null(fit_w$theta)) {
+      row_i <- c(row_i, fit_w$theta)
     }
 
     ## The original popsize() call above has already reported any NA by-groups
     ps_w <- suppressMessages(
       uncounted::popsize(fit_w, by = by, bias_correction = FALSE)
     )
-    ps_w$estimate
+    c(ps_w$estimate, unname(row_i))
   }
 
   # Run FWB
@@ -241,14 +235,13 @@ bootstrap_popsize <- function(object, R = 199, cluster = NULL,
     verbose = verbose
   )
 
-  # Extract bootstrap matrix
-  boot_t <- boot_result$t  # R x n_groups
-  if (ncol(boot_t) == length(ps0$group)) {
-    colnames(boot_t) <- ps0$group
-  }
+  # Split the replicates into xi per group and parameters
+  boot_t <- boot_result$t[, seq_len(n_groups), drop = FALSE]  # R x n_groups
+  colnames(boot_t) <- ps0$group
+  boot_params <- boot_result$t[, n_groups + seq_len(n_params), drop = FALSE]
+  dimnames(boot_params) <- list(NULL, param_names)
 
   # Compute per-group statistics
-  n_groups <- length(t0)
 
   min_reps <- if (ci_type == "cheap") 1L else 10L
   ci_lower <- numeric(n_groups)
@@ -359,7 +352,7 @@ bootstrap_popsize <- function(object, R = 199, cluster = NULL,
     ci_type = ci_type,
     point_estimate = point_estimate,
     level = level,
-    boot_params = bp_env$mat,
+    boot_params = boot_params,
     n_converged = sum(apply(boot_t, 1, function(x) all(is.finite(x)))),
     cluster = !is.null(cluster),
     groups = group_meta

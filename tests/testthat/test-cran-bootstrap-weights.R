@@ -71,3 +71,26 @@ test_that("cheap CI matches fwb and works with very few replications", {
   b1 <- boot_quiet(fit, R = 1, ci_type = "cheap")
   expect_true(is.finite(b1$popsize$lower) && b1$popsize$lower < b1$popsize$upper)
 })
+
+# ---- boot_params lines up with the replicates ----
+
+test_that("boot_params rows are the replicates, not the full-sample fit", {
+  ## fwb calls the statistic once on the full sample before the replicates, so
+  ## a counter-based store had the full-sample fit in row 1 and lost the last
+  ## replicate.
+  fit <- estimate_hidden_pop(testdata, ~m, ~n, ~N, gamma = 0.005)
+  b <- boot_quiet(fit, R = 10)
+  expect_equal(nrow(b$boot_params), 10L)
+  xi_from_params <- vapply(b$boot_params[, "alpha"],
+                           function(a) sum(testdata$N^a), numeric(1))
+  expect_equal(unname(xi_from_params), unname(b$t[, 1]))
+  expect_false(isTRUE(all.equal(unname(b$boot_params[1, ]), unname(coef(fit)))))
+})
+
+test_that("boot_params names cover gamma and theta", {
+  fit <- estimate_hidden_pop(testdata, ~m, ~n, ~N, method = "nb")
+  b <- boot_quiet(fit, R = 3)
+  expect_identical(colnames(b$boot_params), c("alpha", "beta", "gamma", "theta"))
+  expect_true(all(is.finite(b$boot_params)))
+  expect_identical(colnames(b$t), b$popsize$group)
+})
